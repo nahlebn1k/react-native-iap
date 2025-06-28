@@ -78,6 +78,7 @@ export interface ProductPurchase {
   originalTransactionIdentifierIOS?: string;
   verificationResultIOS?: string;
   appAccountToken?: string;
+  appTransactionID?: string;
   //Android
   productIds?: string[];
   dataAndroid?: string;
