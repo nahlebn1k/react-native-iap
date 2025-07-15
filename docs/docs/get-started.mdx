@@ -12,6 +12,29 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 `react-native-iap` will help you access the In-App purchases capabilities of your device on `iOS`, and `Android` (Play Store and Amazon).
 
+:::warning About This Update (v13.0.0)
+**This update focuses on API compatibility with expo-iap and will be the final major release.**
+
+- 🔄 **API Synchronization**: Maximum compatibility with expo-iap API specifications
+- ⚠️ **Deprecation Notice**: react-native-iap will be deprecated in favor of expo-iap
+- 🚫 **No Further Updates**: No additional feature updates or major releases are planned
+- 🏗️ **Modern Features**: For TurboModules support and latest React Native features, please migrate to [expo-iap](https://github.com/hyochan/expo-iap)
+
+**Migration is highly recommended for:**
+- TurboModules support
+- Better performance and stability
+- Continued updates and support
+- Modern React Native architecture
+
+**New features added for compatibility with expo-iap v2.5.2:**
+- iOS receipt validation methods
+- Enhanced useIAP hook with callback support
+- iOS 16+ transaction fields support
+- Field name compatibility for expo-iap
+
+Check out the [migration guide](/docs/migrate_to_13.0.0) for detailed information.
+:::
+
 :::note
 This library will provide the basic features to consume In-App purchases on the client-side, however you'll have to implement the server-side to validate your receipts (which is probably the most time consuming part to do it correctly).
 :::
