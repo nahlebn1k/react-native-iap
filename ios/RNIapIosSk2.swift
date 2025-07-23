@@ -1113,8 +1113,11 @@ class RNIapIosSk2iOS15: Sk2Delegate {
                     case .verified(let appTransaction):
                         var result: [String: Any] = [:]
 
-                        // Add appTransactionID
-                        result["appTransactionID"] = appTransaction.appTransactionID
+                        // Add iOS 18.4+ properties
+                        if #available(iOS 18.4, tvOS 18.4, *) {
+                            result["appTransactionID"] = appTransaction.appTransactionID
+                            result["originalPlatform"] = appTransaction.originalPlatform
+                        }
 
                         // Add other AppTransaction properties
                         result["originalAppVersion"] = appTransaction.originalAppVersion

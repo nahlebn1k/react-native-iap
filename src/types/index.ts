@@ -130,7 +130,8 @@ export interface ProductPurchase {
 }
 
 export type AppTransaction = {
-  appTransactionID: string; // iOS 16+
+  appTransactionID?: string; // iOS 18.4+
+  originalPlatform?: string; // iOS 18.4+
   originalAppVersion: string;
   originalPurchaseDate: number;
   deviceVerification: string;
