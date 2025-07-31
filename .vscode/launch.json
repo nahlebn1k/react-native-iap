@@ -1,0 +1,121 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Android (Google Play)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["android:play"],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    {
+      "name": "Debug Android (Amazon)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["android:amazon"],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    {
+      "name": "Debug iOS",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["ios"],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    {
+      "name": "Start Metro Bundler",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["start"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Install Pods",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["pods"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Clean Android Build",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample/android",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": ["clean"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run Tests",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["test"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Lint",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["lint"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Clear Metro Cache",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["start", "--reset-cache"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Install Dependencies",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/IapExample",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["install"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Android (Google Play) + Metro",
+      "configurations": ["Start Metro Bundler", "Debug Android (Google Play)"],
+      "stopAll": true
+    },
+    {
+      "name": "Android (Amazon) + Metro",
+      "configurations": ["Start Metro Bundler", "Debug Android (Amazon)"],
+      "stopAll": true
+    },
+    {
+      "name": "iOS + Metro",
+      "configurations": ["Start Metro Bundler", "Debug iOS"],
+      "stopAll": true
+    }
+  ]
+}
