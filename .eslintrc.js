@@ -1,21 +1,21 @@
 module.exports = {
   root: true,
-  parser: '@babel/eslint-parser',
-  extends: ['@react-native-community', 'prettier'],
-  plugins: ['@typescript-eslint', 'prettier', 'simple-import-sort', 'jest'],
+  extends: ['expo', 'prettier'],
+  plugins: ['prettier'],
   rules: {
-    '@typescript-eslint/no-unused-vars': 'off',
-    'prettier/prettier': 'error',
-    'simple-import-sort/imports': [
-      'error',
+    'eslint-comments/no-unlimited-disable': 0,
+    'eslint-comments/no-unused-disable': 0,
+    'import/no-unresolved': [
+      2,
       {
-        groups: [
-          ['^\\u0000'],
-          ['^react', '^@?\\w'],
-          ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
-          ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
-        ],
+        ignore: ['^react$', '^react-native$'],
       },
     ],
+  },
+  settings: {
+    'import/ignore': ['react-native'],
+    react: {
+      version: 'detect',
+    },
   },
 };

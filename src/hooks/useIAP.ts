@@ -1,317 +1,456 @@
-import {useCallback, useEffect, useRef} from 'react';
-import {Platform} from 'react-native';
+// External dependencies
+import { useCallback, useEffect, useState, useRef } from 'react'
+import { Platform } from 'react-native'
 
+// Internal modules
 import {
-  finishTransaction as iapFinishTransaction,
-  getAvailablePurchases as iapGetAvailablePurchases,
-  getProducts as iapGetProducts,
-  getPurchaseHistory as iapGetPurchaseHistory,
-  getSubscriptions as iapGetSubscriptions,
-  requestPurchase as iapRequestPurchase,
-  requestSubscription as iapRequestSubscription,
-} from '../iap';
-import {sync, validateReceiptIos} from '../modules/iosSk2';
-import type {PurchaseError} from '../purchaseError';
-import type {Product, Purchase, PurchaseResult, Subscription} from '../types';
+  endConnection,
+  initConnection,
+  purchaseErrorListener,
+  purchaseUpdatedListener,
+  promotedProductListenerIOS,
+  getAvailablePurchases,
+  finishTransaction as finishTransactionInternal,
+  requestPurchase as requestPurchaseInternal,
+  fetchProducts,
+  validateReceipt as validateReceiptInternal,
+  getActiveSubscriptions,
+  hasActiveSubscriptions,
+} from '../'
+import { syncIOS, requestPromotedProductIOS, buyPromotedProductIOS } from '../'
 
-import {useIAPContext} from './withIAPContext';
+// Types
+import type {
+  Product,
+  Purchase,
+  PurchaseError,
+  PurchaseResult,
+  SubscriptionProduct,
+  RequestPurchaseProps,
+  RequestSubscriptionProps,
+  ActiveSubscription,
+} from '../types'
 
-export interface UseIAPOptions {
-  onPurchaseSuccess?: (purchase: Purchase) => void;
-  onPurchaseError?: (error: PurchaseError) => void;
-  onSyncError?: (error: Error) => void;
-  shouldAutoSyncPurchases?: boolean;
+// Types for event subscriptions
+interface EventSubscription {
+  remove(): void
 }
 
-type IAP_STATUS = {
-  connected: boolean;
-  products: Product[];
-  promotedProductsIOS: Product[];
-  subscriptions: Subscription[];
-  purchaseHistory: Purchase[];
-  availablePurchases: Purchase[];
-  currentPurchase?: Purchase;
-  currentPurchaseError?: PurchaseError;
-  initConnectionError?: Error;
-  clearCurrentPurchase: () => void;
-  clearCurrentPurchaseError: () => void;
+type UseIap = {
+  connected: boolean
+  products: Product[]
+  promotedProductsIOS: Purchase[]
+  promotedProductIdIOS?: string
+  subscriptions: SubscriptionProduct[]
+  availablePurchases: Purchase[]
+  currentPurchase?: Purchase
+  currentPurchaseError?: PurchaseError
+  promotedProductIOS?: Product
+  activeSubscriptions: ActiveSubscription[]
+  clearCurrentPurchase: () => void
+  clearCurrentPurchaseError: () => void
   finishTransaction: ({
     purchase,
     isConsumable,
-    developerPayloadAndroid,
   }: {
-    purchase: Purchase;
-    isConsumable?: boolean;
-    developerPayloadAndroid?: string;
-  }) => Promise<string | boolean | PurchaseResult | void>;
-  getAvailablePurchases: () => Promise<void>;
-  getPurchaseHistory: () => Promise<void>;
-  getProducts: ({skus}: {skus: string[]}) => Promise<void>;
-  getSubscriptions: ({skus}: {skus: string[]}) => Promise<void>;
-  requestPurchase: typeof iapRequestPurchase;
-  requestSubscription: typeof iapRequestSubscription;
-  restorePurchases: () => Promise<void>;
+    purchase: Purchase
+    isConsumable?: boolean
+  }) => Promise<PurchaseResult | boolean>
+  getAvailablePurchases: () => Promise<void>
+  fetchProducts: (params: {
+    skus: string[]
+    type?: 'inapp' | 'subs'
+  }) => Promise<void>
+  /**
+   * @deprecated Use fetchProducts({ skus, type: 'inapp' }) instead. This method will be removed in version 3.0.0.
+   * Note: This method internally uses fetchProducts, so no deprecation warning is shown.
+   */
+  getProducts: (skus: string[]) => Promise<void>
+  /**
+   * @deprecated Use fetchProducts({ skus, type: 'subs' }) instead. This method will be removed in version 3.0.0.
+   * Note: This method internally uses fetchProducts, so no deprecation warning is shown.
+   */
+  getSubscriptions: (skus: string[]) => Promise<void>
+  requestPurchase: (params: {
+    request: RequestPurchaseProps | RequestSubscriptionProps
+    type?: 'inapp' | 'subs'
+  }) => Promise<any>
   validateReceipt: (
     sku: string,
     androidOptions?: {
-      packageName: string;
-      productToken: string;
-      accessToken: string;
-      isSub?: boolean;
-    },
-  ) => Promise<any>;
-};
+      packageName: string
+      productToken: string
+      accessToken: string
+      isSub?: boolean
+    }
+  ) => Promise<any>
+  restorePurchases: () => Promise<void> // 구매 복원 함수 추가
+  requestPromotedProductIOS: () => Promise<any | null>
+  buyPromotedProductIOS: () => Promise<void>
+  getActiveSubscriptions: (
+    subscriptionIds?: string[]
+  ) => Promise<ActiveSubscription[]>
+  hasActiveSubscriptions: (subscriptionIds?: string[]) => Promise<boolean>
+}
 
-export const useIAP = (options?: UseIAPOptions): IAP_STATUS => {
-  const {
-    connected,
-    products,
-    promotedProductsIOS,
-    subscriptions,
-    purchaseHistory,
-    availablePurchases,
-    currentPurchase,
-    currentPurchaseError,
-    initConnectionError,
-    setConnected,
-    setProducts,
-    setSubscriptions,
-    setAvailablePurchases,
-    setPurchaseHistory,
-    setCurrentPurchase,
-    setCurrentPurchaseError,
-  } = useIAPContext();
+export interface UseIapOptions {
+  onPurchaseSuccess?: (purchase: Purchase) => void
+  onPurchaseError?: (error: PurchaseError) => void
+  onSyncError?: (error: Error) => void
+  shouldAutoSyncPurchases?: boolean // New option to control auto-syncing
+  onPromotedProductIOS?: (product: Product) => void
+}
 
-  const optionsRef = useRef<UseIAPOptions | undefined>(options);
+/**
+ * React Hook for managing In-App Purchases.
+ * See documentation at https://expo-iap.hyo.dev/docs/hooks/useIAP
+ */
+export function useIAP(options?: UseIapOptions): UseIap {
+  const [connected, setConnected] = useState<boolean>(false)
+  const [products, setProducts] = useState<Product[]>([])
+  const [promotedProductsIOS] = useState<Purchase[]>([])
+  const [subscriptions, setSubscriptions] = useState<SubscriptionProduct[]>([])
+  const [availablePurchases, setAvailablePurchases] = useState<Purchase[]>([])
+  const [currentPurchase, setCurrentPurchase] = useState<Purchase>()
+  const [promotedProductIOS, setPromotedProductIOS] = useState<Product>()
+  const [currentPurchaseError, setCurrentPurchaseError] =
+    useState<PurchaseError>()
+  const [promotedProductIdIOS] = useState<string>()
+  const [activeSubscriptions, setActiveSubscriptions] = useState<
+    ActiveSubscription[]
+  >([])
 
-  useEffect(() => {
-    optionsRef.current = options;
-  }, [options]);
+  const optionsRef = useRef<UseIapOptions | undefined>(options)
 
   // Helper function to merge arrays with duplicate checking
   const mergeWithDuplicateCheck = useCallback(
     <T>(
       existingItems: T[],
       newItems: T[],
-      getKey: (item: T) => string,
+      getKey: (item: T) => string
     ): T[] => {
-      const merged = [...existingItems];
+      const merged = [...existingItems]
       newItems.forEach((newItem) => {
         const isDuplicate = merged.some(
-          (existingItem) => getKey(existingItem) === getKey(newItem),
-        );
+          (existingItem) => getKey(existingItem) === getKey(newItem)
+        )
         if (!isDuplicate) {
-          merged.push(newItem);
+          merged.push(newItem)
         }
-      });
-      return merged;
+      })
+      return merged
     },
-    [],
-  );
+    []
+  )
+
+  useEffect(() => {
+    optionsRef.current = options
+  }, [options])
+
+  const subscriptionsRef = useRef<{
+    purchaseUpdate?: EventSubscription
+    purchaseError?: EventSubscription
+    promotedProductsIOS?: EventSubscription
+    promotedProductIOS?: EventSubscription
+  }>({})
+
+  const subscriptionsRefState = useRef<SubscriptionProduct[]>([])
+
+  useEffect(() => {
+    subscriptionsRefState.current = subscriptions
+  }, [subscriptions])
 
   const clearCurrentPurchase = useCallback(() => {
-    setCurrentPurchase(undefined);
-  }, [setCurrentPurchase]);
+    setCurrentPurchase(undefined)
+  }, [])
 
   const clearCurrentPurchaseError = useCallback(() => {
-    setCurrentPurchaseError(undefined);
-  }, [setCurrentPurchaseError]);
+    setCurrentPurchaseError(undefined)
+  }, [])
 
-  const getProducts = useCallback(
-    async ({skus}: {skus: string[]}): Promise<void> => {
+  const getProductsInternal = useCallback(
+    async (skus: string[]): Promise<void> => {
       try {
-        const result = await iapGetProducts({skus});
-        setProducts(
+        const result = await fetchProducts({ skus, type: 'inapp' })
+        setProducts((prevProducts: Product[]) =>
           mergeWithDuplicateCheck(
-            products,
-            result,
-            (product) => (product as Product).productId || '',
-          ),
-        );
+            prevProducts,
+            result as Product[],
+            (product: Product) => product.id
+          )
+        )
       } catch (error) {
-        console.error('Error getting products:', error);
+        console.error('Error fetching products:', error)
       }
     },
-    [setProducts, mergeWithDuplicateCheck, products],
-  );
+    [mergeWithDuplicateCheck]
+  )
 
-  const getSubscriptions = useCallback(
-    async ({skus}: {skus: string[]}): Promise<void> => {
+  const getSubscriptionsInternal = useCallback(
+    async (skus: string[]): Promise<void> => {
       try {
-        const result = await iapGetSubscriptions({skus});
-        setSubscriptions(
+        const result = await fetchProducts({ skus, type: 'subs' })
+        setSubscriptions((prevSubscriptions: SubscriptionProduct[]) =>
           mergeWithDuplicateCheck(
-            subscriptions,
-            result,
-            (subscription) => (subscription as Subscription).productId || '',
-          ),
-        );
+            prevSubscriptions,
+            result as SubscriptionProduct[],
+            (subscription: SubscriptionProduct) => subscription.id
+          )
+        )
       } catch (error) {
-        console.error('Error getting subscriptions:', error);
+        console.error('Error fetching subscriptions:', error)
       }
     },
-    [setSubscriptions, mergeWithDuplicateCheck, subscriptions],
-  );
+    [mergeWithDuplicateCheck]
+  )
 
-  const getAvailablePurchases = useCallback(async (): Promise<void> => {
-    try {
-      const result = await iapGetAvailablePurchases();
-      setAvailablePurchases(result);
-    } catch (error) {
-      console.error('Error getting available purchases:', error);
-    }
-  }, [setAvailablePurchases]);
+  const fetchProductsInternal = useCallback(
+    async (params: {
+      skus: string[]
+      type?: 'inapp' | 'subs'
+    }): Promise<void> => {
+      try {
+        const result = await fetchProducts(params)
+        if (params.type === 'subs') {
+          setSubscriptions((prevSubscriptions: SubscriptionProduct[]) =>
+            mergeWithDuplicateCheck(
+              prevSubscriptions,
+              result as SubscriptionProduct[],
+              (subscription: SubscriptionProduct) => subscription.id
+            )
+          )
+        } else {
+          setProducts((prevProducts: Product[]) =>
+            mergeWithDuplicateCheck(
+              prevProducts,
+              result as Product[],
+              (product: Product) => product.id
+            )
+          )
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      }
+    },
+    [mergeWithDuplicateCheck]
+  )
 
-  const getPurchaseHistory = useCallback(async (): Promise<void> => {
+  const getAvailablePurchasesInternal = useCallback(async (): Promise<void> => {
     try {
-      const result = await iapGetPurchaseHistory();
-      setPurchaseHistory(result);
+      const result = await getAvailablePurchases()
+      setAvailablePurchases(result)
     } catch (error) {
-      console.error('Error getting purchase history:', error);
+      console.error('Error fetching available purchases:', error)
     }
-  }, [setPurchaseHistory]);
+  }, [])
+
+  const getActiveSubscriptionsInternal = useCallback(
+    async (subscriptionIds?: string[]): Promise<ActiveSubscription[]> => {
+      try {
+        const result = await getActiveSubscriptions(subscriptionIds)
+        setActiveSubscriptions(result)
+        return result
+      } catch (error) {
+        console.error('Error getting active subscriptions:', error)
+        // Don't clear existing activeSubscriptions on error - preserve current state
+        // This prevents the UI from showing empty state when there are temporary network issues
+        return []
+      }
+    },
+    []
+  )
+
+  const hasActiveSubscriptionsInternal = useCallback(
+    async (subscriptionIds?: string[]): Promise<boolean> => {
+      try {
+        return await hasActiveSubscriptions(subscriptionIds)
+      } catch (error) {
+        console.error('Error checking active subscriptions:', error)
+        return false
+      }
+    },
+    []
+  )
 
   const finishTransaction = useCallback(
     async ({
       purchase,
       isConsumable,
-      developerPayloadAndroid,
     }: {
-      purchase: Purchase;
-      isConsumable?: boolean;
-      developerPayloadAndroid?: string;
-    }): Promise<string | boolean | PurchaseResult | void> => {
+      purchase: Purchase
+      isConsumable?: boolean
+    }): Promise<PurchaseResult | boolean> => {
       try {
-        return await iapFinishTransaction({
+        return await finishTransactionInternal({
           purchase,
           isConsumable,
-          developerPayloadAndroid,
-        });
+        })
       } catch (err) {
-        throw err;
+        throw err
       } finally {
-        if (purchase.productId === currentPurchase?.productId) {
-          setCurrentPurchase(undefined);
+        if (purchase.id === currentPurchase?.id) {
+          clearCurrentPurchase()
         }
-
-        if (purchase.productId === currentPurchaseError?.productId) {
-          setCurrentPurchaseError(undefined);
+        if (purchase.id === currentPurchaseError?.productId) {
+          clearCurrentPurchaseError()
         }
       }
     },
     [
-      currentPurchase?.productId,
+      currentPurchase?.id,
       currentPurchaseError?.productId,
-      setCurrentPurchase,
-      setCurrentPurchaseError,
-    ],
-  );
+      clearCurrentPurchase,
+      clearCurrentPurchaseError,
+    ]
+  )
+
+  const requestPurchaseWithReset = useCallback(
+    async (requestObj: { request: any; type?: 'inapp' | 'subs' }) => {
+      clearCurrentPurchase()
+      clearCurrentPurchaseError()
+
+      try {
+        return await requestPurchaseInternal(requestObj)
+      } catch (error) {
+        throw error
+      }
+    },
+    [clearCurrentPurchase, clearCurrentPurchaseError]
+  )
+
+  const refreshSubscriptionStatus = useCallback(
+    async (productId: string) => {
+      try {
+        if (
+          subscriptionsRefState.current.some(
+            (sub: SubscriptionProduct) => sub.id === productId
+          )
+        ) {
+          await getSubscriptionsInternal([productId])
+          await getAvailablePurchasesInternal()
+        }
+      } catch (error) {
+        console.warn('Failed to refresh subscription status:', error)
+      }
+    },
+    [getAvailablePurchasesInternal, getSubscriptionsInternal]
+  )
 
   const restorePurchases = useCallback(async (): Promise<void> => {
     try {
-      // Try to sync with store on iOS
-      if (
-        Platform.OS === 'ios' &&
-        optionsRef.current?.shouldAutoSyncPurchases !== false
-      ) {
-        try {
-          await sync();
-        } catch (syncError) {
-          console.error('Sync error:', syncError);
-          optionsRef.current?.onSyncError?.(syncError as Error);
-        }
+      if (Platform.OS === 'ios') {
+        await syncIOS().catch((error) => {
+          if (optionsRef.current?.onSyncError) {
+            optionsRef.current.onSyncError(error)
+          } else {
+            console.warn('Error restoring purchases:', error)
+          }
+        })
       }
-
-      // Get available purchases
-      await getAvailablePurchases();
+      await getAvailablePurchasesInternal()
     } catch (error) {
-      console.error('Error restoring purchases:', error);
-      throw error;
+      console.warn('Failed to restore purchases:', error)
     }
-  }, [getAvailablePurchases]);
+  }, [getAvailablePurchasesInternal])
 
   const validateReceipt = useCallback(
     async (
       sku: string,
       androidOptions?: {
-        packageName: string;
-        productToken: string;
-        accessToken: string;
-        isSub?: boolean;
-      },
-    ): Promise<any> => {
-      try {
-        if (Platform.OS === 'ios') {
-          // For iOS, use the new validateReceiptIos function
-          const result = await validateReceiptIos(sku);
-          return result;
-        } else if (Platform.OS === 'android' && androidOptions) {
-          // For Android, you would need to implement server-side validation
-          // This is a placeholder - Android validation should be done server-side
-          console.warn(
-            'Android receipt validation should be performed server-side',
-          );
-          return {
-            isValid: false,
-            message:
-              'Android receipt validation should be performed server-side',
-          };
-        }
-
-        throw new Error(
-          'Invalid platform or missing options for receipt validation',
-        );
-      } catch (error) {
-        console.error('Error validating receipt:', error);
-        throw error;
+        packageName: string
+        productToken: string
+        accessToken: string
+        isSub?: boolean
       }
+    ) => {
+      return validateReceiptInternal(sku, androidOptions)
     },
-    [],
-  );
+    []
+  )
 
-  // Listen for purchase events and trigger callbacks
-  useEffect(() => {
-    if (currentPurchase && optionsRef.current?.onPurchaseSuccess) {
-      optionsRef.current.onPurchaseSuccess(currentPurchase);
+  const initIapWithSubscriptions = useCallback(async (): Promise<void> => {
+    const result = await initConnection()
+    setConnected(result)
+
+    if (result) {
+      subscriptionsRef.current.purchaseUpdate = purchaseUpdatedListener(
+        async (purchase: Purchase) => {
+          setCurrentPurchaseError(undefined)
+          setCurrentPurchase(purchase)
+
+          if ('expirationDateIOS' in purchase) {
+            await refreshSubscriptionStatus(purchase.id)
+          }
+
+          if (optionsRef.current?.onPurchaseSuccess) {
+            optionsRef.current.onPurchaseSuccess(purchase)
+          }
+        }
+      )
+
+      subscriptionsRef.current.purchaseError = purchaseErrorListener(
+        (error: PurchaseError) => {
+          setCurrentPurchase(undefined)
+          setCurrentPurchaseError(error)
+
+          if (optionsRef.current?.onPurchaseError) {
+            optionsRef.current.onPurchaseError(error)
+          }
+        }
+      )
+
+      if (Platform.OS === 'ios') {
+        // iOS promoted products listener
+        subscriptionsRef.current.promotedProductsIOS =
+          promotedProductListenerIOS((product: Product) => {
+            setPromotedProductIOS(product)
+
+            if (optionsRef.current?.onPromotedProductIOS) {
+              optionsRef.current.onPromotedProductIOS(product)
+            }
+          })
+      }
     }
-  }, [currentPurchase]);
+  }, [refreshSubscriptionStatus])
 
   useEffect(() => {
-    if (currentPurchaseError && optionsRef.current?.onPurchaseError) {
-      optionsRef.current.onPurchaseError(currentPurchaseError);
-    }
-  }, [currentPurchaseError]);
-
-  useEffect(() => {
-    setConnected(true);
+    initIapWithSubscriptions()
+    const currentSubscriptions = subscriptionsRef.current
 
     return () => {
-      setConnected(false);
-      setCurrentPurchaseError(undefined);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      currentSubscriptions.purchaseUpdate?.remove()
+      currentSubscriptions.purchaseError?.remove()
+      currentSubscriptions.promotedProductsIOS?.remove()
+      currentSubscriptions.promotedProductIOS?.remove()
+      endConnection()
+      setConnected(false)
+    }
+  }, [initIapWithSubscriptions])
 
   return {
     connected,
     products,
     promotedProductsIOS,
+    promotedProductIdIOS,
     subscriptions,
-    purchaseHistory,
+    finishTransaction,
     availablePurchases,
     currentPurchase,
     currentPurchaseError,
-    initConnectionError,
+    promotedProductIOS,
+    activeSubscriptions,
     clearCurrentPurchase,
     clearCurrentPurchaseError,
-    finishTransaction,
-    getProducts,
-    getSubscriptions,
-    getAvailablePurchases,
-    getPurchaseHistory,
-    requestPurchase: iapRequestPurchase,
-    requestSubscription: iapRequestSubscription,
-    restorePurchases,
+    getAvailablePurchases: getAvailablePurchasesInternal,
+    fetchProducts: fetchProductsInternal,
+    requestPurchase: requestPurchaseWithReset,
     validateReceipt,
-  };
-};
+    restorePurchases,
+    getProducts: getProductsInternal,
+    getSubscriptions: getSubscriptionsInternal,
+    requestPromotedProductIOS,
+    buyPromotedProductIOS,
+    getActiveSubscriptions: getActiveSubscriptionsInternal,
+    hasActiveSubscriptions: hasActiveSubscriptionsInternal,
+  }
+}

@@ -1,1 +1,1 @@
-module.exports = require('./plugin/build/withIAP');
+module.exports = require('./plugin/build/withIAP.js');

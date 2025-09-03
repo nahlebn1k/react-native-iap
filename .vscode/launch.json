@@ -2,120 +2,106 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Android (Google Play)",
+      "name": "🔧 RN - iOS Simulator",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["android:play"],
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "yarn install && cd example/ios && pod install && cd ../.. && yarn workspace rn-iap-example ios"
+      ],
       "console": "integratedTerminal",
       "env": {
         "NODE_ENV": "development"
       }
     },
     {
-      "name": "Debug Android (Amazon)",
+      "name": "📱 RN - iOS Device",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["android:amazon"],
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "yarn install && cd example/ios && pod install && cd ../.. && yarn workspace rn-iap-example ios --device"
+      ],
       "console": "integratedTerminal",
       "env": {
         "NODE_ENV": "development"
       }
     },
     {
-      "name": "Debug iOS",
+      "name": "🤖 RN - Android",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["ios"],
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "yarn install && yarn workspace rn-iap-example start --reset-cache & sleep 5 && yarn workspace rn-iap-example android"
+      ],
       "console": "integratedTerminal",
       "env": {
         "NODE_ENV": "development"
       }
     },
     {
-      "name": "Start Metro Bundler",
+      "name": "🚀 Expo - iOS Simulator",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["start"],
-      "console": "integratedTerminal"
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "yarn prepare && cp ios/*.swift example-expo/node_modules/react-native-iap/nitrogen/generated/ios/ && cp -r lib example-expo/node_modules/react-native-iap/ && cp -r nitrogen example-expo/node_modules/react-native-iap/ && cd example-expo && bun ios"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
     },
     {
-      "name": "Install Pods",
+      "name": "📱 Expo - iOS Device",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["pods"],
-      "console": "integratedTerminal"
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "yarn prepare && cp ios/*.swift example-expo/node_modules/react-native-iap/nitrogen/generated/ios/ && cp -r lib example-expo/node_modules/react-native-iap/ && cp -r nitrogen example-expo/node_modules/react-native-iap/ && cd example-expo && bun ios --device"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
     },
     {
-      "name": "Clean Android Build",
+      "name": "🤖 Expo - Android",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample/android",
-      "runtimeExecutable": "./gradlew",
-      "runtimeArgs": ["clean"],
-      "console": "integratedTerminal"
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "yarn prepare && cp -r lib example-expo/node_modules/react-native-iap/ && cp -r nitrogen example-expo/node_modules/react-native-iap/ && cd example-expo && bun android"
+      ],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
     },
     {
-      "name": "Run Tests",
+      "name": "📚 Start Documentation",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["test"],
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Lint",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["lint"],
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Clear Metro Cache",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["start", "--reset-cache"],
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Install Dependencies",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/IapExample",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["install"],
-      "console": "integratedTerminal"
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Android (Google Play) + Metro",
-      "configurations": ["Start Metro Bundler", "Debug Android (Google Play)"],
-      "stopAll": true
-    },
-    {
-      "name": "Android (Amazon) + Metro",
-      "configurations": ["Start Metro Bundler", "Debug Android (Amazon)"],
-      "stopAll": true
-    },
-    {
-      "name": "iOS + Metro",
-      "configurations": ["Start Metro Bundler", "Debug iOS"],
-      "stopAll": true
+      "cwd": "${workspaceFolder}/docs",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "bun install && bun start"],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      }
     }
   ]
 }
