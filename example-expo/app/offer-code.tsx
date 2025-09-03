@@ -1,4 +1,8 @@
-import {useState} from 'react';
+// Generated from example/screens/OfferCode.tsx
+// This file is automatically copied during postinstall
+// Do not edit directly - modify the source file instead
+
+import { useState } from 'react'
 import {
   View,
   Text,
@@ -8,22 +12,19 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-} from 'react-native';
-import {
-  presentCodeRedemptionSheetIOS,
-  useIAP,
-} from 'react-native-iap';
+} from 'react-native'
+import { presentCodeRedemptionSheetIOS, useIAP } from 'react-native-iap'
 
 /**
  * Offer Code Redemption Example
- * 
+ *
  * This example demonstrates how to implement offer code redemption
  * functionality for both iOS and Android platforms.
  */
 
 // Platform-specific content helpers
 const getPlatformContent = () => {
-  const isIOS = Platform.OS === 'ios';
+  const isIOS = Platform.OS === 'ios'
   return {
     buttonText: isIOS ? '🎁 Redeem Offer Code' : '🎁 Open Play Store',
     buttonSubtext: isIOS ? 'Enter code in-app' : 'Redeem in Play Store',
@@ -36,56 +37,61 @@ const getPlatformContent = () => {
     testingInfo: isIOS
       ? '• Use TestFlight or App Store Connect to generate test codes\n• Test on real devices (not simulators)\n• Sandbox environment supports offer codes'
       : '• Generate promo codes in Google Play Console\n• Test with your Google account\n• Ensure app is properly configured for IAP',
-  };
-};
+  }
+}
 
 export default function OfferCodeScreen() {
-  const {connected} = useIAP();
-  const [isRedeeming, setIsRedeeming] = useState(false);
-  const platformContent = getPlatformContent();
-  const isIOS = Platform.OS === 'ios';
+  const { connected } = useIAP()
+  const [isRedeeming, setIsRedeeming] = useState(false)
+  const platformContent = getPlatformContent()
+  const isIOS = Platform.OS === 'ios'
 
   const handleRedeemCode = async () => {
     if (!connected) {
-      Alert.alert('Not Connected', 'Please wait for store connection');
-      return;
+      Alert.alert('Not Connected', 'Please wait for store connection')
+      return
     }
 
-    setIsRedeeming(true);
+    setIsRedeeming(true)
 
     try {
       if (isIOS) {
         // Present native iOS redemption sheet
-        const result = await presentCodeRedemptionSheetIOS();
-        if (result) {
-          Alert.alert(
-            'Success',
-            'Code redemption sheet presented. After successful redemption, the purchase will appear in your purchase history.',
-          );
-        }
+        await presentCodeRedemptionSheetIOS()
+        Alert.alert(
+          'Redemption Sheet Presented',
+          'After successful redemption, the purchase will appear in your purchase history.'
+        )
       } else {
-        // Android doesn't have a direct API for offer code redemption
+        // For Android, we need to guide users to the Play Store
         Alert.alert(
           'Android Offer Codes',
-          'Please redeem your offer code directly in the Google Play Store app. Go to Play Store > Menu > Payments & subscriptions > Redeem.',
-        );
+          'On Android, offer codes must be redeemed through the Google Play Store.\n\n' +
+            'Steps:\n' +
+            '1. Open Google Play Store\n' +
+            '2. Tap profile icon → Payments & subscriptions\n' +
+            '3. Select "Redeem code"\n' +
+            '4. Enter your promo code\n' +
+            '5. Return to this app',
+          [{ text: 'OK', style: 'default' }]
+        )
       }
     } catch (error) {
-      console.error('Error redeeming code:', error);
+      console.error('Error redeeming code:', error)
       Alert.alert(
         'Error',
-        `Failed to redeem code: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+        `Failed to redeem code: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     } finally {
-      setIsRedeeming(false);
+      setIsRedeeming(false)
     }
-  };
+  }
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Offer Code Redemption</Text>
-        
+
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>How it works:</Text>
           <Text style={styles.infoText}>{platformContent.howItWorks}</Text>
@@ -95,6 +101,7 @@ export default function OfferCodeScreen() {
           style={[
             styles.redeemButton,
             (!connected || isRedeeming) && styles.disabledButton,
+            !isIOS && styles.androidButton,
           ]}
           onPress={handleRedeemCode}
           disabled={!connected || isRedeeming}
@@ -103,14 +110,20 @@ export default function OfferCodeScreen() {
             <ActivityIndicator color="white" />
           ) : (
             <>
-              <Text style={styles.buttonText}>{platformContent.buttonText}</Text>
-              <Text style={styles.buttonSubtext}>{platformContent.buttonSubtext}</Text>
+              <Text style={styles.buttonText}>
+                {platformContent.buttonText}
+              </Text>
+              <Text style={styles.buttonSubtext}>
+                {platformContent.buttonSubtext}
+              </Text>
             </>
           )}
         </TouchableOpacity>
 
         <View style={styles.platformNote}>
-          <Text style={styles.noteTitle}>Platform: {isIOS ? 'ios' : 'android'}</Text>
+          <Text style={styles.noteTitle}>
+            Platform: {isIOS ? 'iOS' : 'Android'}
+          </Text>
           <Text style={styles.noteText}>{platformContent.platformNote}</Text>
         </View>
 
@@ -133,9 +146,20 @@ export default function OfferCodeScreen() {
             </Text>
           </View>
         </View>
+
+        {!isIOS && (
+          <View style={styles.androidNote}>
+            <Text style={styles.androidNoteTitle}>⚠️ Android Note</Text>
+            <Text style={styles.androidNoteText}>
+              React Native IAP does not have a direct API for opening the Play
+              Store redemption screen. Users need to manually navigate to the
+              Play Store to redeem their codes.
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -159,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -176,17 +200,20 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   redeemButton: {
-    backgroundColor: '#6c757d',
+    backgroundColor: '#007AFF',
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  androidButton: {
+    backgroundColor: '#4CAF50',
   },
   disabledButton: {
     opacity: 0.6,
@@ -212,6 +239,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
     color: '#495057',
+    textTransform: 'uppercase',
   },
   noteText: {
     fontSize: 14,
@@ -223,7 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -243,8 +271,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 16,
     borderRadius: 12,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -275,4 +304,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
   },
-});
+  androidNote: {
+    backgroundColor: '#fff3cd',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ffc107',
+  },
+  androidNoteTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#856404',
+  },
+  androidNoteText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#856404',
+  },
+})

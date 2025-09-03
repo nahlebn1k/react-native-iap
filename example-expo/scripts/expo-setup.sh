@@ -17,23 +17,21 @@ mkdir -p example-expo/node_modules/react-native-iap
 # Create symlinks for development (TypeScript sources and native code)
 echo "🔗 Creating symlinks for development..."
 
-# Link source directories
-ln -sf "$(pwd)/src" example-expo/node_modules/react-native-iap/src
-ln -sf "$(pwd)/ios" example-expo/node_modules/react-native-iap/ios
-ln -sf "$(pwd)/android" example-expo/node_modules/react-native-iap/android
-ln -sf "$(pwd)/plugin" example-expo/node_modules/react-native-iap/plugin
+# Copy all necessary directories and files
+echo "📁 Copying source directories..."
+cp -r src example-expo/node_modules/react-native-iap/
+cp -r ios example-expo/node_modules/react-native-iap/
+cp -r android example-expo/node_modules/react-native-iap/
 
 # Copy essential files (not symlink to avoid issues)
+echo "📄 Copying configuration files..."
 cp package.json example-expo/node_modules/react-native-iap/
+cp nitro.json example-expo/node_modules/react-native-iap/
+cp NitroIap.podspec example-expo/node_modules/react-native-iap/
+cp react-native.config.js example-expo/node_modules/react-native-iap/ 2>/dev/null || true
 cp README.md example-expo/node_modules/react-native-iap/ 2>/dev/null || true
 cp tsconfig.json example-expo/node_modules/react-native-iap/ 2>/dev/null || true
-cp nitro.json example-expo/node_modules/react-native-iap/ 2>/dev/null || true
-cp react-native.config.js example-expo/node_modules/react-native-iap/
-cp NitroIap.podspec example-expo/node_modules/react-native-iap/ 2>/dev/null || true
-# Also copy as react-native-iap.podspec for CocoaPods compatibility
-cp NitroIap.podspec example-expo/node_modules/react-native-iap/react-native-iap.podspec 2>/dev/null || true
-sed -i '' 's/s.name.*=.*"NitroIap"/s.name         = "react-native-iap"/' example-expo/node_modules/react-native-iap/react-native-iap.podspec 2>/dev/null || true
-cp app.plugin.js example-expo/node_modules/react-native-iap/ 2>/dev/null || true
+# Don't copy app.plugin.js here - will copy after building plugin
 
 # Build the plugin
 echo "🔨 Building plugin..."
@@ -43,37 +41,43 @@ yarn build:plugin
 echo "🔨 Building library..."
 yarn prepare
 
+# Copy plugin directory after building
+echo "📁 Copying plugin directory..."
+if [ -d "plugin" ]; then
+    cp -r plugin example-expo/node_modules/react-native-iap/
+    echo "✅ plugin/ directory copied"
+fi
+
+# Copy app.plugin.js after plugin is built
+cp app.plugin.js example-expo/node_modules/react-native-iap/
+
 # Copy built files
 echo "📂 Copying built files..."
-cp -r lib example-expo/node_modules/react-native-iap/ 2>/dev/null || true
-cp -r nitrogen example-expo/node_modules/react-native-iap/ 2>/dev/null || true
-
-# Copy nitrogen generated files (already includes all necessary files)
-if [ -d "nitrogen/generated" ]; then
-    echo "📋 Copying all nitrogen generated files..."
-    cp -r nitrogen/generated/* example-expo/node_modules/react-native-iap/nitrogen/generated/ 2>/dev/null || true
-    echo "✅ Nitrogen files copied successfully"
+if [ -d "lib" ]; then
+    cp -r lib example-expo/node_modules/react-native-iap/
+    echo "✅ lib/ directory copied"
 fi
+
+if [ -d "nitrogen" ]; then
+    cp -r nitrogen example-expo/node_modules/react-native-iap/
+    echo "✅ nitrogen/ directory copied"
+fi
+
+# Function to add generation comment to copied file
+add_generation_comment() {
+    local source_file=$1
+    local target_file=$2
+    local source_name=$(basename "$source_file")
+    
+    # Create temp file with comment and original content
+    {
+        echo "// Generated from example/screens/$source_name"
+        echo "// This file is automatically copied during postinstall"
+        echo "// Do not edit directly - modify the source file instead"
+        echo ""
+        cat "$source_file"
+    } > "$target_file"
+}
 
 # Return to example-expo directory
 cd example-expo
-
-# Install example-expo dependencies
-echo "📦 Installing example-expo dependencies with bun..."
-bun install
-
-echo "✅ Successfully set up react-native-iap for development!"
-echo "📝 You can now edit TypeScript files in the root src/ directory"
-echo "🔄 Run 'yarn prepare' in root to rebuild after changes"
-echo ""
-echo "🚀 Next steps:"
-echo "   1. Run 'bun prebuild' to generate native code (iOS/Android)"
-echo "      (This will automatically fix the Podfile path)"
-echo "   2. cd ios && pod install"
-echo "   4. iOS: bun ios (for simulator) or bun ios --device (for device)"
-echo "   5. Android: bun android"
-echo ""
-echo "🔧 If iOS build fails, try:"
-echo "   1. cd ios && xcodebuild clean"
-echo "   2. cd ios && pod deintegrate && pod install"
-echo "   3. Clean build folder in Xcode (Cmd+Shift+K)"

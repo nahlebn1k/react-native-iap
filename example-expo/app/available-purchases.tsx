@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+// Generated from example/screens/AvailablePurchases.tsx
+// This file is automatically copied during postinstall
+// Do not edit directly - modify the source file instead
+
+import { useState, useEffect, useCallback } from 'react'
 import {
   View,
   Text,
@@ -9,15 +13,17 @@ import {
   Alert,
   Platform,
 } from 'react-native'
-import type { PurchaseError, Purchase } from 'react-native-iap'
+import type { PurchaseError } from 'react-native-iap'
 import { useIAP } from 'react-native-iap'
+
+// Define subscription IDs at component level like in the working example
+const subscriptionIds = [
+  'dev.hyo.martie.premium', // Same as subscription-flow
+]
 
 export default function AvailablePurchases() {
   const [loading, setLoading] = useState(false)
   const [isCheckingStatus, setIsCheckingStatus] = useState(false)
-
-  // Define subscription IDs at component level like in the working example
-  const subscriptionIds = useMemo(() => ['dev.hyo.martie.premium'], [])
 
   // Use the useIAP hook like subscription-flow does
   const {
@@ -30,7 +36,7 @@ export default function AvailablePurchases() {
     fetchProducts,
     finishTransaction,
   } = useIAP({
-    onPurchaseSuccess: async (purchase: Purchase) => {
+    onPurchaseSuccess: async (purchase) => {
       console.log('[AVAILABLE-PURCHASES] Purchase successful:', purchase)
 
       // Finish transaction like in subscription-flow
@@ -107,14 +113,14 @@ export default function AvailablePurchases() {
 
       // Then load available purchases
       console.log('[AVAILABLE-PURCHASES] Loading available purchases...')
-      getAvailablePurchases().catch((error: any) => {
+      getAvailablePurchases().catch((error) => {
         console.warn(
           '[AVAILABLE-PURCHASES] Failed to load available purchases:',
           error
         )
       })
     }
-  }, [connected, fetchProducts, getAvailablePurchases, subscriptionIds])
+  }, [connected, fetchProducts, getAvailablePurchases])
 
   // Check subscription status separately like subscription-flow does
   useEffect(() => {
@@ -171,7 +177,7 @@ export default function AvailablePurchases() {
             Currently active subscription services
           </Text>
 
-          {activeSubscriptions.map((subscription: any, index: number) => (
+          {activeSubscriptions.map((subscription, index) => (
             <View
               key={subscription.productId + index}
               style={[styles.purchaseItem, styles.activeSubscriptionItem]}
@@ -244,7 +250,7 @@ export default function AvailablePurchases() {
             No historical purchases found (active subscriptions shown above)
           </Text>
         ) : (
-          availablePurchases.map((purchase: Purchase, index: number) => (
+          availablePurchases.map((purchase, index) => (
             <View key={purchase.productId + index} style={styles.purchaseItem}>
               <View style={styles.purchaseRow}>
                 <Text style={styles.label}>Product ID:</Text>

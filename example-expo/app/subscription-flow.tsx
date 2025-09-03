@@ -1,3 +1,7 @@
+// Generated from example/screens/SubscriptionFlow.tsx
+// This file is automatically copied during postinstall
+// Do not edit directly - modify the source file instead
+
 import { useEffect, useCallback, useState } from 'react'
 import {
   View,
@@ -10,13 +14,13 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native'
-import * as Clipboard from 'expo-clipboard'
-import { signal, effect } from '@preact/signals-react'
-import { requestPurchase, useIAP } from 'react-native-iap'
-import type {
-  SubscriptionProduct,
-  PurchaseError,
-  Purchase,
+import Clipboard from '@react-native-clipboard/clipboard'
+import {
+  useIAP,
+  requestPurchase,
+  type SubscriptionProduct,
+  type PurchaseError,
+  type Purchase,
 } from 'react-native-iap'
 
 /**
@@ -35,66 +39,36 @@ import type {
  * - activeSubscriptions state - automatically updated subscription list
  */
 
-// Signals for state management
-const purchaseResultSignal = signal<string>('')
-const isProcessingSignal = signal(false)
-const isCheckingStatusSignal = signal(false)
-const selectedSubscriptionSignal = signal<SubscriptionProduct | null>(null)
-const modalVisibleSignal = signal(false)
+// Sample subscription product IDs
+const SUBSCRIPTION_IDS = ['dev.hyo.martie.premium']
 
 export default function SubscriptionFlow() {
-  // React state synced with signals
-  const [purchaseResult, setPurchaseResult] = useState(
-    purchaseResultSignal.value
-  )
-  const [isProcessing, setIsProcessing] = useState(isProcessingSignal.value)
-  const [isCheckingStatus, setIsCheckingStatus] = useState(
-    isCheckingStatusSignal.value
-  )
-  const [selectedSubscription, setSelectedSubscription] = useState(
-    selectedSubscriptionSignal.value
-  )
-  const [modalVisible, setModalVisible] = useState(modalVisibleSignal.value)
-
-  // Subscribe to signal changes
-  useEffect(() => {
-    const unsubscribes = [
-      effect(() => setPurchaseResult(purchaseResultSignal.value)),
-      effect(() => setIsProcessing(isProcessingSignal.value)),
-      effect(() => setIsCheckingStatus(isCheckingStatusSignal.value)),
-      effect(() => setSelectedSubscription(selectedSubscriptionSignal.value)),
-      effect(() => setModalVisible(modalVisibleSignal.value)),
-    ]
-
-    return () => unsubscribes.forEach((fn) => fn())
-  }, [])
-
-  // Use the useIAP hook for managing subscriptions with built-in subscription status
   const {
     connected,
     subscriptions,
     availablePurchases,
-    fetchProducts,
-    getAvailablePurchases,
-    finishTransaction,
-    getActiveSubscriptions,
     activeSubscriptions,
+    fetchProducts,
+    finishTransaction,
+    getAvailablePurchases,
+    getActiveSubscriptions,
   } = useIAP({
-    onPurchaseSuccess: async (purchase: Purchase) => {
+    onPurchaseSuccess: async (purchase) => {
       console.log('Subscription successful:', purchase)
-      isProcessingSignal.value = false
+      setIsProcessing(false)
 
       // Check if this is a duplicate subscription (already active)
       const isAlreadySubscribed = activeSubscriptions.some(
-        (sub: any) => sub.productId === purchase.productId
+        (sub) => sub.productId === purchase.productId
       )
 
       if (isAlreadySubscribed) {
         // This is likely a duplicate transaction or restoration
-        purchaseResultSignal.value =
+        setPurchaseResult(
           `ℹ️ Subscription restored/verified (${purchase.platform})\n` +
-          `Product: ${purchase.productId}\n` +
-          `No additional charge - existing subscription confirmed`
+            `Product: ${purchase.productId}\n` +
+            `No additional charge - existing subscription confirmed`
+        )
 
         await finishTransaction({
           purchase,
@@ -109,12 +83,13 @@ export default function SubscriptionFlow() {
       }
 
       // Handle new subscription
-      purchaseResultSignal.value =
+      setPurchaseResult(
         `✅ Subscription successful (${purchase.platform})\n` +
-        `Product: ${purchase.productId}\n` +
-        `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
-        `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}\n` +
-        `Receipt: ${purchase.transactionReceipt?.substring(0, 50)}...`
+          `Product: ${purchase.productId}\n` +
+          `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
+          `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}\n` +
+          `Receipt: ${purchase.transactionReceipt?.substring(0, 50)}...`
+      )
 
       // IMPORTANT: Server-side receipt validation should be performed here
       // Send the receipt to your backend server for validation
@@ -141,10 +116,10 @@ export default function SubscriptionFlow() {
     },
     onPurchaseError: (error: PurchaseError) => {
       console.error('Subscription failed:', error)
-      isProcessingSignal.value = false
+      setIsProcessing(false)
 
       // Handle subscription error
-      purchaseResultSignal.value = `❌ Subscription failed: ${error.message}`
+      setPurchaseResult(`❌ Subscription failed: ${error.message}`)
     },
     onSyncError: (error: Error) => {
       console.warn('Sync error:', error)
@@ -155,37 +130,25 @@ export default function SubscriptionFlow() {
     },
   })
 
-  // Check subscription status
-  const checkSubscriptionStatus = useCallback(async () => {
-    if (!connected || isCheckingStatusSignal.value) return
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false)
+  const [purchaseResult, setPurchaseResult] = useState('')
+  const [selectedSubscription, setSelectedSubscription] =
+    useState<SubscriptionProduct | null>(null)
+  const [modalVisible, setModalVisible] = useState(false)
 
-    isCheckingStatusSignal.value = true
-    try {
-      // No need to pass subscriptionIds - it will check all active subscriptions
-      const subs = await getActiveSubscriptions()
-      console.log('Active subscriptions result:', subs)
-    } catch (error) {
-      console.error('Error checking subscription status:', error)
-    } finally {
-      isCheckingStatusSignal.value = false
-    }
-  }, [connected, getActiveSubscriptions])
-
-  // Load subscriptions and check status when component mounts
+  // Load subscription products when connected
   useEffect(() => {
     if (connected) {
-      const subscriptionIds = [
-        'dev.hyo.martie.premium', // Example subscription ID
-      ]
       console.log('Connected to store, loading subscription products...')
       // fetchProducts is event-based, not promise-based
       // Results will be available through the useIAP hook's subscriptions state
-      fetchProducts({ skus: subscriptionIds, type: 'subs' })
+      fetchProducts({ skus: SUBSCRIPTION_IDS, type: 'subs' })
       console.log('Product loading request sent - waiting for results...')
 
       // Load available purchases to check subscription history
       console.log('Loading available purchases...')
-      getAvailablePurchases().catch((error: any) => {
+      getAvailablePurchases().catch((error) => {
         console.warn('Failed to load available purchases:', error)
       })
     }
@@ -226,13 +189,32 @@ export default function SubscriptionFlow() {
     )
   }, [subscriptions])
 
+  // Removed - handled by onPurchaseSuccess and onPurchaseError callbacks
+
+  // Check subscription status
+  const checkSubscriptionStatus = useCallback(async () => {
+    if (!connected || isCheckingStatus) return
+
+    setIsCheckingStatus(true)
+    try {
+      // No need to pass subscriptionIds - it will check all active subscriptions
+      const subs = await getActiveSubscriptions()
+      console.log('Active subscriptions result:', subs)
+    } catch (error) {
+      console.error('Error checking subscription status:', error)
+    } finally {
+      setIsCheckingStatus(false)
+    }
+  }, [connected, getActiveSubscriptions, isCheckingStatus])
+
+  // Handle subscription purchase
   const handleSubscription = async (itemId: string) => {
     try {
-      isProcessingSignal.value = true
-      purchaseResultSignal.value = 'Processing subscription...'
+      setIsProcessing(true)
+      setPurchaseResult('Processing subscription...')
 
       // Find the subscription to get offer details for Android
-      const subscription = subscriptions.find((sub: any) => sub.id === itemId)
+      const subscription = subscriptions.find((sub) => sub.id === itemId)
 
       // New platform-specific API (v2.7.0+) - no Platform.OS branching needed
       // requestPurchase is event-based - results come through onPurchaseSuccess/onPurchaseError
@@ -260,19 +242,20 @@ export default function SubscriptionFlow() {
         type: 'subs',
       })
     } catch (error) {
-      isProcessingSignal.value = false
+      setIsProcessing(false)
       const errorMessage =
         error instanceof Error ? error.message : 'Subscription failed'
-      purchaseResultSignal.value = `❌ Subscription failed: ${errorMessage}`
+      setPurchaseResult(`❌ Subscription failed: ${errorMessage}`)
       Alert.alert('Subscription Failed', errorMessage)
     }
   }
 
+  // Retry loading subscriptions
   const retryLoadSubscriptions = () => {
-    const subscriptionIds = ['dev.hyo.martie.premium']
-    fetchProducts({ skus: subscriptionIds, type: 'subs' })
+    fetchProducts({ skus: SUBSCRIPTION_IDS, type: 'subs' })
   }
 
+  // Get subscription display price
   const getSubscriptionDisplayPrice = (
     subscription: SubscriptionProduct
   ): string => {
@@ -301,88 +284,83 @@ export default function SubscriptionFlow() {
     }
   }
 
+  // Get subscription period
+  const getSubscriptionPeriod = (subscription: SubscriptionProduct): string => {
+    if (Platform.OS === 'ios' && 'subscriptionPeriodUnitIOS' in subscription) {
+      // iOS subscription period
+      const periodUnit = subscription.subscriptionPeriodUnitIOS
+      const periodNumber = subscription.subscriptionPeriodNumberIOS
+      if (periodUnit && periodNumber) {
+        const units: Record<string, string> = {
+          DAY: 'day',
+          WEEK: 'week',
+          MONTH: 'month',
+          YEAR: 'year',
+        }
+        const periodNum = parseInt(periodNumber, 10)
+        return `${periodNumber} ${units[periodUnit] || periodUnit}${
+          periodNum > 1 ? 's' : ''
+        }`
+      }
+    }
+    // Default or Android
+    return 'subscription'
+  }
+
+  // Get introductory offer text
   const getIntroductoryOffer = (
     subscription: SubscriptionProduct
   ): string | null => {
-    if (
-      'subscriptionInfoIOS' in subscription &&
-      subscription.subscriptionInfoIOS?.introductoryOffer
-    ) {
-      const offer = subscription.subscriptionInfoIOS.introductoryOffer
-      switch (offer?.paymentMode) {
-        case 'FREETRIAL':
-          return `${offer.periodCount} ${offer.period?.unit?.toLowerCase()}(s) free trial`
-        case 'PAYASYOUGO':
-          return `${offer.displayPrice} for ${offer.periodCount} ${offer.period?.unit?.toLowerCase()}(s)`
-        case 'PAYUPFRONT':
-          return `${offer.displayPrice} for first ${offer.periodCount} ${offer.period?.unit?.toLowerCase()}(s)`
-        default:
-          return null
+    if (Platform.OS === 'ios' && 'introductoryPriceIOS' in subscription) {
+      if (subscription.introductoryPriceIOS) {
+        const paymentMode = subscription.introductoryPricePaymentModeIOS
+        const numberOfPeriods = subscription.introductoryPriceNumberOfPeriodsIOS
+        const subscriptionPeriod =
+          subscription.introductoryPriceSubscriptionPeriodIOS
+
+        if (paymentMode === 'FREETRIAL') {
+          return `${numberOfPeriods} ${subscriptionPeriod} free trial`
+        } else if (paymentMode === 'PAYASYOUGO') {
+          return `${subscription.introductoryPriceIOS} for ${numberOfPeriods} ${subscriptionPeriod}`
+        } else if (paymentMode === 'PAYUPFRONT') {
+          return `${subscription.introductoryPriceIOS} for first ${numberOfPeriods} ${subscriptionPeriod}`
+        }
       }
     }
     return null
   }
 
-  const getSubscriptionPeriod = (subscription: SubscriptionProduct): string => {
-    if (
-      'subscriptionOfferDetailsAndroid' in subscription &&
-      subscription.subscriptionOfferDetailsAndroid
-    ) {
-      const offers = subscription.subscriptionOfferDetailsAndroid
-      if (offers && offers.length > 0) {
-        const firstOffer = offers[0]
-        if (firstOffer) {
-          const pricingPhases = firstOffer.pricingPhases
-          if (
-            pricingPhases?.pricingPhaseList &&
-            pricingPhases.pricingPhaseList.length > 0
-          ) {
-            const firstPhase = pricingPhases.pricingPhaseList[0]
-            if (firstPhase) {
-              return firstPhase.billingPeriod || 'Unknown'
-            }
-          }
-        }
-      }
-      return 'Unknown'
-    } else if (
-      'subscriptionInfoIOS' in subscription &&
-      subscription.subscriptionInfoIOS
-    ) {
-      return (
-        subscription.subscriptionInfoIOS.subscriptionPeriod?.unit || 'Unknown'
-      )
-    }
-    return 'Unknown'
-  }
-
+  // Handle subscription info press
   const handleSubscriptionPress = (subscription: SubscriptionProduct) => {
-    selectedSubscriptionSignal.value = subscription
-    modalVisibleSignal.value = true
+    setSelectedSubscription(subscription)
+    setModalVisible(true)
   }
 
+  // Copy subscription details to clipboard
+  const copyToClipboard = async () => {
+    if (!selectedSubscription) return
+
+    const jsonString = JSON.stringify(selectedSubscription, null, 2)
+    Clipboard.setString(jsonString)
+    Alert.alert('Copied', 'Subscription JSON copied to clipboard')
+  }
+
+  // Log subscription to console
+  const logToConsole = () => {
+    if (!selectedSubscription) return
+
+    console.log('=== SUBSCRIPTION DATA ===')
+    console.log(selectedSubscription)
+    console.log('=== SUBSCRIPTION JSON ===')
+    console.log(JSON.stringify(selectedSubscription, null, 2))
+    Alert.alert('Console', 'Subscription data logged to console')
+  }
+
+  // Render subscription details modal
   const renderSubscriptionDetails = () => {
-    const subscription = selectedSubscription
-    if (!subscription) return null
+    if (!selectedSubscription) return null
 
-    const jsonString = JSON.stringify(subscription, null, 2)
-
-    const copyToClipboard = async () => {
-      try {
-        await Clipboard.setStringAsync(jsonString)
-        Alert.alert('Copied', 'Subscription JSON copied to clipboard')
-      } catch {
-        Alert.alert('Copy Failed', 'Failed to copy to clipboard')
-      }
-    }
-
-    const logToConsole = () => {
-      console.log('=== SUBSCRIPTION DATA ===')
-      console.log(subscription)
-      console.log('=== SUBSCRIPTION JSON ===')
-      console.log(jsonString)
-      Alert.alert('Console', 'Subscription data logged to console')
-    }
+    const jsonString = JSON.stringify(selectedSubscription, null, 2)
 
     return (
       <View style={styles.modalContent}>
@@ -412,7 +390,7 @@ export default function SubscriptionFlow() {
       <View style={styles.header}>
         <Text style={styles.title}>Subscription Flow</Text>
         <Text style={styles.subtitle}>
-          TypeScript-first approach for subscriptions
+          React Native IAP Subscription Management with useIAP Hook
         </Text>
         <View style={styles.statusContainer}>
           <Text style={styles.statusText}>
@@ -424,31 +402,8 @@ export default function SubscriptionFlow() {
         </View>
       </View>
 
-      {/* Debug Information */}
-      {__DEV__ && (
-        <View style={[styles.section, { backgroundColor: '#fff3cd' }]}>
-          <Text style={styles.sectionTitle}>Debug Info (Dev Only)</Text>
-          <Text style={{ fontSize: 12, fontFamily: 'monospace' }}>
-            Connected: {connected.toString()}
-            {'\n'}
-            Subscriptions: {subscriptions.length}
-            {'\n'}
-            Active Subscriptions: {activeSubscriptions.length}
-            {'\n'}
-            Available Purchases: {availablePurchases.length}
-            {'\n'}
-            Checking Status: {isCheckingStatus.toString()}
-            {'\n'}
-            {activeSubscriptions.length > 0 &&
-              `Active IDs: ${activeSubscriptions.map((s: any) => s.productId).join(', ')}\n`}
-            {activeSubscriptions.length > 0 &&
-              `Active Status: ${JSON.stringify(activeSubscriptions[0], null, 2)}`}
-          </Text>
-        </View>
-      )}
-
-      {/* Subscription Status Section - Using library's activeSubscriptions */}
-      {activeSubscriptions.length > 0 ? (
+      {/* Subscription Status Section */}
+      {activeSubscriptions.length > 0 && (
         <View style={[styles.section, styles.statusSection]}>
           <Text style={styles.sectionTitle}>Current Subscription Status</Text>
           <View style={styles.statusCard}>
@@ -469,56 +424,32 @@ export default function SubscriptionFlow() {
                   <Text style={styles.statusValue}>{sub.productId}</Text>
                 </View>
 
-                {Platform.OS === 'ios' && sub.expirationDateIOS ? (
+                {sub.expirationDateIOS && (
                   <View style={styles.statusRow}>
                     <Text style={styles.statusLabel}>Expires:</Text>
                     <Text style={styles.statusValue}>
-                      {sub.expirationDateIOS.toLocaleDateString()}
+                      {sub.expirationDateIOS?.toLocaleDateString()}
                     </Text>
                   </View>
-                ) : null}
+                )}
 
-                {Platform.OS === 'android' &&
-                sub.autoRenewingAndroid !== undefined ? (
+                {Platform.OS === 'android' && sub.isActive !== undefined && (
                   <View style={styles.statusRow}>
                     <Text style={styles.statusLabel}>Auto-Renew:</Text>
                     <Text
                       style={[
                         styles.statusValue,
-                        sub.autoRenewingAndroid
+                        sub.isActive
                           ? styles.activeStatus
                           : styles.cancelledStatus,
                       ]}
                     >
-                      {sub.autoRenewingAndroid ? '✅ Enabled' : '⚠️ Cancelled'}
+                      {sub.isActive ? '✅ Enabled' : '⚠️ Cancelled'}
                     </Text>
                   </View>
-                ) : null}
-
-                {sub.environmentIOS ? (
-                  <View style={styles.statusRow}>
-                    <Text style={styles.statusLabel}>Environment:</Text>
-                    <Text style={styles.statusValue}>{sub.environmentIOS}</Text>
-                  </View>
-                ) : null}
-
-                {sub.willExpireSoon ? (
-                  <Text style={styles.warningText}>
-                    ⚠️ Your subscription will expire soon.{' '}
-                    {sub.daysUntilExpirationIOS &&
-                      `(${sub.daysUntilExpirationIOS} days remaining)`}
-                  </Text>
-                ) : null}
+                )}
               </View>
             ))}
-
-            {Platform.OS === 'android' &&
-            activeSubscriptions.some((s: any) => !s.autoRenewingAndroid) ? (
-              <Text style={styles.warningText}>
-                ⚠️ Your subscription will not auto-renew. You&apos;ll lose
-                access when the current period ends.
-              </Text>
-            ) : null}
           </View>
 
           <TouchableOpacity
@@ -533,17 +464,19 @@ export default function SubscriptionFlow() {
             )}
           </TouchableOpacity>
         </View>
-      ) : null}
+      )}
 
+      {/* Available Subscriptions */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Available Subscriptions</Text>
-          {activeSubscriptions.length === 0 && connected ? (
+          {activeSubscriptions.length === 0 && connected && (
             <TouchableOpacity onPress={checkSubscriptionStatus}>
               <Text style={styles.checkStatusLink}>Check Status</Text>
             </TouchableOpacity>
-          ) : null}
+          )}
         </View>
+
         {!connected ? (
           <Text style={styles.loadingText}>Connecting to store...</Text>
         ) : subscriptions.length > 0 ? (
@@ -564,13 +497,13 @@ export default function SubscriptionFlow() {
                     per {getSubscriptionPeriod(subscription)}
                   </Text>
                 </View>
-                {getIntroductoryOffer(subscription) ? (
+                {getIntroductoryOffer(subscription) && (
                   <View style={styles.offerBadge}>
                     <Text style={styles.offerText}>
                       {getIntroductoryOffer(subscription)}
                     </Text>
                   </View>
-                ) : null}
+                )}
               </View>
               <View style={styles.subscriptionActions}>
                 <TouchableOpacity
@@ -584,11 +517,11 @@ export default function SubscriptionFlow() {
                     styles.subscribeButton,
                     (isProcessing ||
                       activeSubscriptions.some(
-                        (sub: any) => sub.productId === subscription.id
+                        (sub) => sub.productId === subscription.id
                       )) &&
                       styles.disabledButton,
                     activeSubscriptions.some(
-                      (sub: any) => sub.productId === subscription.id
+                      (sub) => sub.productId === subscription.id
                     ) && styles.subscribedButton,
                   ]}
                   onPress={() => handleSubscription(subscription.id)}
@@ -596,7 +529,7 @@ export default function SubscriptionFlow() {
                     isProcessing ||
                     !connected ||
                     activeSubscriptions.some(
-                      (sub: any) => sub.productId === subscription.id
+                      (sub) => sub.productId === subscription.id
                     )
                   }
                 >
@@ -604,14 +537,14 @@ export default function SubscriptionFlow() {
                     style={[
                       styles.subscribeButtonText,
                       activeSubscriptions.some(
-                        (sub: any) => sub.productId === subscription.id
+                        (sub) => sub.productId === subscription.id
                       ) && styles.subscribedButtonText,
                     ]}
                   >
                     {isProcessing
                       ? 'Processing...'
                       : activeSubscriptions.some(
-                            (sub: any) => sub.productId === subscription.id
+                            (sub) => sub.productId === subscription.id
                           )
                         ? '✅ Subscribed'
                         : 'Subscribe'}
@@ -636,90 +569,52 @@ export default function SubscriptionFlow() {
         )}
       </View>
 
-      {/* Available Purchases Section */}
-      {availablePurchases?.length > 0 ? (
+      {/* Purchase History */}
+      {availablePurchases.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Available Purchases History</Text>
+          <Text style={styles.sectionTitle}>Purchase History</Text>
           <Text style={styles.subtitle}>
             Past purchases and subscription transactions
           </Text>
-          {(availablePurchases || []).map(
-            (purchase: Purchase, index: number) => (
-              <View
-                key={`${purchase.productId}-${index}`}
-                style={styles.purchaseCard}
-              >
-                <View style={styles.purchaseInfo}>
-                  <Text style={styles.purchaseTitle}>{purchase.productId}</Text>
-                  <Text style={styles.purchaseDate}>
-                    {new Date(purchase.transactionDate).toLocaleDateString()}
-                  </Text>
-                  <Text style={styles.purchasePlatform}>
-                    Platform: {purchase.platform}
-                  </Text>
-                  {Platform.OS === 'ios' &&
-                  'expirationDateIOS' in purchase &&
-                  purchase.expirationDateIOS ? (
-                    <Text style={styles.purchaseExpiry}>
-                      Expires:{' '}
-                      {new Date(
-                        purchase.expirationDateIOS
-                      ).toLocaleDateString()}
-                    </Text>
-                  ) : null}
-                  {Platform.OS === 'android' &&
-                  'autoRenewingAndroid' in purchase ? (
+          {availablePurchases.map((purchase: Purchase, index: number) => (
+            <View key={`${purchase.id}-${index}`} style={styles.purchaseCard}>
+              <View style={styles.purchaseInfo}>
+                <Text style={styles.purchaseTitle}>{purchase.id}</Text>
+                <Text style={styles.purchaseDate}>
+                  {new Date(purchase.transactionDate).toLocaleDateString()}
+                </Text>
+                <Text style={styles.purchasePlatform}>
+                  Platform: {purchase.platform}
+                </Text>
+                {Platform.OS === 'android' &&
+                  'autoRenewingAndroid' in purchase && (
                     <Text style={styles.purchaseRenewal}>
                       Auto-Renewing:{' '}
                       {purchase.autoRenewingAndroid ? 'Yes' : 'No'}
                     </Text>
-                  ) : null}
-                </View>
-                <View style={styles.purchaseStatus}>
-                  <Text style={styles.purchaseStatusText}>
-                    {purchase.platform === 'ios' &&
-                    'expirationDateIOS' in purchase &&
-                    purchase.expirationDateIOS
-                      ? purchase.expirationDateIOS > Date.now()
-                        ? '✅ Active'
-                        : '❌ Expired'
-                      : '✅ Purchased'}
-                  </Text>
-                </View>
+                  )}
               </View>
-            )
-          )}
+            </View>
+          ))}
         </View>
-      ) : null}
+      )}
 
-      {purchaseResult ? (
+      {/* Purchase Result */}
+      {purchaseResult && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Result</Text>
-          <TouchableOpacity
-            style={styles.resultCard}
-            onLongPress={async () => {
-              try {
-                await Clipboard.setStringAsync(purchaseResult)
-                Alert.alert('Copied', 'Result copied to clipboard')
-              } catch {
-                Alert.alert('Copy Failed', 'Failed to copy to clipboard')
-              }
-            }}
-            activeOpacity={0.8}
-          >
+          <View style={styles.resultCard}>
             <Text style={styles.resultText}>{purchaseResult}</Text>
-            <Text style={styles.hintText}>Long press to copy</Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      ) : null}
+      )}
 
+      {/* Subscription Details Modal */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => {
-          modalVisibleSignal.value = false
-        }}
+        onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -727,7 +622,7 @@ export default function SubscriptionFlow() {
               <Text style={styles.modalTitle}>Subscription Details</Text>
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => (modalVisibleSignal.value = false)}
+                onPress={() => setModalVisible(false)}
               >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
@@ -737,14 +632,15 @@ export default function SubscriptionFlow() {
         </View>
       </Modal>
 
+      {/* Info Section */}
       <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>🔄 Key Features Demonstrated</Text>
+        <Text style={styles.infoTitle}>🔄 Key Features with useIAP Hook</Text>
         <Text style={styles.infoText}>
-          • Automatic TypeScript type inference{'\n'}• Platform-agnostic
-          subscription handling{'\n'}• No manual type casting required{'\n'}•
-          Subscription-specific pricing display{'\n'}• Auto-renewal state
-          management
-          {'\n'}• CPK React Native compliance
+          • Simplified API with useIAP hook{'\n'}• Event-based subscription
+          handling{'\n'}• Automatic connection management{'\n'}•
+          Platform-specific subscription details{'\n'}• Subscription status
+          checking{'\n'}• Auto-renewal state management{'\n'}• Receipt
+          validation ready
         </Text>
       </View>
     </ScrollView>
@@ -758,7 +654,6 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 60,
     backgroundColor: '#f8f9fa',
   },
   title: {
@@ -790,154 +685,23 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     color: '#333',
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  checkStatusLink: {
+    color: '#007AFF',
+    fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   loadingText: {
     textAlign: 'center',
     color: '#666',
     fontSize: 16,
     padding: 20,
-  },
-  subscriptionCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-  },
-  subscriptionActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoButton: {
-    backgroundColor: '#e9ecef',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  infoButtonText: {
-    fontSize: 18,
-  },
-  subscriptionInfo: {
-    flex: 1,
-    marginRight: 15,
-  },
-  subscriptionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  subscriptionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  subscriptionDetails: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-  },
-  subscriptionPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#28a745',
-  },
-  subscriptionPeriod: {
-    fontSize: 12,
-    color: '#666',
-  },
-  subscribeButton: {
-    backgroundColor: '#28a745',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  subscribeButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  noSubscriptionsCard: {
-    backgroundColor: '#fff3cd',
-    borderRadius: 8,
-    padding: 20,
-    alignItems: 'center',
-  },
-  noSubscriptionsText: {
-    textAlign: 'center',
-    color: '#856404',
-    marginBottom: 15,
-    lineHeight: 20,
-  },
-  retryButton: {
-    backgroundColor: '#ffc107',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  retryButtonText: {
-    color: '#212529',
-    fontWeight: '600',
-  },
-  resultCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#28a745',
-  },
-  resultText: {
-    fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    lineHeight: 20,
-    color: '#333',
-  },
-  hintText: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
-    marginTop: 10,
-    textAlign: 'right',
-  },
-  infoSection: {
-    padding: 20,
-    backgroundColor: '#f0f8ff',
-    margin: 20,
-    borderRadius: 12,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 10,
-    color: '#0066cc',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#0066cc',
-    lineHeight: 20,
-  },
-  offerBadge: {
-    backgroundColor: '#e7f3ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  offerText: {
-    fontSize: 12,
-    color: '#0066cc',
-    fontWeight: '600',
   },
   statusSection: {
     backgroundColor: '#e8f4f8',
@@ -974,12 +738,11 @@ const styles = StyleSheet.create({
   cancelledStatus: {
     color: '#ffc107',
   },
-  warningText: {
-    fontSize: 12,
-    color: '#ff9800',
-    fontStyle: 'italic',
-    marginTop: 12,
-    lineHeight: 18,
+  subscriptionStatusItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    paddingBottom: 12,
+    marginBottom: 12,
   },
   refreshButton: {
     backgroundColor: '#fff',
@@ -996,29 +759,117 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  checkStatusLink: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  subscriptionStatusItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingBottom: 12,
+  subscriptionCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 2,
+    borderColor: '#e9ecef',
+  },
+  subscriptionInfo: {
+    flex: 1,
+    marginRight: 15,
+  },
+  subscriptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  subscriptionDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  subscriptionDetails: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  subscriptionPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#28a745',
+  },
+  subscriptionPeriod: {
+    fontSize: 12,
+    color: '#666',
+  },
+  subscriptionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  infoButton: {
+    backgroundColor: '#e9ecef',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoButtonText: {
+    fontSize: 18,
+  },
+  subscribeButton: {
+    backgroundColor: '#28a745',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  subscribeButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   subscribedButton: {
     backgroundColor: '#6c757d',
   },
   subscribedButtonText: {
     color: '#fff',
+  },
+  offerBadge: {
+    backgroundColor: '#e7f3ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  offerText: {
+    fontSize: 12,
+    color: '#0066cc',
+    fontWeight: '600',
+  },
+  noSubscriptionsCard: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    padding: 20,
+    alignItems: 'center',
+  },
+  noSubscriptionsText: {
+    textAlign: 'center',
+    color: '#856404',
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#ffc107',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#212529',
+    fontWeight: '600',
   },
   purchaseCard: {
     backgroundColor: '#f8f9fa',
@@ -1050,22 +901,22 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 2,
   },
-  purchaseExpiry: {
-    fontSize: 12,
-    color: '#28a745',
-    marginBottom: 2,
-  },
   purchaseRenewal: {
     fontSize: 12,
     color: '#007AFF',
   },
-  purchaseStatus: {
-    alignItems: 'center',
+  resultCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#28a745',
   },
-  purchaseStatusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#28a745',
+  resultText: {
+    fontSize: 14,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    lineHeight: 20,
+    color: '#333',
   },
   modalOverlay: {
     flex: 1,
@@ -1146,5 +997,22 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  infoSection: {
+    padding: 20,
+    backgroundColor: '#f0f8ff',
+    margin: 20,
+    borderRadius: 12,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#0066cc',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#0066cc',
+    lineHeight: 20,
   },
 })

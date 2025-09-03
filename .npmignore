@@ -2,10 +2,8 @@
 example/
 example-expo/
 
-# Build artifacts
-nitro.json
-lib/
-build/
+# Build artifacts (but keep lib/ for npm publish!)
+# lib/ should NOT be ignored - it contains the built JS files
 android/build/
 ios/build/
 DerivedData/

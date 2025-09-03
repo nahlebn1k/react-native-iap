@@ -35,7 +35,6 @@ jest.mock('react-native-nitro-modules', () => ({
       ),
       deepLinkingGetPendingPurchases: jest.fn(() => Promise.resolve()),
       presentCodeRedemptionSheetIOS: jest.fn(() => Promise.resolve()),
-      openRedeemOfferCodeAndroid: jest.fn(() => Promise.resolve()),
     })),
   },
 }));
@@ -72,7 +71,6 @@ jest.mock('../src/index', () => ({
   getReceiptIOS: jest.fn(() => Promise.resolve()),
   getPendingPurchasesIOS: jest.fn(() => Promise.resolve()),
   presentCodeRedemptionSheetIOS: jest.fn(() => Promise.resolve()),
-  openRedeemOfferCodeAndroid: jest.fn(() => Promise.resolve()),
 
   // Event listeners
   purchaseUpdatedListener: jest.fn((callback) => ({remove: jest.fn()})),
@@ -217,8 +215,8 @@ global.fetch = jest.fn(() =>
   }),
 );
 
-// Mock timers
-jest.useFakeTimers();
+// Don't use fake timers globally - let each test decide
+// jest.useFakeTimers();
 
 // Mock Linking
 jest.mock('react-native/Libraries/Linking/Linking', () => ({

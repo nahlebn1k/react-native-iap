@@ -12,14 +12,14 @@ import {
 import type {PurchaseError} from 'react-native-iap';
 import {useIAP} from 'react-native-iap';
 
+// Define subscription IDs at component level like in the working example
+const subscriptionIds = [
+  'dev.hyo.martie.premium', // Same as subscription-flow
+];
+
 export default function AvailablePurchases() {
   const [loading, setLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-
-  // Define subscription IDs at component level like in the working example
-  const subscriptionIds = [
-    'dev.hyo.martie.premium', // Same as subscription-flow
-  ];
 
   // Use the useIAP hook like subscription-flow does
   const {

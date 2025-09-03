@@ -10,19 +10,17 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "setup": "./scripts/expo-setup.sh",
-    "prebuild": "bunx expo prebuild && node ./scripts/fix-podfile.js",
-    "postprebuild": "node ./scripts/fix-podfile.js"
+    "postinstall": "./scripts/expo-setup.sh && ./scripts/copy-screens.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
     "@preact/signals-react": "^3.3.0",
+    "@react-native-clipboard/clipboard": "^1.16.3",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "expo": "~53.0.22",
     "expo-blur": "~14.1.5",
-    "expo-clipboard": "^7.1.5",
     "expo-constants": "~17.1.7",
     "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",

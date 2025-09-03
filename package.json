@@ -25,6 +25,7 @@
     "nitrogen",
     "nitro.json",
     "*.podspec",
+    "app.plugin.js",
     "react-native.config.js",
     "!ios/build",
     "!android/build",

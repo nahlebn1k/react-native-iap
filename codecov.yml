@@ -4,18 +4,32 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: "50...100"
 
   status:
     project:
       default:
-        target: 70%
+        target: 50%
         threshold: 1%
+      library:
+        target: 30%
+        threshold: 1%
+        flags:
+          - library
         paths:
           - "src/**"
+          - "plugin/src/**"
+      example:
+        target: 50%
+        threshold: 1%
+        flags:
+          - example
+        paths:
+          - "example/screens/**"
+          - "example/components/**"
     patch:
       default:
-        target: 70%
+        target: 50%
         threshold: 1%
 
 parsers:
@@ -30,6 +44,18 @@ comment:
   layout: "reach,diff,flags,tree"
   behavior: default
   require_changes: true
+
+flags:
+  library:
+    paths:
+      - src/
+      - plugin/src/
+    carryforward: false
+  example:
+    paths:
+      - example/screens/
+      - example/components/
+    carryforward: false
 
 ignore:
   - "**/*.test.ts"

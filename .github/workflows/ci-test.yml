@@ -35,11 +35,28 @@ jobs:
         uses: ./.github/actions/setup
 
 
-      - name: Run unit tests
+      - name: Run library tests
         run: yarn test:ci
       
-      - name: Upload coverage reports to Codecov
+      - name: Run example tests
+        run: yarn workspace rn-iap-example test --coverage
+      
+      - name: Upload library coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: hyochan/react-native-iap
+          files: ./coverage/lcov.info
+          flags: library
+          name: library-coverage
+          fail_ci_if_error: false
+      
+      - name: Upload example coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: hyochan/react-native-iap
+          files: ./example/coverage/lcov.info
+          flags: example
+          name: example-coverage
+          fail_ci_if_error: false

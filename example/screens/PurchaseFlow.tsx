@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Text,
@@ -37,31 +37,7 @@ const PurchaseFlow: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const subscriptionsRef = useRef<{updateSub?: any; errorSub?: any}>({});
 
-  useEffect(() => {
-    // Initialize connection when component mounts
-    initializeIAP();
-    setupPurchaseListeners();
-
-    // Cleanup when component unmounts
-    return () => {
-      // Clean up listeners
-      subscriptionsRef.current.updateSub?.remove();
-      subscriptionsRef.current.errorSub?.remove();
-      endConnection();
-    };
-  }, []);
-
-  const setupPurchaseListeners = () => {
-    // Set up purchase success listener
-    subscriptionsRef.current.updateSub =
-      purchaseUpdatedListener(handlePurchaseUpdate);
-
-    // Set up purchase error listener
-    subscriptionsRef.current.errorSub =
-      purchaseErrorListener(handlePurchaseError);
-  };
-
-  const handlePurchaseUpdate = (purchase: Purchase) => {
+  const handlePurchaseUpdate = useCallback((purchase: Purchase) => {
     console.log('✅ Purchase successful:', purchase);
 
     // Get receipt/token based on platform
@@ -90,7 +66,9 @@ const PurchaseFlow: React.FC = () => {
         resultMessage += `Original Transaction: ${iosPurchase.originalTransactionIdentifierIOS}\n`;
       }
       if (iosPurchase.originalTransactionDateIOS) {
-        resultMessage += `Original Date: ${new Date(iosPurchase.originalTransactionDateIOS).toLocaleDateString()}\n`;
+        resultMessage += `Original Date: ${new Date(
+          iosPurchase.originalTransactionDateIOS,
+        ).toLocaleDateString()}\n`;
       }
       if (iosPurchase.appAccountToken) {
         resultMessage += `App Account Token: ${iosPurchase.appAccountToken}\n`;
@@ -102,8 +80,12 @@ const PurchaseFlow: React.FC = () => {
         `Purchase Token: ${androidPurchase.purchaseToken || 'N/A'}\n` +
         `Order ID: ${androidPurchase.orderId || 'N/A'}\n` +
         `Package: ${androidPurchase.packageNameAndroid || 'N/A'}\n` +
-        `State: ${androidPurchase.purchaseStateAndroid === 1 ? 'Purchased' : 'Pending'}\n` +
-        `Acknowledged: ${androidPurchase.isAcknowledgedAndroid ? 'Yes' : 'No'}\n`;
+        `State: ${
+          androidPurchase.purchaseStateAndroid === 1 ? 'Purchased' : 'Pending'
+        }\n` +
+        `Acknowledged: ${
+          androidPurchase.isAcknowledgedAndroid ? 'Yes' : 'No'
+        }\n`;
       if (androidPurchase.signatureAndroid) {
         resultMessage += `Signature: ${androidPurchase.signatureAndroid}\n`;
       }
@@ -118,23 +100,9 @@ const PurchaseFlow: React.FC = () => {
     handleFinishTransaction(purchase);
 
     Alert.alert('Success', 'Purchase completed successfully!');
-  };
+  }, []);
 
-  const handlePurchaseError = (error: NitroPurchaseResult) => {
-    console.error('❌ Purchase failed:', error);
-
-    const errorMessage = error.message || 'Purchase failed';
-    setPurchaseResult(`❌ Purchase failed: ${errorMessage}`);
-    setPurchasing(false);
-
-    if (error.code === 'user_cancelled') {
-      Alert.alert('Purchase Cancelled', 'You cancelled the purchase');
-    } else {
-      Alert.alert('Purchase Failed', errorMessage);
-    }
-  };
-
-  const initializeIAP = async () => {
+  const initializeIAP = useCallback(async () => {
     try {
       setLoading(true);
       const isConnected = await initConnection();
@@ -148,6 +116,48 @@ const PurchaseFlow: React.FC = () => {
       Alert.alert('Error', 'Failed to initialize IAP connection');
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Initialize connection when component mounts
+    initializeIAP();
+
+    const setupPurchaseListeners = () => {
+      // Set up purchase success listener
+      subscriptionsRef.current.updateSub =
+        purchaseUpdatedListener(handlePurchaseUpdate);
+
+      // Set up purchase error listener
+      subscriptionsRef.current.errorSub =
+        purchaseErrorListener(handlePurchaseError);
+    };
+
+    setupPurchaseListeners();
+
+    // Capture current subscription references at the time the effect runs
+    const currentSubscriptions = subscriptionsRef.current;
+
+    // Cleanup when component unmounts
+    return () => {
+      // Clean up listeners
+      currentSubscriptions.updateSub?.remove();
+      currentSubscriptions.errorSub?.remove();
+      endConnection();
+    };
+  }, [handlePurchaseUpdate, initializeIAP]);
+
+  const handlePurchaseError = (error: NitroPurchaseResult) => {
+    console.error('❌ Purchase failed:', error);
+
+    const errorMessage = error.message || 'Purchase failed';
+    setPurchaseResult(`❌ Purchase failed: ${errorMessage}`);
+    setPurchasing(false);
+
+    if (error.code === 'user_cancelled') {
+      Alert.alert('Purchase Cancelled', 'You cancelled the purchase');
+    } else {
+      Alert.alert('Purchase Failed', errorMessage);
     }
   };
 

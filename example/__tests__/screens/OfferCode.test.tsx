@@ -1,21 +1,21 @@
 import {render, fireEvent, waitFor} from '@testing-library/react-native';
 import {Alert, Platform} from 'react-native';
 import OfferCode from '../../screens/OfferCode';
+import * as RNIap from 'react-native-iap';
 
-const mockPresentCodeRedemptionSheetIOS = jest.fn();
 const mockGetActiveSubscriptions = jest.fn();
 const mockGetAvailablePurchases = jest.fn();
+const mockPresentCodeRedemptionSheetIOS =
+  RNIap.presentCodeRedemptionSheetIOS as jest.Mock;
 
-jest.mock('react-native-iap', () => ({
-  useIAP: () => ({
-    connected: true,
-    activeSubscriptions: [],
-    availablePurchases: [],
-    getActiveSubscriptions: mockGetActiveSubscriptions,
-    getAvailablePurchases: mockGetAvailablePurchases,
-  }),
-  presentCodeRedemptionSheetIOS: mockPresentCodeRedemptionSheetIOS,
-}));
+// Override the useIAP hook for this test
+(RNIap.useIAP as jest.Mock).mockReturnValue({
+  connected: true,
+  activeSubscriptions: [],
+  availablePurchases: [],
+  getActiveSubscriptions: mockGetActiveSubscriptions,
+  getAvailablePurchases: mockGetAvailablePurchases,
+});
 
 jest.spyOn(Alert, 'alert');
 
@@ -84,9 +84,7 @@ describe('OfferCode Screen', () => {
     Platform.OS = 'android';
     const {getByText} = render(<OfferCode />);
 
-    expect(
-      getByText('🎁 Open Play Store'),
-    ).toBeTruthy();
+    expect(getByText('🎁 Open Play Store')).toBeTruthy();
   });
 
   it('shows testing offer codes section', () => {
@@ -94,5 +92,4 @@ describe('OfferCode Screen', () => {
 
     expect(getByText('Testing Offer Codes')).toBeTruthy();
   });
-
 });
