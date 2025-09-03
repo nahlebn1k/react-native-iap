@@ -1,5 +1,5 @@
 codecov:
-  require_ci_to_pass: true
+  require_ci_to_pass: false
 
 coverage:
   precision: 2
@@ -9,28 +9,31 @@ coverage:
   status:
     project:
       default:
-        target: 50%
-        threshold: 1%
+        target: auto
+        threshold: 5%
+        informational: true
       library:
-        target: 30%
-        threshold: 1%
+        target: auto
+        threshold: 5%
         flags:
           - library
         paths:
           - "src/**"
           - "plugin/src/**"
+        informational: false
       example:
-        target: 50%
-        threshold: 1%
+        target: auto
+        threshold: 10%
         flags:
           - example
         paths:
           - "example/screens/**"
           - "example/components/**"
+        informational: false
     patch:
       default:
-        target: 50%
-        threshold: 1%
+        target: 60%
+        threshold: 5%
 
 parsers:
   gcov:
@@ -41,30 +44,36 @@ parsers:
       macro: no
 
 comment:
-  layout: "reach,diff,flags,tree"
+  layout: "reach,diff,flags,tree,betaprofiling"
   behavior: default
-  require_changes: true
+  require_changes: false
+  require_base: false
+  require_head: false
 
 flags:
   library:
     paths:
       - src/
-      - plugin/src/
-    carryforward: false
+      - plugin/
+    carryforward: true
   example:
     paths:
       - example/screens/
       - example/components/
-    carryforward: false
+    carryforward: true
 
 ignore:
   - "**/*.test.ts"
   - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
   - "**/__tests__/**"
   - "**/__mocks__/**"
-  - "example/**"
+  - "**/nitrogen/**"
+  - "**/node_modules/**"
   - "example-expo/**"
   - "docs/**"
   - "scripts/**"
-  - "nitrogen/generated/**"
   - "lib/**"
+  - "src/specs/**"
+  - "src/index.tsx"

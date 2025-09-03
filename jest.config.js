@@ -26,6 +26,9 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/**/index.{js,ts}',
     '!src/**/*.nitro.ts',
+    '!src/specs/**',
     '!plugin/src/index.ts',
+    '!**/__tests__/**',
+    '!**/__mocks__/**',
   ],
 };

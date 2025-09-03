@@ -6,20 +6,32 @@ on:
     paths:
       - '.github/workflows/ci-test.yml'
       - '.github/actions/**'
-      - 'src/**/__tests__/**'
-      - 'src/**/*.test.*'
+      - 'src/**'
+      - 'plugin/**'
+      - 'example/screens/**'
+      - 'example/components/**'
+      - 'example/__tests__/**'
       - 'jest.config.*'
       - 'jest.setup.*'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'codecov.yml'
   pull_request:
     branches:
       - main
     paths:
       - '.github/workflows/ci-test.yml'
       - '.github/actions/**'
-      - 'src/**/__tests__/**'
-      - 'src/**/*.test.*'
+      - 'src/**'
+      - 'plugin/**'
+      - 'example/screens/**'
+      - 'example/components/**'
+      - 'example/__tests__/**'
       - 'jest.config.*'
       - 'jest.setup.*'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'codecov.yml'
   merge_group:
     types:
       - checks_requested
@@ -35,11 +47,18 @@ jobs:
         uses: ./.github/actions/setup
 
 
-      - name: Run library tests
+      - name: Run library tests with coverage
         run: yarn test:ci
       
-      - name: Run example tests
-        run: yarn workspace rn-iap-example test --coverage
+      - name: Run example tests with coverage  
+        run: yarn test:ci:example
+      
+      - name: List coverage files
+        run: |
+          echo "Library coverage:"
+          ls -la coverage/ || echo "No library coverage directory"
+          echo "Example coverage:"
+          ls -la example/coverage/ || echo "No example coverage directory"
       
       - name: Upload library coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -50,6 +69,7 @@ jobs:
           flags: library
           name: library-coverage
           fail_ci_if_error: false
+          verbose: true
       
       - name: Upload example coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -60,3 +80,4 @@ jobs:
           flags: example
           name: example-coverage
           fail_ci_if_error: false
+          verbose: true
