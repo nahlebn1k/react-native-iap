@@ -16,7 +16,13 @@ export type ChangeEventPayload = {
   value: string
 }
 
-export type ProductType = 'inapp' | 'subs'
+// iOS detailed product types (4 types)
+export enum ProductTypeIOS {
+  consumable = 'consumable',
+  nonConsumable = 'nonConsumable',
+  autoRenewableSubscription = 'autoRenewableSubscription',
+  nonRenewingSubscription = 'nonRenewingSubscription',
+}
 
 // ============================================================================
 // COMMON TYPES (Base types shared across all platforms)
@@ -32,8 +38,8 @@ export type ProductCommon = {
   title: string
   /** Product description */
   description: string
-  /** Product type: 'inapp' for one-time purchases (consumable/non-consumable), 'subs' for subscriptions */
-  type: ProductType
+  /** Product type: 'inapp' or 'subs' for Android compatibility */
+  type: 'inapp' | 'subs' // Note: this is the actual product type, not for filtering
   /** Display name for the product */
   displayName?: string
   /** Formatted price string for display (e.g., "$9.99") */
@@ -69,6 +75,21 @@ export type PurchaseCommon = {
   purchaseToken?: string
   /** Platform identifier ('ios' or 'android') */
   platform?: string
+  /** Purchase quantity (defaults to 1) */
+  quantity: number
+  /** Purchase state (common field) */
+  purchaseState: PurchaseState
+  /** Auto-renewable subscription flag (common field) */
+  isAutoRenewing: boolean
+}
+
+export enum PurchaseState {
+  pending = 'pending',
+  purchased = 'purchased',
+  failed = 'failed',
+  restored = 'restored', // iOS only
+  deferred = 'deferred', // iOS only
+  unknown = 'unknown',
 }
 
 export type ProductSubscriptionCommon = ProductCommon & {
@@ -128,6 +149,7 @@ export type ProductIOS = ProductCommon & {
   jsonRepresentationIOS: string
   platform: 'ios'
   subscriptionInfoIOS?: SubscriptionInfo
+  typeIOS: ProductTypeIOS // Detailed iOS product type
   // deprecated fields
   displayName?: string
   isFamilyShareable?: boolean
@@ -245,12 +267,6 @@ export type ProductSubscriptionAndroid = ProductAndroid & {
   subscriptionOfferDetails?: ProductSubscriptionAndroidOfferDetails[]
 }
 
-export enum PurchaseAndroidState {
-  UNSPECIFIED_STATE = 0,
-  PURCHASED = 1,
-  PENDING = 2,
-}
-
 export type PurchaseAndroid = PurchaseCommon & {
   platform: 'android'
   /**
@@ -259,8 +275,8 @@ export type PurchaseAndroid = PurchaseCommon & {
   purchaseTokenAndroid?: string
   dataAndroid?: string
   signatureAndroid?: string
+  /** @deprecated Use the common `isAutoRenewing` field instead */
   autoRenewingAndroid?: boolean
-  purchaseStateAndroid?: PurchaseAndroidState
   isAcknowledgedAndroid?: boolean
   packageNameAndroid?: string
   developerPayloadAndroid?: string
@@ -322,13 +338,21 @@ export type Purchase =
 // REQUEST TYPES
 // ============================================================================
 
+// Product request parameters for fetching products from the store
+export interface ProductRequest {
+  /** Product SKUs to fetch */
+  skus: string[]
+  /** Filter type: "inapp" (default), "subs", or "all" */
+  type?: 'inapp' | 'subs' | 'all'
+}
+
 // iOS-specific purchase request parameters
 export interface RequestPurchaseIosProps {
   readonly sku: string
   readonly andDangerouslyFinishTransactionAutomatically?: boolean
   readonly appAccountToken?: string
   readonly quantity?: number
-  readonly withOffer?: PaymentDiscount
+  readonly withOffer?: DiscountOffer
 }
 
 // Android-specific purchase request parameters
@@ -418,7 +442,7 @@ export type PurchaseResult = {
 }
 
 // Additional iOS types
-export type PaymentDiscount = {
+export type DiscountOffer = {
   identifier: string
   keyIdentifier: string
   nonce: string
@@ -447,22 +471,12 @@ export type AppTransactionIOS = {
 // ============================================================================
 
 /**
- * Options for getAvailablePurchases methods
+ * Options for getAvailablePurchases and getPurchaseHistories methods
  */
 export interface PurchaseOptions {
-  /**
-   * @deprecated Use alsoPublishToEventListenerIOS instead
-   * Whether to also publish purchases to event listener (iOS only)
-   */
-  alsoPublishToEventListener?: boolean
-  /**
-   * @deprecated Use onlyIncludeActiveItemsIOS instead
-   * Whether to only include active items (iOS only)
-   */
-  onlyIncludeActiveItems?: boolean
-  /** Whether to also publish purchases to event listener (iOS only) */
+  /** Whether to also publish purchases to event listener */
   alsoPublishToEventListenerIOS?: boolean
-  /** Whether to only include active items (subscriptions that are still active) (iOS only) */
+  /** Whether to only include active items (subscriptions that are still active) */
   onlyIncludeActiveItemsIOS?: boolean
 }
 
@@ -513,7 +527,7 @@ export interface IapContext {
   /** Initialize connection to the store */
   initConnection(): Promise<boolean>
   /** End connection to the store */
-  endConnection(): Promise<void>
+  endConnection(): Promise<boolean>
   /** Sync purchases (iOS only) */
   sync(): Promise<void>
 
@@ -521,11 +535,11 @@ export interface IapContext {
   /**
    * Fetch products from the store
    * @param params.skus - Array of product SKUs to fetch
-   * @param params.type - Type of products: 'inapp' for regular products or 'subs' for subscriptions
+   * @param params.type - Type of products: 'inapp' for regular products, 'subs' for subscriptions, 'all' to fetch both. Defaults to 'inapp'
    */
   fetchProducts(params: {
     skus: string[]
-    type?: ProductType // 'inapp' | 'subs', defaults to 'inapp'
+    type?: 'inapp' | 'subs' | 'all' // Defaults to 'inapp'
   }): Promise<Product[] | SubscriptionProduct[]>
 
   // Purchase methods
@@ -561,7 +575,13 @@ export interface IapContext {
   // Receipt validation
   /** Validate a receipt (server-side validation recommended) */
   validateReceipt(
-    options: ValidateReceiptProps
+    sku: string,
+    androidOptions?: {
+      packageName: string
+      productToken: string
+      accessToken: string
+      isSub?: boolean
+    }
   ): Promise<ReceiptValidationResult>
 }
 
@@ -580,7 +600,7 @@ export interface PurchaseError {
 /**
  * Validation options for receipt validation
  */
-export interface ValidateReceiptProps {
+export interface ReceiptValidationProps {
   /** Product SKU to validate */
   sku: string
   /** Android-specific validation options */
@@ -595,7 +615,7 @@ export interface ValidateReceiptProps {
 /**
  * iOS receipt validation result
  */
-export interface ReceiptIOS {
+export interface ReceiptValidationResultIOS {
   /** Whether the receipt is valid */
   isValid: boolean
   /** Receipt data string */
@@ -609,35 +629,6 @@ export interface ReceiptIOS {
 /**
  * Android receipt validation result
  */
-export interface ReceiptAndroid {
-  /** Whether the receipt is valid */
-  isValid: boolean
-  /** Receipt data string */
-  receiptData: string
-  /** JWS representation */
-  jwsRepresentation: string
-  /** Latest transaction if available */
-  latestTransaction?: Purchase
-}
-
-/**
- * Receipt validation result from receipt validation
- */
-export type ReceiptValidationResult = ReceiptAndroid | ReceiptIOS
-
-/**
- * New iOS receipt validation result (matches user specification)
- */
-export interface ReceiptValidationResultIOS {
-  isValid: boolean
-  receiptData: string
-  jwsRepresentation: string
-  latestTransaction?: Purchase
-}
-
-/**
- * New Android receipt validation result (matches user specification)
- */
 export interface ReceiptValidationResultAndroid {
   autoRenewing: boolean
   betaProduct: boolean
@@ -649,7 +640,7 @@ export interface ReceiptValidationResultAndroid {
   gracePeriodEndDate: number
   parentProductId: string
   productId: string
-  productType: string
+  productType: 'inapp' | 'subs'
   purchaseDate: number
   quantity: number
   receiptId: string
@@ -660,6 +651,13 @@ export interface ReceiptValidationResultAndroid {
 }
 
 /**
+ * Receipt validation result from receipt validation
+ */
+export type ReceiptValidationResult =
+  | ReceiptValidationResultAndroid
+  | ReceiptValidationResultIOS
+
+/**
  * Represents an active subscription with platform-specific details
  */
 export interface ActiveSubscription {
@@ -667,9 +665,15 @@ export interface ActiveSubscription {
   productId: string
   /** Whether the subscription is currently active */
   isActive: boolean
+  /** Transaction identifier for backend validation */
+  transactionId: string
+  /** JWT token (iOS) or purchase token (Android) for backend validation */
+  purchaseToken?: string
+  /** Transaction timestamp */
+  transactionDate: number
   /** iOS: Subscription expiration date */
   expirationDateIOS?: Date
-  /** Android: Whether the subscription auto-renews */
+  /** @deprecated Use the common `isAutoRenewing` field instead */
   autoRenewingAndroid?: boolean
   /** iOS: Environment where the subscription was purchased (Production/Sandbox) */
   environmentIOS?: string

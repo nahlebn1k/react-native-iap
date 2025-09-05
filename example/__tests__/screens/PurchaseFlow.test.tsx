@@ -421,6 +421,7 @@ describe('PurchaseFlow Screen', () => {
       purchaseToken: 'token-123',
       dataAndroid: 'android-data',
       purchaseStateAndroid: 1,
+      purchaseState: 'purchased',
       isAcknowledgedAndroid: false,
       packageNameAndroid: 'dev.hyo.martie',
       transactionDate: Date.now(),
@@ -437,5 +438,172 @@ describe('PurchaseFlow Screen', () => {
         isConsumable: true,
       });
     });
+  });
+
+  it('handles non-cancelled purchase errors', async () => {
+    let purchaseErrorCallback: any;
+    (RNIap.purchaseErrorListener as jest.Mock).mockImplementation(
+      (callback) => {
+        purchaseErrorCallback = callback;
+        return {remove: jest.fn()};
+      },
+    );
+
+    render(<PurchaseFlow />);
+
+    // Simulate non-cancelled error
+    const mockError = {
+      code: 'E_NETWORK_ERROR',
+      message: 'Network connection failed',
+    };
+
+    act(() => {
+      purchaseErrorCallback(mockError);
+    });
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Purchase Failed',
+        'Network connection failed',
+      );
+    });
+  });
+
+  it('handles retry button when no products found', async () => {
+    // First return empty, then return products on retry
+    (RNIap.fetchProducts as jest.Mock)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: 'dev.hyo.martie.10bulbs',
+          title: '10 Bulbs',
+          description: 'Get 10 bulbs for your garden',
+          displayPrice: '$0.99',
+          price: 0.99,
+          currency: 'USD',
+          type: 'inapp',
+        },
+      ]);
+
+    const {getByText} = render(<PurchaseFlow />);
+
+    await waitFor(() => {
+      expect(getByText('Store: ✅ Connected')).toBeTruthy();
+    });
+
+    await waitFor(() => {
+      expect(getByText(/No products found/)).toBeTruthy();
+    });
+
+    // Press retry button
+    const retryButton = getByText('Retry');
+    fireEvent.press(retryButton);
+
+    await waitFor(() => {
+      expect(getByText('10 Bulbs')).toBeTruthy();
+    });
+  });
+
+  it('handles product with Android offer price', async () => {
+    Platform.OS = 'android';
+
+    (RNIap.fetchProducts as jest.Mock).mockResolvedValue([
+      {
+        id: 'dev.hyo.martie.10bulbs',
+        title: '10 Bulbs',
+        description: 'Get 10 bulbs for your garden',
+        displayPrice: '$0.99',
+        oneTimePurchaseOfferFormattedPrice: '$0.89',
+        price: 0.99,
+        currency: 'USD',
+        type: 'inapp',
+      },
+    ]);
+
+    const {getByText} = render(<PurchaseFlow />);
+
+    await waitFor(() => {
+      // Should show Android offer price instead of display price
+      expect(getByText('$0.89')).toBeTruthy();
+    });
+
+    Platform.OS = 'ios';
+  });
+
+  it('handles console log button in product modal', async () => {
+    const {getByText, getAllByText} = render(<PurchaseFlow />);
+
+    await waitFor(() => {
+      expect(getByText('Store: ✅ Connected')).toBeTruthy();
+    });
+
+    await waitFor(() => {
+      expect(getByText('10 Bulbs')).toBeTruthy();
+    });
+
+    // Open modal
+    const infoButtons = getAllByText('ℹ️');
+    if (infoButtons[0]) {
+      fireEvent.press(infoButtons[0]);
+    }
+
+    await waitFor(() => {
+      expect(getByText('Product Details')).toBeTruthy();
+    });
+
+    // Press console log button
+    const consoleButton = getByText('🖥️ Console Log');
+    fireEvent.press(consoleButton);
+
+    // Since we removed console.log, just check Alert is called
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Console',
+      'Product data logged to console',
+    );
+  });
+
+  it('handles long press to copy purchase result', async () => {
+    let purchaseUpdateCallback: any;
+    (RNIap.purchaseUpdatedListener as jest.Mock).mockImplementation(
+      (callback) => {
+        purchaseUpdateCallback = callback;
+        return {remove: jest.fn()};
+      },
+    );
+
+    const {getByText} = render(<PurchaseFlow />);
+
+    await waitFor(() => {
+      expect(getByText('Store: ✅ Connected')).toBeTruthy();
+    });
+
+    // Simulate purchase to show result
+    const mockPurchase = {
+      productId: 'dev.hyo.martie.10bulbs',
+      transactionId: 'trans-123',
+      transactionReceipt: 'receipt-123',
+      transactionDate: Date.now(),
+      platform: 'ios',
+      purchaseState: 'purchased',
+    };
+
+    act(() => {
+      purchaseUpdateCallback(mockPurchase);
+    });
+
+    await waitFor(() => {
+      expect(getByText(/✅ Purchase successful/)).toBeTruthy();
+    });
+
+    // Find and long press the result text
+    const resultText = getByText(/✅ Purchase successful/);
+    if (resultText.parent) {
+      fireEvent(resultText.parent, 'onLongPress');
+    }
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Copied',
+      'Purchase result copied to clipboard',
+    );
   });
 });
