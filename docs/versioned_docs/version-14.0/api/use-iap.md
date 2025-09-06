@@ -20,11 +20,13 @@ import { useIAP } from 'react-native-iap'
 
 ## Important: Hook Behavior
 
-The `useIAP` hook follows React Hooks conventions and differs from the underlying native module methods:
+The `useIAP` hook follows React Hooks conventions and differs from calling functions directly from the root API:
 
-- **Automatic Connection Management**: The hook automatically calls `initConnection` when the component mounts and `endConnection` when it unmounts.
-- **State Management**: Hook methods like `fetchProducts`, `requestPurchase`, etc., return `Promise<void>` instead of returning data directly. They update the internal state which you access through the returned properties.
-- **Product Caching**: Product caching is handled automatically by the native module - you don't need to implement caching at the application level.
+- **Automatic connection**: Calls `initConnection` on mount and `endConnection` on unmount.
+- **Void-returning methods**: Hook methods like `fetchProducts`, `requestPurchase`, `getAvailablePurchases`, etc. return `Promise<void>` in the hook. They do not resolve to data. Instead they update hook state (`products`, `subscriptions`, `availablePurchases`, etc.).
+- **Don’t await for data**: When using the hook, do not write `const x = await fetchProducts(...)`. Call the method, then read the updated state from the hook.
+- **Prefer callbacks over `currentPurchase`**: `currentPurchase` is primarily useful for debugging/migration. In production flows, rely on `onPurchaseSuccess` and `onPurchaseError` passed to `useIAP`.
+- **Product caching**: Handled by the native layer for you.
 
 ## Basic Usage
 
@@ -265,13 +267,13 @@ interface UseIAPOptions {
 #### currentPurchase
 
 - **Type**: `Purchase | null`
-- **Description**: Currently active purchase (if any)
-- **Example**:
+- **Description**: Last purchase event captured by the hook. Primarily useful for debugging and migration. Prefer handling results via `onPurchaseSuccess` and errors via `onPurchaseError`.
+- **Example (debug logging)**:
 
   ```tsx
   useEffect(() => {
     if (currentPurchase) {
-      processPurchase(currentPurchase)
+      console.log('Debug purchase event:', currentPurchase.id)
     }
   }, [currentPurchase])
   ```
@@ -331,7 +333,7 @@ interface UseIAPOptions {
 
 ### Methods
 
-#### fetchProducts
+#### fetchProducts (hook)
 
 - **Type**: `(params: RequestProductsParams) => Promise<void>`
 - **Description**: Fetch products or subscriptions from the store and update the `products` or `subscriptions` state
@@ -339,31 +341,28 @@ interface UseIAPOptions {
   - `params`: Object containing:
     - `skus`: Array of product/subscription IDs to fetch
     - `type`: Product type - either `'inapp'` for products or `'subs'` for subscriptions
-- **Returns**: `Promise<void>` - The fetched products are available in the `products` or `subscriptions` state properties
+- **Returns**: `Promise<void>` - Updates `products` / `subscriptions` state
+- **Do not await for data**: Call the method, then consume state from the hook
 - **Example**:
 
   ```tsx
   // Fetch in-app products
-  const fetchProducts = async () => {
+  const loadInAppProducts = async () => {
     try {
-      const products = await fetchProducts({
-        skus: ['com.app.premium', 'com.app.coins_100'],
-        type: 'inapp',
-      })
-      console.log('Fetched products:', products)
+      await fetchProducts({ skus: ['com.app.premium', 'com.app.coins_100'], type: 'inapp' })
+      // Read from state later: products
+      console.log('Products count:', products.length)
     } catch (error) {
       console.error('Failed to fetch products:', error)
     }
   }
 
   // Fetch subscriptions
-  const fetchSubscriptions = async () => {
+  const loadSubscriptions = async () => {
     try {
-      const subs = await fetchProducts({
-        skus: ['com.app.premium_monthly', 'com.app.premium_yearly'],
-        type: 'subs',
-      })
-      console.log('Fetched subscriptions:', subs)
+      await fetchProducts({ skus: ['com.app.premium_monthly', 'com.app.premium_yearly'], type: 'subs' })
+      // Read from state later: subscriptions
+      console.log('Subscriptions count:', subscriptions.length)
     } catch (error) {
       console.error('Failed to fetch subscriptions:', error)
     }
@@ -402,13 +401,22 @@ interface UseIAPOptions {
   ```tsx
   const restorePurchases = async () => {
     try {
-      await getAvailablePurchases()
-      console.log('Available purchases:', availablePurchases)
+      await getAvailablePurchases() // updates `availablePurchases` state
+      console.log('Available purchases count:', availablePurchases.length)
     } catch (error) {
       console.error('Failed to fetch available purchases:', error)
     }
   }
   ```
+
+#### Subscription helpers (hook)
+
+- `getActiveSubscriptions(subscriptionIds?) => Promise<ActiveSubscription[]>`
+  - Returns active subscriptions and also updates `activeSubscriptions` state.
+  - Exception to the hook’s void-return design: this helper returns data for convenience.
+
+- `hasActiveSubscriptions(subscriptionIds?) => Promise<boolean>`
+  - Boolean convenience method to check if any active subscriptions exist (optionally filtered by IDs).
 
 #### validateReceipt
 

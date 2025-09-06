@@ -332,6 +332,17 @@ export const fetchProductsIOS = async (params: {
 - Document platform-specific behavior
 - Link to detailed documentation
 
+### Hook vs Root API Semantics
+
+- The `useIAP` hook methods are designed for React state flows and generally return `Promise<void>` while updating internal state. Do not expect data from these methods.
+  - Examples: `fetchProducts`, `requestProducts` (if available), `requestPurchase`, `getAvailablePurchases`.
+  - Pattern: call the method, then read from hook state like `products`, `subscriptions`, `availablePurchases`.
+- Exceptions in the hook API:
+  - `getActiveSubscriptions(subscriptionIds?) => Promise<ActiveSubscription[]>` returns computed subscription info and updates `activeSubscriptions` state.
+  - `hasActiveSubscriptions(subscriptionIds?) => Promise<boolean>` convenience boolean.
+- Root (index) API functions return data directly and can be awaited for values.
+  - Use these when not relying on React state or when writing non-React utilities.
+
 ## Testing
 
 ### Test Structure

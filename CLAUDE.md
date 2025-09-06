@@ -233,6 +233,16 @@ yarn specs
 yarn install && yarn typecheck && yarn lint --fix
 ```
 
+## Hook API Semantics (useIAP)
+
+- Inside the `useIAP` hook, most methods return `Promise<void>` and update internal state. Do not design examples that expect returned data from these methods.
+  - Examples: `fetchProducts`, `requestProducts` (if present), `requestPurchase`, `getAvailablePurchases`.
+  - After calling, consume state from the hook: `products`, `subscriptions`, `availablePurchases`, etc.
+- Defined exceptions in the hook that DO return values:
+  - `getActiveSubscriptions(subscriptionIds?) => Promise<ActiveSubscription[]>` (also updates `activeSubscriptions` state)
+  - `hasActiveSubscriptions(subscriptionIds?) => Promise<boolean>`
+- The root (index) API is value-returning and can be awaited to receive data directly. Use root API when not using React state.
+
 ### Common CI Fixes
 
 - TypeScript errors: Ensure all types are properly imported
