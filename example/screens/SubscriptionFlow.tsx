@@ -17,7 +17,6 @@ import {
   type SubscriptionProduct,
   type PurchaseError,
   type Purchase,
-  type PurchaseIOS,
 } from 'react-native-iap';
 
 /**
@@ -51,70 +50,47 @@ export default function SubscriptionFlow() {
     getActiveSubscriptions,
   } = useIAP({
     onPurchaseSuccess: async (purchase) => {
-      console.log('Subscription successful (event):', purchase);
+      console.log('Purchase successful:', purchase);
       setIsProcessing(false);
 
-      // Determine restoration for iOS based on original vs. current transaction ID
-      let isRestoration = false;
-      if (Platform.OS === 'ios' && purchase.platform === 'ios') {
-        const iosPurchase = purchase as PurchaseIOS;
-        const currentId = purchase.transactionId || purchase.id;
-        isRestoration = Boolean(
-          iosPurchase.originalTransactionIdentifierIOS &&
-            iosPurchase.originalTransactionIdentifierIOS !== currentId,
-        );
-      }
+      // IMPORTANT: Server-side receipt validation should be performed here
+      // Send the receipt to your backend server for validation
+      // Example:
+      // const isValid = await validateReceiptOnServer(purchase.transactionReceipt);
+      // if (!isValid) {
+      //   Alert.alert('Error', 'Receipt validation failed');
+      //   return;
+      // }
 
+      // After successful server validation, finish the transaction
+      // For subscriptions, set isConsumable to false
+      await finishTransaction({
+        purchase,
+        isConsumable: false, // Set to false for subscription products
+      });
+
+      // Refresh subscription status and available purchases after success
       try {
-        // Always finish subscription transactions (no-op if auto-finished)
-        await finishTransaction({purchase, isConsumable: false});
+        await getActiveSubscriptions(SUBSCRIPTION_IDS);
       } catch (e) {
-        console.warn('finishTransaction (post-purchase) failed:', e);
+        console.warn('Failed to refresh active subscriptions:', e);
       }
-
-      if (isRestoration) {
-        // Treat as restoration/verification
-        setPurchaseResult(
-          `ℹ️ Subscription restored/verified (${purchase.platform})\n` +
-            `Product: ${purchase.productId}`,
-        );
-        // Refresh state
-        try {
-          await getActiveSubscriptions();
-          await getAvailablePurchases();
-        } catch {}
-        return;
-      }
-
-      // New subscription — verify activation before showing success
-      setPurchaseResult('⏳ Processing subscription...');
       try {
-        const subs = await getActiveSubscriptions([purchase.productId]);
-        const isNowActive = subs.some(
-          (s) => s.productId === purchase.productId,
-        );
-        if (isNowActive) {
-          setPurchaseResult(
-            `✅ Subscription activated (${purchase.platform})\n` +
-              `Product: ${purchase.productId}\n` +
-              `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
-              `Date: ${new Date(
-                purchase.transactionDate,
-              ).toLocaleDateString()}`,
-          );
-          Alert.alert('Success', 'Subscription activated successfully!');
-        } else {
-          setPurchaseResult(
-            '⏳ Subscription is processing. Please refresh status shortly.',
-          );
-        }
-      } finally {
-        // Also refresh history/state shortly after
-        setTimeout(() => {
-          getAvailablePurchases().catch(() => {});
-          getActiveSubscriptions().catch(() => {});
-        }, 1000);
+        await getAvailablePurchases();
+      } catch (e) {
+        console.warn('Failed to refresh available purchases:', e);
       }
+
+      // Handle successful purchase
+      setPurchaseResult(
+        `✅ Subscription activated\n` +
+          `Product: ${purchase.productId}\n` +
+          `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
+          `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}\n` +
+          `Receipt: ${purchase.transactionReceipt?.substring(0, 50)}...`,
+      );
+
+      Alert.alert('Success', 'Purchase completed successfully!');
     },
     onPurchaseError: (error: PurchaseError) => {
       console.error('Subscription failed:', error);

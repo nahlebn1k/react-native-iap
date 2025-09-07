@@ -37,71 +37,34 @@ const PurchaseFlow: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const subscriptionsRef = useRef<{updateSub?: any; errorSub?: any}>({});
 
-  const handlePurchaseUpdate = useCallback((purchase: Purchase) => {
-    // Purchase successful
-
-    // Get receipt/token based on platform
-    const receipt =
-      Platform.OS === 'android'
-        ? (purchase as any).dataAndroid
-        : purchase.purchaseToken || // Contains JWS representation on iOS
-          purchase.transactionReceipt; // Legacy receipt format
-
-    // Get transaction ID based on platform
-    const transactionId = purchase.transactionId || purchase.id;
-
-    // Build platform-specific result message
-    let resultMessage =
-      `✅ Purchase successful (${purchase.platform || Platform.OS})\n` +
-      `Product: ${purchase.productId}\n` +
-      `Transaction ID: ${transactionId || 'N/A'}\n` +
-      `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}\n`;
-
-    if (Platform.OS === 'ios') {
-      const iosPurchase = purchase as any;
-      if (iosPurchase.quantityIOS) {
-        resultMessage += `Quantity: ${iosPurchase.quantityIOS}\n`;
-      }
-      if (iosPurchase.originalTransactionIdentifierIOS) {
-        resultMessage += `Original Transaction: ${iosPurchase.originalTransactionIdentifierIOS}\n`;
-      }
-      if (iosPurchase.originalTransactionDateIOS) {
-        resultMessage += `Original Date: ${new Date(
-          iosPurchase.originalTransactionDateIOS,
-        ).toLocaleDateString()}\n`;
-      }
-      if (iosPurchase.appAccountToken) {
-        resultMessage += `App Account Token: ${iosPurchase.appAccountToken}\n`;
-      }
-      resultMessage += `JWS Token: ${receipt || 'N/A'}\n`;
-    } else if (Platform.OS === 'android') {
-      const androidPurchase = purchase as any;
-      resultMessage +=
-        `Purchase Token: ${androidPurchase.purchaseToken || 'N/A'}\n` +
-        `Order ID: ${androidPurchase.orderId || 'N/A'}\n` +
-        `Package: ${androidPurchase.packageNameAndroid || 'N/A'}\n` +
-        `State: ${
-          purchase.purchaseState === 'purchased'
-            ? 'Purchased'
-            : purchase.purchaseState === 'pending'
-              ? 'Pending'
-              : purchase.purchaseState
-        }\n` +
-        `Acknowledged: ${
-          androidPurchase.isAcknowledgedAndroid ? 'Yes' : 'No'
-        }\n`;
-      if (androidPurchase.signatureAndroid) {
-        resultMessage += `Signature: ${androidPurchase.signatureAndroid}\n`;
-      }
-      resultMessage += `Receipt JSON: ${receipt || 'N/A'}\n`;
-    }
-
-    // Update purchase result display
-    setPurchaseResult(resultMessage);
+  const handlePurchaseUpdate = useCallback(async (purchase: Purchase) => {
+    console.log('Purchase successful:', purchase);
     setPurchasing(false);
 
-    // Finish the transaction
-    handleFinishTransaction(purchase);
+    // IMPORTANT: Server-side receipt validation should be performed here
+    // Send the receipt to your backend server for validation
+    // Example:
+    // const isValid = await validateReceiptOnServer(purchase.transactionReceipt);
+    // if (!isValid) {
+    //   Alert.alert('Error', 'Receipt validation failed');
+    //   return;
+    // }
+
+    // After successful server validation, finish the transaction
+    // For consumable products (like bulb packs), set isConsumable to true
+    await finishTransaction({
+      purchase,
+      isConsumable: true, // Set to true for consumable products
+    });
+
+    // Handle successful purchase
+    setPurchaseResult(
+      `✅ Purchase successful (${purchase.platform})\n` +
+        `Product: ${purchase.productId}\n` +
+        `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
+        `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}\n` +
+        `Receipt: ${purchase.transactionReceipt?.substring(0, 50)}...`,
+    );
 
     Alert.alert('Success', 'Purchase completed successfully!');
   }, []);
@@ -211,18 +174,6 @@ const PurchaseFlow: React.FC = () => {
       setPurchasing(false);
 
       Alert.alert('Request Failed', errorMessage);
-    }
-  };
-
-  const handleFinishTransaction = async (purchase: Purchase) => {
-    try {
-      await finishTransaction({
-        purchase,
-        isConsumable: true,
-      });
-      // Transaction finished
-    } catch (error) {
-      // Failed to finish transaction
     }
   };
 
