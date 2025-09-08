@@ -8,6 +8,10 @@ assignees: ''
 
 > Please use the [Discussion board](https://github.com/hyochan/react-native-iap/discussions) if you want to get some help. Please use issues to report bugs.
 
+**Checklist**
+
+- [ ] I tested with the latest version of the library (recent releases often fix past issues; please verify on the newest version).
+
 **Description**
 
 <!-- A brief description of the issue. -->
@@ -26,14 +30,15 @@ assignees: ''
 - react-native:
 - Platforms (iOS, Android, emulator, simulator, device):
 
-**To Reproduce**
-Steps to reproduce the behavior:
+**To Reproduce** Steps to reproduce the behavior:
 
 1. Go to '...'
 2. Press '...'
 3. Error '...' is shown
 
 ---
+
+gcmsg 'ci(template): latest version check on bug'
 
 [Optional] **Additional Context**
 
