@@ -1,7 +1,7 @@
 # React Native IAP
 
 <div align="center">
-  <img src="https://react-native-iap.hyo.dev/img/icon.png" alt="React Native IAP Logo" width="150" />
+  <img src="https://hyochan.github.io/react-native-iap/img/icon.png" alt="React Native IAP Logo" width="150" />
   
 [![Version](http://img.shields.io/npm/v/react-native-iap.svg?style=flat-square)](https://npmjs.org/package/react-native-iap)
 [![Next Version](https://img.shields.io/npm/v/react-native-iap/next)](https://npmjs.org/package/react-native-iap)
@@ -17,7 +17,7 @@
 
 ## 📚 Documentation
 
-**[📖 Visit our comprehensive documentation site →](https://react-native-iap.hyo.dev)**
+**[📖 Visit our comprehensive documentation site →](https://hyochan.github.io/react-native-iap)**
 
 ## ⚠️ Notice
 
@@ -43,7 +43,7 @@ npm install react-native-iap react-native-nitro-modules
 yarn add react-native-iap react-native-nitro-modules
 ```
 
-**[📖 See the complete installation guide and quick start tutorial →](https://react-native-iap.hyo.dev/docs/installation)**
+**[📖 See the complete installation guide and quick start tutorial →](https://hyochan.github.io/react-native-iap/docs/installation)**
 
 ## 🏗️ Architecture
 
@@ -154,15 +154,15 @@ React Native IAP is **OpenIAP compliant**. For detailed store configuration:
 
 ## 🎯 What's Next?
 
-**[📖 Visit our comprehensive documentation site →](https://react-native-iap.hyo.dev)**
+**[📖 Visit our comprehensive documentation site →](https://hyochan.github.io/react-native-iap)**
 
 ### Key Resources
 
-- **[Installation & Quick Start](https://react-native-iap.hyo.dev/docs/installation)** - Get started in minutes
-- **[API Reference](https://react-native-iap.hyo.dev/docs/api)** - Complete useIAP hook documentation
-- **[Examples](https://react-native-iap.hyo.dev/docs/examples/basic-store)** - Production-ready implementations
-- **[Error Handling](https://react-native-iap.hyo.dev/docs/api/error-codes)** - OpenIAP compliant error codes
-- **[Troubleshooting](https://react-native-iap.hyo.dev/docs/guides/troubleshooting)** - Common issues and solutions
+- **[Installation & Quick Start](https://hyochan.github.io/react-native-iap/docs/installation)** - Get started in minutes
+- **[API Reference](https://hyochan.github.io/react-native-iap/docs/api)** - Complete useIAP hook documentation
+- **[Examples](https://hyochan.github.io/react-native-iap/docs/examples/basic-store)** - Production-ready implementations
+- **[Error Handling](https://hyochan.github.io/react-native-iap/docs/api/error-codes)** - OpenIAP compliant error codes
+- **[Troubleshooting](https://hyochan.github.io/react-native-iap/docs/guides/troubleshooting)** - Common issues and solutions
 
 ## Sponsors
 

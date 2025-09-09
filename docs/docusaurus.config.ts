@@ -15,11 +15,11 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
-  // Set the production url of your site here
-  url: 'https://react-native-iap.hyo.dev',
+  // Set the production url of your site here (no sub-path)
+  url: 'https://hyochan.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
-  // For custom domain, use root path
-  baseUrl: '/',
+  // For project pages on GitHub Pages, use "/<repo>/"
+  baseUrl: '/react-native-iap/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.

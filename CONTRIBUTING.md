@@ -149,4 +149,4 @@ cd example-expo && bun test    # Expo example tests (if available)
 4. Run tests and linting: `yarn typecheck && yarn lint --fix`
 5. Submit a pull request with a clear description
 
-For detailed usage examples and error handling, see the [documentation](https://react-native-iap.hyo.dev).
+For detailed usage examples and error handling, see the [documentation](https://hyochan.github.io/react-native-iap).
