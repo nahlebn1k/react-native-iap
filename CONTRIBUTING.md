@@ -114,6 +114,44 @@ cd example && yarn test        # React Native example tests
 cd example-expo && bun test    # Expo example tests (if available)
 ```
 
+## Release Process (Maintainers)
+
+Follow these steps when preparing a new release (e.g., 14.2.0):
+
+1. Verify CI locally
+
+   ```bash
+   yarn ci:check
+   # or:
+   yarn typecheck && yarn lint --fix && yarn test:ci && yarn nitrogen
+   ```
+
+2. iOS/OpenIAP
+   - Ensure Nitro codegen is up to date: `yarn nitrogen`
+   - Verify Pods resolve in the example app: `cd example/ios && pod install`
+
+3. Android
+   - We ship consumer R8 keep rules in `android/consumer-rules.pro` so Nitro classes aren’t stripped.
+   - Verify a release build of the example app: `cd example/android && ./gradlew :app:assembleRelease`
+
+4. Version bump & docs
+   - Update `package.json` version
+   - Add a blog post in `docs/blog/` with highlights
+   - Update CHANGELOG if needed
+
+5. Tagging and Publishing
+   - Push the release PR; ensure CI is green
+   - Create a GitHub Release
+   - Publish to npm via the existing workflows
+
+Recent highlights (14.2.0)
+
+- iOS: idempotent, non-blocking init; `initConnection()` now propagates failures.
+- iOS: bump OpenIAP to `~> 1.1.8`.
+- Android: add consumer R8 keep rules to protect Nitro HybridObjects.
+- CI: use vendored Yarn to avoid Corepack 503.
+- Example: stabilized Subscription/Purchase flows; tests improved.
+
 ## Project Structure
 
 - [`android/`](android): All your `android`-specific implementations.
