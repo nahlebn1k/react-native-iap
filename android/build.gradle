@@ -57,6 +57,8 @@ android {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+    // Ship consumer keep rules so Nitro HybridObjects aren't stripped in app release builds
+    consumerProguardFiles 'consumer-rules.pro'
 
     externalNativeBuild {
       cmake {
@@ -162,4 +164,3 @@ dependencies {
 configurations.all {
   exclude group: 'com.facebook.react', module: 'react-native-safe-area-context'
 }
-
