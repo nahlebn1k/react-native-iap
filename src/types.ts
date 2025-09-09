@@ -211,6 +211,27 @@ export type PurchaseIOS = PurchaseCommon & {
   jwsRepresentationIOS?: string
 }
 
+/**
+ * iOS subscription renewal info
+ */
+export interface SubscriptionRenewalInfoIOS {
+  autoRenewStatus: boolean
+  autoRenewPreference?: string
+  expirationReason?: number
+  gracePeriodExpirationDate?: number
+  currentProductID?: string
+  platform: 'ios'
+}
+
+/**
+ * iOS subscription status entry
+ */
+export interface SubscriptionStatusIOS {
+  state: number
+  platform: 'ios'
+  renewalInfo?: SubscriptionRenewalInfoIOS
+}
+
 // ============================================================================
 // ANDROID TYPES
 // ============================================================================

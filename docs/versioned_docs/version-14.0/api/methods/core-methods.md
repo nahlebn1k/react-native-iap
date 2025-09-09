@@ -145,8 +145,8 @@ Initiates a purchase request for products or subscriptions.
 
 > **⚠️ Important:** This is an event-based operation. Listen for events through `purchaseUpdatedListener` or `purchaseErrorListener`.
 
-> **⚠️ Platform Differences:**
->
+**⚠️ Platform Differences:**
+
 > - **iOS**: Can only purchase one product at a time (uses `sku: string`)
 > - **Android**: Can purchase multiple products at once (uses `skus: string[]`)
 
@@ -660,7 +660,7 @@ const getSubscriptionStatus = async (sku: string) => {
 
 **Platform:** iOS only
 
-**Returns:** `Promise<any[]>`
+**Returns:** `Promise<SubscriptionStatusIOS[]>`
 
 ### currentEntitlementIOS()
 
