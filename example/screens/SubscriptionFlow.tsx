@@ -1,4 +1,4 @@
-import {useEffect, useCallback, useState} from 'react';
+import {useEffect, useCallback, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import {
 import Clipboard from '@react-native-clipboard/clipboard';
 import {
   useIAP,
-  requestPurchase,
   type SubscriptionProduct,
   type PurchaseError,
   type Purchase,
@@ -48,6 +47,7 @@ export default function SubscriptionFlow() {
     finishTransaction,
     getAvailablePurchases,
     getActiveSubscriptions,
+    requestPurchase,
   } = useIAP({
     onPurchaseSuccess: async (purchase) => {
       console.log('Purchase successful:', purchase);
@@ -118,29 +118,39 @@ export default function SubscriptionFlow() {
     null,
   );
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
+  const fetchedProductsOnceRef = useRef(false);
+  const loadedPurchasesOnceRef = useRef(false);
+  const statusAutoCheckedRef = useRef(false);
 
   // Load subscription products when connected
   useEffect(() => {
     if (connected) {
-      console.log('Connected to store, loading subscription products...');
-      // fetchProducts is event-based, not promise-based
-      // Results will be available through the useIAP hook's subscriptions state
-      fetchProducts({skus: SUBSCRIPTION_IDS, type: 'subs'});
-      console.log('Product loading request sent - waiting for results...');
+      if (!fetchedProductsOnceRef.current) {
+        console.log('Connected to store, loading subscription products...');
+        fetchProducts({skus: SUBSCRIPTION_IDS, type: 'subs'});
+        console.log('Product loading request sent - waiting for results...');
+        fetchedProductsOnceRef.current = true;
+      }
 
-      // Load available purchases to check subscription history
-      console.log('Loading available purchases...');
-      getAvailablePurchases().catch((error) => {
-        console.warn('Failed to load available purchases:', error);
-      });
+      if (!loadedPurchasesOnceRef.current) {
+        console.log('Loading available purchases...');
+        getAvailablePurchases()
+          .catch((error) => {
+            console.warn('Failed to load available purchases:', error);
+          })
+          .finally(() => {
+            loadedPurchasesOnceRef.current = true;
+          });
+      }
     }
   }, [connected, fetchProducts, getAvailablePurchases]);
 
   // Check subscription status separately to avoid infinite loop
   useEffect(() => {
-    if (connected) {
+    if (connected && !statusAutoCheckedRef.current) {
       // Use a timeout to avoid rapid consecutive calls
       const timer = setTimeout(() => {
+        statusAutoCheckedRef.current = true;
         checkSubscriptionStatus();
       }, 500);
 
@@ -372,6 +382,19 @@ export default function SubscriptionFlow() {
             Platform: {Platform.OS === 'ios' ? '🍎 iOS' : '🤖 Android'}
           </Text>
         </View>
+        {!connected && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 8,
+            }}
+          >
+            <ActivityIndicator size="small" color="#007AFF" />
+            <Text style={styles.loadingText}>Connecting to store…</Text>
+          </View>
+        )}
       </View>
 
       {/* Subscription Status Section */}
@@ -751,6 +774,12 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     padding: 20,
+  },
+  loadingScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   statusSection: {
     backgroundColor: '#e8f4f8',

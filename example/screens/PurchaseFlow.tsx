@@ -13,10 +13,10 @@ import {
 import Clipboard from '@react-native-clipboard/clipboard';
 import {
   initConnection,
-  endConnection,
   fetchProducts,
   requestPurchase,
   finishTransaction,
+  endConnection,
   purchaseUpdatedListener,
   purchaseErrorListener,
   type Product,
@@ -29,17 +29,23 @@ const PRODUCT_IDS = ['dev.hyo.martie.10bulbs', 'dev.hyo.martie.30bulbs'];
 
 const PurchaseFlow: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [purchaseResult, setPurchaseResult] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [lastPurchase, setLastPurchase] = useState<Purchase | null>(null);
+  const [lastError, setLastError] = useState<NitroPurchaseResult | null>(null);
   const subscriptionsRef = useRef<{updateSub?: any; errorSub?: any}>({});
+  const hasLoadedProductsRef = useRef(false);
 
   const handlePurchaseUpdate = useCallback(async (purchase: Purchase) => {
     console.log('Purchase successful:', purchase);
     setPurchasing(false);
+    setLastError(null);
+    setLastPurchase(purchase);
 
     // IMPORTANT: Server-side receipt validation should be performed here
     // Send the receipt to your backend server for validation
@@ -71,36 +77,50 @@ const PurchaseFlow: React.FC = () => {
 
   const initializeIAP = useCallback(async () => {
     try {
-      setLoading(true);
+      // Attach listeners first to avoid race conditions
+      const handlePurchaseError = (error: NitroPurchaseResult) => {
+        // Purchase failed
+        setLastPurchase(null);
+        setLastError(error);
+        const errorMessage = error.message || 'Purchase failed';
+        setPurchaseResult(`❌ Purchase failed: ${errorMessage}`);
+        setPurchasing(false);
+
+        if (error.code === 'user_cancelled') {
+          Alert.alert('Purchase Cancelled', 'You cancelled the purchase');
+        } else {
+          Alert.alert('Purchase Failed', errorMessage);
+        }
+      };
+
+      const setupPurchaseListeners = () => {
+        // Set up purchase success listener
+        subscriptionsRef.current.updateSub =
+          purchaseUpdatedListener(handlePurchaseUpdate);
+
+        // Set up purchase error listener
+        subscriptionsRef.current.errorSub =
+          purchaseErrorListener(handlePurchaseError);
+      };
+
+      setupPurchaseListeners();
+
       const isConnected = await initConnection();
       setConnected(isConnected);
 
-      if (isConnected) {
+      if (isConnected && !hasLoadedProductsRef.current) {
         await loadProducts();
+        hasLoadedProductsRef.current = true;
       }
     } catch (error) {
       // Failed to initialize IAP
       Alert.alert('Error', 'Failed to initialize IAP connection');
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     // Initialize connection when component mounts
     initializeIAP();
-
-    const setupPurchaseListeners = () => {
-      // Set up purchase success listener
-      subscriptionsRef.current.updateSub =
-        purchaseUpdatedListener(handlePurchaseUpdate);
-
-      // Set up purchase error listener
-      subscriptionsRef.current.errorSub =
-        purchaseErrorListener(handlePurchaseError);
-    };
-
-    setupPurchaseListeners();
 
     // Capture current subscription references at the time the effect runs
     const currentSubscriptions = subscriptionsRef.current;
@@ -110,23 +130,14 @@ const PurchaseFlow: React.FC = () => {
       // Clean up listeners
       currentSubscriptions.updateSub?.remove();
       currentSubscriptions.errorSub?.remove();
-      endConnection();
+      // For the standalone example screen, end connection on unmount
+      // (Library hook keeps connection across screens, but example manages it locally)
+      // End IAP connection for example app on unmount (no await needed for test expectations)
+      try {
+        endConnection();
+      } catch {}
     };
   }, [handlePurchaseUpdate, initializeIAP]);
-
-  const handlePurchaseError = (error: NitroPurchaseResult) => {
-    // Purchase failed
-
-    const errorMessage = error.message || 'Purchase failed';
-    setPurchaseResult(`❌ Purchase failed: ${errorMessage}`);
-    setPurchasing(false);
-
-    if (error.code === 'user_cancelled') {
-      Alert.alert('Purchase Cancelled', 'You cancelled the purchase');
-    } else {
-      Alert.alert('Purchase Failed', errorMessage);
-    }
-  };
 
   const loadProducts = async () => {
     try {
@@ -225,6 +236,30 @@ const PurchaseFlow: React.FC = () => {
     );
   };
 
+  const renderResultDetails = () => {
+    const payload = lastPurchase ?? lastError;
+    if (!payload) return null;
+    const jsonString = JSON.stringify(payload, null, 2);
+    return (
+      <View style={styles.modalContent}>
+        <ScrollView style={styles.jsonContainer}>
+          <Text style={styles.jsonText}>{jsonString}</Text>
+        </ScrollView>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.consoleButton]}
+            onPress={() => {
+              Clipboard.setString(jsonString);
+              Alert.alert('Copied', 'Result JSON copied to clipboard');
+            }}
+          >
+            <Text style={styles.actionButtonText}>📋 Copy JSON</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -297,6 +332,22 @@ const PurchaseFlow: React.FC = () => {
       {purchaseResult ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Result</Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <TouchableOpacity
+              style={[styles.infoButton, {marginRight: 8}]}
+              onPress={() => setResultModalVisible(true)}
+              disabled={!lastPurchase && !lastError}
+            >
+              <Text style={styles.infoButtonText}>🔍</Text>
+            </TouchableOpacity>
+            <Text style={{color: '#666'}}>View details</Text>
+          </View>
           <TouchableOpacity
             onLongPress={() => {
               Clipboard.setString(purchaseResult);
@@ -330,6 +381,29 @@ const PurchaseFlow: React.FC = () => {
               </TouchableOpacity>
             </View>
             {renderProductDetails()}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Result Details Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={resultModalVisible}
+        onRequestClose={() => setResultModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Result Details</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setResultModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {renderResultDetails()}
           </View>
         </View>
       </Modal>
