@@ -81,6 +81,22 @@
 - Cover: helpers (`src/utils/*`), hooks (`src/hooks/*`), plugin behavior, error mapping. Avoid testing generated code.
 - Use `yarn test:ci` for coverage; add focused tests near changes.
 
+## Hook API Semantics (useIAP)
+
+- Most hook methods return `Promise<void>` and update internal state. Read results from hook state: `products`, `subscriptions`, `availablePurchases`, etc.
+- Value-returning exceptions in the hook:
+  - `getActiveSubscriptions(ids?) => Promise<ActiveSubscription[]>` (also updates `activeSubscriptions`)
+  - `hasActiveSubscriptions(ids?) => Promise<boolean>`
+- The root API (from `src/index.ts`) is value-returning and can be awaited directly. Prefer root API when not using React state.
+
+Example:
+
+```ts
+const { fetchProducts, products } = useIAP()
+await fetchProducts({ skus: ['p1'] })
+// then read products from state
+```
+
 ## CI Checks
 
 Run locally before pushing to avoid CI failures:
@@ -96,6 +112,54 @@ yarn test:ci
 # Or use helper script
 yarn ci:check
 ```
+
+## Platform-Specific Features
+
+- iOS (StoreKit 2): Subscription management, promotional offers, family sharing, refund requests, transaction verification, receipt validation.
+- Android (Play Billing): Multiple SKU purchases, subscription offers, obfuscated account/profile IDs, purchase acknowledgement, product consumption.
+- Android billing uses automatic service reconnection; connection handling is simplified in native code.
+
+## Error Handling
+
+- Centralized TS helpers in `src/utils/*` and types in `src/types.ts`:
+  - `parseErrorStringToJsonObj()` — parse native error strings into structured objects
+  - `isUserCancelledError()` — detect user-cancelled operations
+  - `ErrorCode` enum — normalized cross-platform error codes
+- Native layers map platform errors to the same JSON shape before returning to JS.
+
+Error JSON format (from native):
+
+```json
+{
+  "code": "E_USER_CANCELLED",
+  "message": "User cancelled the purchase",
+  "responseCode": 1,
+  "debugMessage": "User pressed cancel",
+  "productId": "com.example.product"
+}
+```
+
+Usage example:
+
+```ts
+try {
+  await requestPurchase({
+    /* ... */
+  })
+} catch (e) {
+  const err = parseErrorStringToJsonObj(e)
+  if (isUserCancelledError(err)) return
+  console.error('IAP failed:', err.code, err.message)
+}
+```
+
+## Troubleshooting
+
+- Specs changed but build fails: run `yarn specs` to regenerate Nitrogen bridge and rebuild native.
+- React duplication issues in example apps: ensure Metro alias resolves a single `react`/`react-native` (see `example/metro.config.js`).
+- iOS pods: `cd example/ios && bundle install && bundle exec pod install` (for Expo example: `cd example-expo/ios && pod install`).
+- Install issues: `yarn install`, clear cache `yarn cache clean`, or reinstall `rm -rf node_modules example/node_modules && yarn install`.
+- Metro cache: `cd example && yarn start --reset-cache`.
 
 ## Nitro Modules
 
@@ -137,20 +201,20 @@ yarn ci:check
 
 ```ts
 // src/specs/RnIap.nitro.ts
-export type Purchase = {id: string; productId: string; date: Date};
+export type Purchase = { id: string; productId: string; date: Date }
 export type Result<T> =
-  | {kind: 'ok'; value: T}
-  | {kind: 'err'; code: string; message: string};
+  | { kind: 'ok'; value: T }
+  | { kind: 'err'; code: string; message: string }
 
 export interface RnIapSpec {
-  init(): Promise<void>;
-  fetchProducts(ids: string[]): Promise<Product[]>;
+  init(): Promise<void>
+  fetchProducts(ids: string[]): Promise<Product[]>
   requestPurchase(
     id: string,
-    opts?: {quantity?: number},
-  ): Promise<Result<Purchase>>;
-  addPurchaseListener(cb: (p: Purchase) => void): void;
-  getStorefrontIOS?(): string;
+    opts?: { quantity?: number }
+  ): Promise<Result<Purchase>>
+  addPurchaseListener(cb: (p: Purchase) => void): void
+  getStorefrontIOS?(): string
 }
 ```
 
