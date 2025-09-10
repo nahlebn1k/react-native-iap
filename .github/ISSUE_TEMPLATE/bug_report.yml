@@ -39,14 +39,52 @@ body:
       placeholder: 'x.x.x'
     validations:
       required: true
+  - type: input
+    id: react-native-version
+    attributes:
+      label: React Native version
+      description: Exact version from your app (e.g., 0.73.7). If using Expo, include SDK version.
+      placeholder: '0.73.7 (Expo SDK 51)'
+    validations:
+      required: true
+  - type: dropdown
+    id: nitro-installed
+    attributes:
+      label: Is `react-native-nitro-modules` installed?
+      description: This library relies on Nitro. Indicate whether `react-native-nitro-modules` is installed and configured in your app.
+      options:
+        - Yes
+        - No
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: nitro-version
+    attributes:
+      label: `react-native-nitro-modules` version
+      description: Optional. If installed, provide the version (e.g., output of `npm ls react-native-nitro-modules` or `yarn why react-native-nitro-modules`).
+      placeholder: 'x.x.x'
+    validations:
+      required: false
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platform(s) affected
+      description: Select all platforms where you can reproduce the issue.
+      multiple: true
+      options:
+        - iOS
+        - Android
+    validations:
+      required: true
   - type: textarea
     id: react-native-info
     attributes:
       label: Environment info
-      description: Run `react-native info` in your terminal and paste the results here.
+      description: Optional. Run `npx react-native info` and paste results for more context.
       render: shell
     validations:
-      required: true
+      required: false
   - type: textarea
     id: steps-to-reproduce
     attributes:
