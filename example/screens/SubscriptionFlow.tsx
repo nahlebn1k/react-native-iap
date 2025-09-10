@@ -16,6 +16,7 @@ import {
   type SubscriptionProduct,
   type PurchaseError,
   type Purchase,
+  isUserCancelledError,
 } from 'react-native-iap';
 
 /**
@@ -38,6 +39,8 @@ import {
 const SUBSCRIPTION_IDS = ['dev.hyo.martie.premium'];
 
 export default function SubscriptionFlow() {
+  // Track connection to coordinate delayed finish
+  const connectedRef = useRef(false);
   const {
     connected,
     subscriptions,
@@ -63,11 +66,38 @@ export default function SubscriptionFlow() {
       // }
 
       // After successful server validation, finish the transaction
-      // For subscriptions, set isConsumable to false
-      await finishTransaction({
-        purchase,
-        isConsumable: false, // Set to false for subscription products
-      });
+      // Guard: Only attempt when connected to store
+      if (!connectedRef.current) {
+        console.log(
+          '[SubscriptionFlow] Skipping finishTransaction - not connected yet',
+        );
+        // Retry until connected or timeout (~1s)
+        const started = Date.now();
+        const tryFinish = () => {
+          if (connectedRef.current) {
+            finishTransaction({
+              purchase,
+              isConsumable: false,
+            }).catch((err) => {
+              console.warn(
+                '[SubscriptionFlow] Delayed finishTransaction failed:',
+                err,
+              );
+            });
+            return;
+          }
+          if (Date.now() - started < 1000) {
+            setTimeout(tryFinish, 100);
+          }
+        };
+        setTimeout(tryFinish, 100);
+      } else {
+        // For subscriptions, set isConsumable to false
+        await finishTransaction({
+          purchase,
+          isConsumable: false, // Set to false for subscription products
+        });
+      }
 
       // Refresh subscription status and available purchases after success
       try {
@@ -95,9 +125,13 @@ export default function SubscriptionFlow() {
     onPurchaseError: (error: PurchaseError) => {
       console.error('Subscription failed:', error);
       setIsProcessing(false);
-
-      // Handle subscription error
+      const isCancel = isUserCancelledError(error as any);
+      // Always update UI error text
       setPurchaseResult(`❌ Subscription failed: ${error.message}`);
+      // Only alert for non-cancel errors
+      if (!isCancel) {
+        Alert.alert('Subscription Failed', error.message);
+      }
     },
     onSyncError: (error: Error) => {
       console.warn('Sync error:', error);
@@ -144,6 +178,11 @@ export default function SubscriptionFlow() {
       }
     }
   }, [connected, fetchProducts, getAvailablePurchases]);
+
+  // Keep ref in sync for delayed finish
+  useEffect(() => {
+    connectedRef.current = connected;
+  }, [connected]);
 
   // Check subscription status separately to avoid infinite loop
   useEffect(() => {

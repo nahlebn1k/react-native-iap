@@ -21,6 +21,10 @@ class HybridRnIap: HybridRnIapSpec {
     private var purchaseUpdatedListeners: [(NitroPurchase) -> Void] = []
     private var purchaseErrorListeners: [(NitroPurchaseResult) -> Void] = []
     private var promotedProductListeners: [(NitroProduct) -> Void] = []
+    // Deduplication for purchase error events
+    private var lastPurchaseErrorCode: String? = nil
+    private var lastPurchaseErrorProductId: String? = nil
+    private var lastPurchaseErrorTimestamp: TimeInterval = 0
     
     // MARK: - Initialization
     
@@ -53,6 +57,9 @@ class HybridRnIap: HybridRnIapSpec {
                     self.purchaseErrorSub = OpenIapModule.shared.purchaseErrorListener { [weak self] error in
                         guard let self else { return }
                         Task { @MainActor in
+                            #if DEBUG
+                            print("[HybridRnIap] purchaseError event: code=\(error.code), productId=\(error.productId ?? "-")")
+                            #endif
                             let nitroError = self.createPurchaseErrorResult(
                                 code: error.code,
                                 message: error.message,
@@ -108,6 +115,9 @@ class HybridRnIap: HybridRnIapSpec {
                 self.purchaseErrorSub = OpenIapModule.shared.purchaseErrorListener { [weak self] error in
                     guard let self else { return }
                     Task { @MainActor in
+                        #if DEBUG
+                        print("[HybridRnIap] purchaseError event: code=\(error.code), productId=\(error.productId ?? "-")")
+                        #endif
                         let nitroError = self.createPurchaseErrorResult(
                             code: error.code,
                             message: error.message,
@@ -182,7 +192,8 @@ class HybridRnIap: HybridRnIapSpec {
                 let products = try await OpenIapModule.shared.fetchProducts(req)
                 return products.map { self.convertOpenIapProductToNitroProduct($0) }
             } catch {
-                throw OpenIapFailure.storeKitError(error: error)
+                // Propagate OpenIAP error
+                throw error
             }
         }
     }
@@ -198,7 +209,19 @@ class HybridRnIap: HybridRnIapSpec {
                 return
             }
             do {
-                try self.ensureConnection()
+                // Event-first behavior: don't reject Promise on connection issues
+                guard self.isInitialized else {
+                    #if DEBUG
+                    print("[HybridRnIap] requestPurchase while not initialized; sending E_INIT_CONNECTION")
+                    #endif
+                    let err = self.createPurchaseErrorResult(
+                        code: OpenIapError.E_INIT_CONNECTION,
+                        message: "IAP store connection not initialized",
+                        productId: iosRequest.sku
+                    )
+                    self.sendPurchaseError(err)
+                    return
+                }
                 // Delegate purchase to OpenIAP. It emits success/error events which we bridge above.
                 let props = OpenIapRequestPurchaseProps(
                     sku: iosRequest.sku,
@@ -216,13 +239,14 @@ class HybridRnIap: HybridRnIapSpec {
                 )
                 _ = try await OpenIapModule.shared.requestPurchase(props)
             } catch {
-                // OpenIAP will emit error event; also forward here for safety
+                // Ensure an error reaches JS even if OpenIAP threw before emitting.
+                // Use simple de-duplication window to avoid double-emitting.
                 let err = self.createPurchaseErrorResult(
                     code: OpenIapError.E_SERVICE_ERROR,
                     message: error.localizedDescription,
                     productId: iosRequest.sku
                 )
-                self.sendPurchaseError(err)
+                self.sendPurchaseErrorDedup(err)
             }
         }
     }
@@ -236,7 +260,8 @@ class HybridRnIap: HybridRnIapSpec {
                 let purchases = try await OpenIapModule.shared.getAvailablePurchases(props)
                 return purchases.map { self.convertOpenIapPurchaseToNitroPurchase($0) }
             } catch {
-                throw OpenIapFailure.networkError
+                // Propagate OpenIAP error or map to network error
+                throw OpenIapError.make(code: OpenIapError.E_NETWORK_ERROR)
             }
         }
     }
@@ -250,7 +275,7 @@ class HybridRnIap: HybridRnIapSpec {
                 return .first(ok)
             } catch {
                 let tid = iosParams.transactionId
-                throw OpenIapFailure.verificationFailed(reason: "Transaction not found: \(tid)")
+                throw OpenIapError.make(code: OpenIapError.E_PURCHASE_ERROR, message: "Transaction not found: \(tid)")
             }
         }
     }
@@ -271,7 +296,7 @@ class HybridRnIap: HybridRnIapSpec {
                 )
                 return .first(mapped)
             } catch {
-                throw OpenIapFailure.invalidReceipt
+                throw OpenIapError.make(code: OpenIapError.E_RECEIPT_FAILED, message: error.localizedDescription)
             }
         }
     }
@@ -283,7 +308,7 @@ class HybridRnIap: HybridRnIapSpec {
             do {
                 return try await OpenIapModule.shared.getStorefrontIOS()
             } catch {
-                throw OpenIapFailure.storeKitError(error: error)
+                throw OpenIapError.make(code: OpenIapError.E_SERVICE_ERROR, message: error.localizedDescription)
             }
         }
     }
@@ -347,7 +372,7 @@ class HybridRnIap: HybridRnIapSpec {
             do {
                 try await OpenIapModule.shared.requestPurchaseOnPromotedProductIOS()
             } catch {
-                throw OpenIapFailure.productNotFound(id: "promoted-product")
+                // Event-only: OpenIAP will emit purchaseError for this flow. Avoid Promise rejection.
             }
         }
     }
@@ -359,7 +384,7 @@ class HybridRnIap: HybridRnIapSpec {
                 return ok
             } catch {
                 // Fallback with explicit error for simulator or unsupported cases
-                throw OpenIapFailure.notSupported
+                throw OpenIapError.make(code: OpenIapError.E_FEATURE_NOT_SUPPORTED)
             }
         }
     }
@@ -423,7 +448,7 @@ class HybridRnIap: HybridRnIapSpec {
                 }
                 return nil
             } catch {
-                throw OpenIapFailure.productNotFound(id: sku)
+                throw OpenIapError.make(code: OpenIapError.E_SKU_NOT_FOUND, productId: sku)
             }
         }
     }
@@ -437,7 +462,7 @@ class HybridRnIap: HybridRnIapSpec {
                 }
                 return nil
             } catch {
-                throw OpenIapFailure.productNotFound(id: sku)
+                throw OpenIapError.make(code: OpenIapError.E_SKU_NOT_FOUND, productId: sku)
             }
         }
     }
@@ -459,7 +484,7 @@ class HybridRnIap: HybridRnIapSpec {
                 let ok = try await OpenIapModule.shared.syncIOS()
                 return ok
             } catch {
-                throw OpenIapFailure.networkError
+                throw OpenIapError.make(code: OpenIapError.E_SERVICE_ERROR, message: error.localizedDescription)
             }
         }
     }
@@ -473,7 +498,7 @@ class HybridRnIap: HybridRnIapSpec {
                 let purchases = try await OpenIapModule.shared.getAvailablePurchases(OpenIapPurchaseOptions(alsoPublishToEventListenerIOS: false, onlyIncludeActiveItemsIOS: true))
                 return purchases.map { self.convertOpenIapPurchaseToNitroPurchase($0) }
             } catch {
-                throw OpenIapFailure.storeKitError(error: error)
+                throw OpenIapError.make(code: OpenIapError.E_SERVICE_ERROR, message: error.localizedDescription)
             }
         }
     }
@@ -490,9 +515,9 @@ class HybridRnIap: HybridRnIapSpec {
                 if let receipt = try await OpenIapModule.shared.getReceiptDataIOS() {
                     return receipt
                 }
-                throw OpenIapFailure.invalidReceipt
+                throw OpenIapError.make(code: OpenIapError.E_RECEIPT_FAILED)
             } catch {
-                throw OpenIapFailure.invalidReceipt
+                throw OpenIapError.make(code: OpenIapError.E_RECEIPT_FAILED, message: error.localizedDescription)
             }
         }
     }
@@ -508,7 +533,7 @@ class HybridRnIap: HybridRnIapSpec {
         return Promise.async {
             try self.ensureConnection()
             do { return try await OpenIapModule.shared.getTransactionJwsIOS(sku: sku) } catch {
-                throw OpenIapFailure.verificationFailed(reason: "Can't find transaction for sku \(sku)")
+                throw OpenIapError.make(code: OpenIapError.E_TRANSACTION_VALIDATION_FAILED, message: "Can't find transaction for sku \(sku)")
             }
         }
     }
@@ -577,7 +602,7 @@ class HybridRnIap: HybridRnIapSpec {
     
     private func ensureConnection() throws {
         guard isInitialized else {
-            throw OpenIapFailure.restoreFailed(reason: "Connection not initialized. Call initConnection() first.")
+            throw OpenIapError.make(code: OpenIapError.E_INIT_CONNECTION, message: "Connection not initialized. Call initConnection() first.")
         }
     }
     
@@ -588,9 +613,24 @@ class HybridRnIap: HybridRnIapSpec {
     }
     
     private func sendPurchaseError(_ error: NitroPurchaseResult) {
+        // Update last error for deduplication
+        lastPurchaseErrorCode = error.code
+        lastPurchaseErrorProductId = error.purchaseToken
+        lastPurchaseErrorTimestamp = Date().timeIntervalSince1970
         for listener in purchaseErrorListeners {
             listener(error)
         }
+    }
+
+    private func sendPurchaseErrorDedup(_ error: NitroPurchaseResult) {
+        let now = Date().timeIntervalSince1970
+        let sameCode = (error.code == lastPurchaseErrorCode)
+        let sameProduct = (error.purchaseToken == lastPurchaseErrorProductId)
+        let withinWindow = (now - lastPurchaseErrorTimestamp) < 0.3
+        if sameCode && sameProduct && withinWindow {
+            return
+        }
+        sendPurchaseError(error)
     }
     
     private func createPurchaseErrorResult(code: String, message: String, productId: String? = nil) -> NitroPurchaseResult {
