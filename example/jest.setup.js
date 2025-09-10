@@ -29,9 +29,6 @@ jest.mock('react-native-nitro-modules', () => ({
       requestPromotedProductIOS: jest.fn(() => Promise.resolve()),
       validateReceiptIos: jest.fn(() => Promise.resolve()),
       getReceiptIOS: jest.fn(() => Promise.resolve()),
-      flushFailedPurchasesCachedAsPendingAndroid: jest.fn(() =>
-        Promise.resolve(),
-      ),
       deepLinkingGetPendingPurchases: jest.fn(() => Promise.resolve()),
       presentCodeRedemptionSheetIOS: jest.fn(() => Promise.resolve()),
     })),
@@ -55,7 +52,6 @@ jest.mock('../src/index', () => ({
   // Android specific
   acknowledgePurchaseAndroid: jest.fn(() => Promise.resolve()),
   consumePurchaseAndroid: jest.fn(() => Promise.resolve()),
-  flushFailedPurchasesCachedAsPendingAndroid: jest.fn(() => Promise.resolve()),
   deepLinkingGetPendingPurchases: jest.fn(() => Promise.resolve()),
   validateReceiptAndroid: jest.fn(() => Promise.resolve()),
 
