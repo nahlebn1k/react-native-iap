@@ -2,7 +2,7 @@
 // This file is automatically copied during postinstall
 // Do not edit directly - modify the source file instead
 
-import { useState } from 'react'
+import {useState} from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-} from 'react-native'
-import { presentCodeRedemptionSheetIOS, useIAP } from 'react-native-iap'
+} from 'react-native';
+import {presentCodeRedemptionSheetIOS, useIAP} from 'react-native-iap';
 
 /**
  * Offer Code Redemption Example
@@ -24,7 +24,7 @@ import { presentCodeRedemptionSheetIOS, useIAP } from 'react-native-iap'
 
 // Platform-specific content helpers
 const getPlatformContent = () => {
-  const isIOS = Platform.OS === 'ios'
+  const isIOS = Platform.OS === 'ios';
   return {
     buttonText: isIOS ? '🎁 Redeem Offer Code' : '🎁 Open Play Store',
     buttonSubtext: isIOS ? 'Enter code in-app' : 'Redeem in Play Store',
@@ -37,31 +37,31 @@ const getPlatformContent = () => {
     testingInfo: isIOS
       ? '• Use TestFlight or App Store Connect to generate test codes\n• Test on real devices (not simulators)\n• Sandbox environment supports offer codes'
       : '• Generate promo codes in Google Play Console\n• Test with your Google account\n• Ensure app is properly configured for IAP',
-  }
-}
+  };
+};
 
 export default function OfferCodeScreen() {
-  const { connected } = useIAP()
-  const [isRedeeming, setIsRedeeming] = useState(false)
-  const platformContent = getPlatformContent()
-  const isIOS = Platform.OS === 'ios'
+  const {connected} = useIAP();
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const platformContent = getPlatformContent();
+  const isIOS = Platform.OS === 'ios';
 
   const handleRedeemCode = async () => {
     if (!connected) {
-      Alert.alert('Not Connected', 'Please wait for store connection')
-      return
+      Alert.alert('Not Connected', 'Please wait for store connection');
+      return;
     }
 
-    setIsRedeeming(true)
+    setIsRedeeming(true);
 
     try {
       if (isIOS) {
         // Present native iOS redemption sheet
-        await presentCodeRedemptionSheetIOS()
+        await presentCodeRedemptionSheetIOS();
         Alert.alert(
           'Redemption Sheet Presented',
-          'After successful redemption, the purchase will appear in your purchase history.'
-        )
+          'After successful redemption, the purchase will appear in your purchase history.',
+        );
       } else {
         // For Android, we need to guide users to the Play Store
         Alert.alert(
@@ -73,19 +73,19 @@ export default function OfferCodeScreen() {
             '3. Select "Redeem code"\n' +
             '4. Enter your promo code\n' +
             '5. Return to this app',
-          [{ text: 'OK', style: 'default' }]
-        )
+          [{text: 'OK', style: 'default'}],
+        );
       }
     } catch (error) {
-      console.error('Error redeeming code:', error)
+      console.error('Error redeeming code:', error);
       Alert.alert(
         'Error',
-        `Failed to redeem code: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+        `Failed to redeem code: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     } finally {
-      setIsRedeeming(false)
+      setIsRedeeming(false);
     }
-  }
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -159,7 +159,7 @@ export default function OfferCodeScreen() {
         )}
       </View>
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -322,4 +322,4 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#856404',
   },
-})
+});

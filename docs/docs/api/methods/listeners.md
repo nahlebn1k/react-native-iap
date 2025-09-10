@@ -17,42 +17,42 @@ react-native-iap provides event listeners to handle purchase updates and errors.
 Listens for purchase updates from **the** store.
 
 ```tsx
-import { purchaseUpdatedListener } from 'react-native-iap'
+import {purchaseUpdatedListener} from 'react-native-iap';
 
 const setupPurchaseListener = () => {
   const subscription = purchaseUpdatedListener((purchase) => {
-    console.log('Purchase received:', purchase)
-    handlePurchaseUpdate(purchase)
-  })
+    console.log('Purchase received:', purchase);
+    handlePurchaseUpdate(purchase);
+  });
 
   // Clean up listener when component unmounts
   return () => {
     if (subscription) {
-      subscription.remove()
+      subscription.remove();
     }
-  }
-}
+  };
+};
 
 const handlePurchaseUpdate = async (purchase) => {
   try {
     // Validate receipt on your server
-    const isValid = await validateReceiptOnServer(purchase)
+    const isValid = await validateReceiptOnServer(purchase);
 
     if (isValid) {
       // Grant purchase to user
-      await grantPurchaseToUser(purchase)
+      await grantPurchaseToUser(purchase);
 
       // Finish the transaction
-      await finishTransaction({ purchase })
+      await finishTransaction({purchase});
 
-      console.log('Purchase completed successfully')
+      console.log('Purchase completed successfully');
     } else {
-      console.error('Receipt validation failed')
+      console.error('Receipt validation failed');
     }
   } catch (error) {
-    console.error('Error handling purchase:', error)
+    console.error('Error handling purchase:', error);
   }
-}
+};
 ```
 
 **Parameters:**
@@ -67,52 +67,52 @@ const handlePurchaseUpdate = async (purchase) => {
 Listens for purchase errors from the store.
 
 ```tsx
-import { purchaseErrorListener } from 'react-native-iap'
+import {purchaseErrorListener} from 'react-native-iap';
 
 const setupErrorListener = () => {
   const subscription = purchaseErrorListener((error) => {
-    console.error('Purchase error:', error)
-    handlePurchaseError(error)
-  })
+    console.error('Purchase error:', error);
+    handlePurchaseError(error);
+  });
 
   // Clean up listener when component unmounts
   return () => {
     if (subscription) {
-      subscription.remove()
+      subscription.remove();
     }
-  }
-}
+  };
+};
 
 const handlePurchaseError = (error) => {
   switch (error.code) {
     case 'E_USER_CANCELLED':
       // User cancelled the purchase
-      console.log('Purchase cancelled by user')
-      break
+      console.log('Purchase cancelled by user');
+      break;
 
     case 'E_NETWORK_ERROR':
       // Network error occurred
       showErrorMessage(
-        'Network error. Please check your connection and try again.'
-      )
-      break
+        'Network error. Please check your connection and try again.',
+      );
+      break;
 
     case 'E_ITEM_UNAVAILABLE':
       // Product is not available
-      showErrorMessage('This product is currently unavailable.')
-      break
+      showErrorMessage('This product is currently unavailable.');
+      break;
 
     case 'E_ALREADY_OWNED':
       // User already owns this product
-      showErrorMessage('You already own this product.')
-      break
+      showErrorMessage('You already own this product.');
+      break;
 
     default:
       // Other errors
-      showErrorMessage(`Purchase failed: ${error.message}`)
-      break
+      showErrorMessage(`Purchase failed: ${error.message}`);
+      break;
   }
-}
+};
 ```
 
 **Parameters:**
@@ -131,34 +131,34 @@ import {
   promotedProductListenerIOS,
   requestPromotedProductIOS,
   buyPromotedProductIOS,
-} from 'react-native-iap'
+} from 'react-native-iap';
 
 const setupPromotedProductListener = () => {
   const subscription = promotedProductListenerIOS((product) => {
-    console.log('Promoted product purchase initiated:', product)
-    handlePromotedProduct(product)
-  })
+    console.log('Promoted product purchase initiated:', product);
+    handlePromotedProduct(product);
+  });
 
   return () => {
     if (subscription) {
-      subscription.remove()
+      subscription.remove();
     }
-  }
-}
+  };
+};
 
 const handlePromotedProduct = async (product) => {
   try {
     // Show your custom purchase UI with the product details
-    const confirmed = await showProductConfirmation(product)
+    const confirmed = await showProductConfirmation(product);
 
     if (confirmed) {
       // Complete the promoted purchase
-      await buyPromotedProductIOS()
+      await buyPromotedProductIOS();
     }
   } catch (error) {
-    console.error('Error handling promoted product:', error)
+    console.error('Error handling promoted product:', error);
   }
-}
+};
 ```
 
 **Parameters:**
@@ -180,87 +180,81 @@ const handlePromotedProduct = async (product) => {
 ### Functional Components
 
 ```tsx
-import React, { useEffect } from 'react'
-import {
-  purchaseUpdatedListener,
-  purchaseErrorListener,
-} from 'react-native-iap'
+import React, {useEffect} from 'react';
+import {purchaseUpdatedListener, purchaseErrorListener} from 'react-native-iap';
 
 export default function PurchaseManager() {
   useEffect(() => {
     // Set up purchase listeners
     const purchaseUpdateSubscription = purchaseUpdatedListener((purchase) => {
-      handlePurchaseUpdate(purchase)
-    })
+      handlePurchaseUpdate(purchase);
+    });
 
     const purchaseErrorSubscription = purchaseErrorListener((error) => {
-      handlePurchaseError(error)
-    })
+      handlePurchaseError(error);
+    });
 
     // Cleanup function
     return () => {
-      purchaseUpdateSubscription?.remove()
-      purchaseErrorSubscription?.remove()
-    }
-  }, [])
+      purchaseUpdateSubscription?.remove();
+      purchaseErrorSubscription?.remove();
+    };
+  }, []);
 
   const handlePurchaseUpdate = async (purchase) => {
     // Handle purchase logic
-  }
+  };
 
   const handlePurchaseError = (error) => {
     // Handle error logic
-  }
+  };
 
-  return <div>{/* Your component JSX */}</div>
+  return <div>{/* Your component JSX */}</div>;
 }
 ```
 
 ### Class Components
 
 ```tsx
-import React, { Component } from 'react'
-import {
-  purchaseUpdatedListener,
-  purchaseErrorListener,
-} from 'react-native-iap'
+import React, {Component} from 'react';
+import {purchaseUpdatedListener, purchaseErrorListener} from 'react-native-iap';
 
 class PurchaseManager extends Component {
-  purchaseUpdateSubscription = null
-  purchaseErrorSubscription = null
+  purchaseUpdateSubscription = null;
+  purchaseErrorSubscription = null;
 
   componentDidMount() {
     // Set up listeners
     this.purchaseUpdateSubscription = purchaseUpdatedListener((purchase) => {
-      this.handlePurchaseUpdate(purchase)
-    })
+      this.handlePurchaseUpdate(purchase);
+    });
 
     this.purchaseErrorSubscription = purchaseErrorListener((error) => {
-      this.handlePurchaseError(error)
-    })
+      this.handlePurchaseError(error);
+    });
   }
 
   componentWillUnmount() {
     // Clean up listeners
     if (this.purchaseUpdateSubscription) {
-      this.purchaseUpdateSubscription.remove()
+      this.purchaseUpdateSubscription.remove();
     }
 
     if (this.purchaseErrorSubscription) {
-      this.purchaseErrorSubscription.remove()
+      this.purchaseErrorSubscription.remove();
     }
   }
 
   handlePurchaseUpdate = async (purchase) => {
     // Handle purchase logic
-  }
+  };
 
   handlePurchaseError = (error) => {
     // Handle error logic
-  }
+  };
 
   render() {
-    return <div>{/* Your component JSX */}</div>
+    return <div>{/* Your component JSX */}</div>;
   }
 }
 ```
@@ -270,70 +264,71 @@ class PurchaseManager extends Component {
 You can create a custom hook to encapsulate purchase listener logic:
 
 ```tsx
-import { useEffect, useCallback } from 'react'
+import {useEffect, useCallback} from 'react';
 import {
   purchaseUpdatedListener,
   purchaseErrorListener,
   finishTransaction,
-} from 'react-native-iap'
+} from 'react-native-iap';
 
 export const usePurchaseHandler = () => {
   const handlePurchaseUpdate = useCallback(async (purchase) => {
     try {
       // Validate receipt
-      const isValid = await validateReceiptOnServer(purchase)
+      const isValid = await validateReceiptOnServer(purchase);
 
       if (isValid) {
         // Grant purchase
-        await grantPurchaseToUser(purchase)
+        await grantPurchaseToUser(purchase);
 
         // Finish transaction
-        await finishTransaction({ purchase })
+        await finishTransaction({purchase});
 
         // Show success message
-        showSuccessMessage('Purchase completed successfully!')
+        showSuccessMessage('Purchase completed successfully!');
       } else {
-        console.error('Receipt validation failed')
-        showErrorMessage('Purchase validation failed. Please contact support.')
+        console.error('Receipt validation failed');
+        showErrorMessage('Purchase validation failed. Please contact support.');
       }
     } catch (error) {
-      console.error('Error handling purchase:', error)
-      showErrorMessage('An error occurred while processing your purchase.')
+      console.error('Error handling purchase:', error);
+      showErrorMessage('An error occurred while processing your purchase.');
     }
-  }, [])
+  }, []);
 
   const handlePurchaseError = useCallback((error) => {
-    console.error('Purchase error:', error)
+    console.error('Purchase error:', error);
 
     switch (error.code) {
       case 'E_USER_CANCELLED':
         // Don't show error for user cancellation
-        break
+        break;
       default:
-        showErrorMessage(`Purchase failed: ${error.message}`)
-        break
+        showErrorMessage(`Purchase failed: ${error.message}`);
+        break;
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     // Set up listeners
     const purchaseUpdateSubscription =
-      purchaseUpdatedListener(handlePurchaseUpdate)
-    const purchaseErrorSubscription = purchaseErrorListener(handlePurchaseError)
+      purchaseUpdatedListener(handlePurchaseUpdate);
+    const purchaseErrorSubscription =
+      purchaseErrorListener(handlePurchaseError);
 
     // Cleanup
     return () => {
-      purchaseUpdateSubscription?.remove()
-      purchaseErrorSubscription?.remove()
-    }
-  }, [handlePurchaseUpdate, handlePurchaseError])
-}
+      purchaseUpdateSubscription?.remove();
+      purchaseErrorSubscription?.remove();
+    };
+  }, [handlePurchaseUpdate, handlePurchaseError]);
+};
 
 // Usage in component
 export default function MyStoreComponent() {
-  usePurchaseHandler() // Sets up listeners automatically
+  usePurchaseHandler(); // Sets up listeners automatically
 
-  return <div>{/* Your store UI */}</div>
+  return <div>{/* Your store UI */}</div>;
 }
 ```
 
@@ -353,17 +348,17 @@ Always handle both purchase updates and errors:
 useEffect(() => {
   const purchaseUpdateSubscription = purchaseUpdatedListener((purchase) => {
     // Handle successful/pending purchases
-  })
+  });
 
   const purchaseErrorSubscription = purchaseErrorListener((error) => {
     // Handle purchase errors
-  })
+  });
 
   return () => {
-    purchaseUpdateSubscription?.remove()
-    purchaseErrorSubscription?.remove()
-  }
-}, [])
+    purchaseUpdateSubscription?.remove();
+    purchaseErrorSubscription?.remove();
+  };
+}, []);
 ```
 
 ### Purchase States
@@ -381,22 +376,22 @@ Handle each state appropriately in your purchase listener.
 For simpler usage, consider using the `useIAP` hook which automatically manages listeners:
 
 ```tsx
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 
 export default function StoreComponent() {
-  const { currentPurchase, currentPurchaseError } = useIAP()
+  const {currentPurchase, currentPurchaseError} = useIAP();
 
   useEffect(() => {
     if (currentPurchase) {
-      handlePurchaseUpdate(currentPurchase)
+      handlePurchaseUpdate(currentPurchase);
     }
-  }, [currentPurchase])
+  }, [currentPurchase]);
 
   useEffect(() => {
     if (currentPurchaseError) {
-      handlePurchaseError(currentPurchaseError)
+      handlePurchaseError(currentPurchaseError);
     }
-  }, [currentPurchaseError])
+  }, [currentPurchaseError]);
 
   // Rest of component
 }

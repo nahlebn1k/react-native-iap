@@ -15,7 +15,7 @@ React Native IAP conforms to the OpenIAP specification, which provides standardi
 React Native IAP uses Nitro Modules for high-performance native bridge communication. The core types are imported from `react-native-nitro-modules`:
 
 ```typescript
-import type { HybridObject } from 'react-native-nitro-modules'
+import type {HybridObject} from 'react-native-nitro-modules';
 ```
 
 ## Key Type Categories
@@ -59,7 +59,7 @@ import {
   convertNitroPurchaseToPurchase,
   validateNitroProduct,
   validateNitroPurchase,
-} from 'react-native-iap/utils/type-bridge'
+} from 'react-native-iap/utils/type-bridge';
 ```
 
 ## Error Types
@@ -68,11 +68,11 @@ Error handling types follow the OpenIAP specification:
 
 ```typescript
 interface NitroPurchaseResult {
-  responseCode: number
-  debugMessage?: string
-  code: string
-  message: string
-  purchaseToken?: string
+  responseCode: number;
+  debugMessage?: string;
+  code: string;
+  message: string;
+  purchaseToken?: string;
 }
 ```
 

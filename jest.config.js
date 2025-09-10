@@ -5,10 +5,7 @@ module.exports = {
     '<rootDir>/nitrogen/',
     '<rootDir>/example/',
   ],
-  testPathIgnorePatterns: [
-    '<rootDir>/example/',
-    '<rootDir>/node_modules/',
-  ],
+  testPathIgnorePatterns: ['<rootDir>/example/', '<rootDir>/node_modules/'],
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.test.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/?(*.)+(spec|test).{js,jsx,ts,tsx}',

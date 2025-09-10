@@ -102,9 +102,7 @@ export default function SubscriptionFlow() {
             `✅ Subscription activated (${purchase.platform})\n` +
               `Product: ${purchase.productId}\n` +
               `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
-              `Date: ${new Date(
-                purchase.transactionDate,
-              ).toLocaleDateString()}`,
+              `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}`,
           );
           Alert.alert('Success', 'Subscription activated successfully!');
         } else {

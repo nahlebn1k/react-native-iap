@@ -97,13 +97,13 @@ Common causes:
 5. **Store setup incomplete** - see platform-specific requirements below
 
 ```tsx
-const { connected, fetchProducts } = useIAP()
+const {connected, fetchProducts} = useIAP();
 
 useEffect(() => {
   if (connected) {
-    fetchProducts({ skus: ['com.yourapp.product1'], type: 'inapp' })
+    fetchProducts({skus: ['com.yourapp.product1'], type: 'inapp'});
   }
-}, [connected])
+}, [connected]);
 ```
 
 **Platform-specific setup requirements:**
@@ -160,19 +160,19 @@ Users cannot cancel subscriptions within your app. They need to manage their sub
 For non-consumable products and subscriptions:
 
 ```tsx
-const { getAvailablePurchases } = useIAP()
+const {getAvailablePurchases} = useIAP();
 
 const restorePurchases = async () => {
   try {
-    const purchases = await getAvailablePurchases()
+    const purchases = await getAvailablePurchases();
     // Process and validate restored purchases
     for (const purchase of purchases) {
-      await validateAndGrantPurchase(purchase)
+      await validateAndGrantPurchase(purchase);
     }
   } catch (error) {
-    console.error('Restore failed:', error)
+    console.error('Restore failed:', error);
   }
-}
+};
 ```
 
 ## Receipt Validation
@@ -191,19 +191,19 @@ const restorePurchases = async () => {
 const handlePurchaseUpdate = async (purchase) => {
   try {
     // 1. Validate on server
-    const isValid = await validateReceiptOnServer(purchase)
+    const isValid = await validateReceiptOnServer(purchase);
 
     if (isValid) {
       // 2. Grant purchase
-      await grantPurchaseToUser(purchase)
+      await grantPurchaseToUser(purchase);
 
       // 3. Finish transaction
-      await finishTransaction({ purchase })
+      await finishTransaction({purchase});
     }
   } catch (error) {
-    console.error('Purchase validation failed:', error)
+    console.error('Purchase validation failed:', error);
   }
-}
+};
 ```
 
 ### What happens if I don't call `finishTransaction()`?
@@ -291,9 +291,9 @@ Initialize as early as possible in your app's lifecycle:
 
 ```tsx
 function App() {
-  const { connected } = useIAP() // Connection starts automatically
+  const {connected} = useIAP(); // Connection starts automatically
 
-  return <YourAppContent />
+  return <YourAppContent />;
 }
 ```
 
@@ -302,18 +302,18 @@ function App() {
 Implement purchase state management:
 
 ```tsx
-const [isPurchasing, setIsPurchasing] = useState(false)
+const [isPurchasing, setIsPurchasing] = useState(false);
 
 const handlePurchase = async (productId) => {
-  if (isPurchasing) return
+  if (isPurchasing) return;
 
-  setIsPurchasing(true)
+  setIsPurchasing(true);
   try {
-    await requestPurchase({ sku: productId })
+    await requestPurchase({sku: productId});
   } finally {
-    setIsPurchasing(false)
+    setIsPurchasing(false);
   }
-}
+};
 ```
 
 ### Should I cache product information?
@@ -330,12 +330,12 @@ When using the `useIAP` hook:
 // No manual caching needed - just fetch when connected
 useEffect(() => {
   if (connected) {
-    fetchProducts({ skus: productIds, type: 'inapp' })
+    fetchProducts({skus: productIds, type: 'inapp'});
   }
-}, [connected])
+}, [connected]);
 
 // Access products directly from state
-products.map((product) => <ProductItem key={product.id} product={product} />)
+products.map((product) => <ProductItem key={product.id} product={product} />);
 ```
 
 ## Migration and Updates
@@ -358,21 +358,21 @@ npx expo install react-native-iap
 
 ```tsx
 // react-native-iap (OLD)
-import { useIAP, withIAPContext } from 'react-native-iap'
+import {useIAP, withIAPContext} from 'react-native-iap';
 
 function App() {
   return (
     <withIAPContext>
       <YourApp />
     </withIAPContext>
-  )
+  );
 }
 
 // react-native-iap (NEW)
-import { useIAP } from 'react-native-iap' // No context wrapper needed
+import {useIAP} from 'react-native-iap'; // No context wrapper needed
 
 function App() {
-  return <YourApp /> // Hook works anywhere in your app
+  return <YourApp />; // Hook works anywhere in your app
 }
 ```
 
@@ -388,7 +388,7 @@ const {
   requestPurchase,
   finishTransaction,
   // ... other methods
-} = useIAP()
+} = useIAP();
 ```
 
 **Key Benefits of Migration:**
@@ -446,45 +446,45 @@ These issues ([#114](https://github.com/hyochan/react-native-iap/issues/114), [r
 ```tsx
 // This pattern may cause duplicate calls
 const purchaseListener = purchaseUpdatedListener(async (purchase) => {
-  console.log('Purchase received:', purchase.transactionId)
-  await validateOnServer(purchase)
-  await finishTransaction({ purchase, isConsumable: false })
+  console.log('Purchase received:', purchase.transactionId);
+  await validateOnServer(purchase);
+  await finishTransaction({purchase, isConsumable: false});
   // ⚠️ Listener may be called again after finishTransaction
-})
+});
 
 await requestPurchase({
   sku: 'your.product.id',
   andDangerouslyFinishTransactionAutomatically: false,
-})
+});
 ```
 
 **Workaround:** Track processed transactions to avoid duplicate processing:
 
 ```tsx
-const processedTransactions = new Set()
+const processedTransactions = new Set();
 
 const purchaseListener = purchaseUpdatedListener(async (purchase) => {
-  const transactionId = purchase.transactionId
+  const transactionId = purchase.transactionId;
 
   // Skip if already processed
   if (processedTransactions.has(transactionId)) {
-    console.log('Transaction already processed:', transactionId)
-    return
+    console.log('Transaction already processed:', transactionId);
+    return;
   }
 
   // Mark as processed
-  processedTransactions.add(transactionId)
+  processedTransactions.add(transactionId);
 
   try {
-    console.log('Processing purchase:', transactionId)
-    await validateOnServer(purchase)
-    await finishTransaction({ purchase, isConsumable: false })
+    console.log('Processing purchase:', transactionId);
+    await validateOnServer(purchase);
+    await finishTransaction({purchase, isConsumable: false});
   } catch (error) {
     // Remove from processed set if validation fails
-    processedTransactions.delete(transactionId)
-    console.error('Purchase processing failed:', error)
+    processedTransactions.delete(transactionId);
+    console.error('Purchase processing failed:', error);
   }
-})
+});
 ```
 
 **Root Cause:** This appears to be an Apple StoreKit behavior where finishing a transaction triggers another purchase notification. This is a known iOS platform limitation, not specific to react-native-iap.

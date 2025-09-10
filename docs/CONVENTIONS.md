@@ -37,15 +37,15 @@ This document outlines the coding conventions and best practices for the react-n
 
 ```typescript
 // External
-import React from 'react'
-import { Platform } from 'react-native'
+import React from 'react';
+import {Platform} from 'react-native';
 
 // Internal modules
-import { ExpoIapModule } from '../ExpoIapModule'
-import { validateReceipt } from '../utils'
+import {ExpoIapModule} from '../ExpoIapModule';
+import {validateReceipt} from '../utils';
 
 // Types
-import type { Product, Purchase } from '../types'
+import type {Product, Purchase} from '../types';
 ```
 
 ## TypeScript Conventions
@@ -60,18 +60,18 @@ import type { Product, Purchase } from '../types'
 ```typescript
 // ✅ Good
 export interface Product {
-  id: string
-  title: string
-  price: string
+  id: string;
+  title: string;
+  price: string;
 }
 
-export type Platform = 'ios' | 'android'
-export type PurchaseResult = Success | Failure
+export type Platform = 'ios' | 'android';
+export type PurchaseResult = Success | Failure;
 
 // ❌ Bad
 export interface Platform {
   // Should be type
-  name: 'ios' | 'android'
+  name: 'ios' | 'android';
 }
 ```
 
@@ -80,16 +80,16 @@ export interface Platform {
 ```typescript
 // ✅ Good - Clear parameter and return types
 export const fetchProducts = async (params: {
-  skus: string[]
-  type?: 'inapp' | 'subs'
+  skus: string[];
+  type?: 'inapp' | 'subs';
 }): Promise<Product[]> => {
   // implementation
-}
+};
 
 // ❌ Bad - Missing types
 export const fetchProducts = async (params) => {
   // implementation
-}
+};
 ```
 
 ## Platform-Specific Naming
@@ -111,26 +111,26 @@ Functions that handle platform differences internally do NOT need suffixes.
 // iOS-only functions (no Platform.OS check needed in iOS module)
 export const validateReceiptIOS = async (sku: string): Promise<boolean> => {
   // iOS implementation
-  return ExpoIapModule.validateReceiptIOS(sku)
-}
+  return ExpoIapModule.validateReceiptIOS(sku);
+};
 
 export const getStorefrontIOS = async (): Promise<string> => {
-  return ExpoIapModule.getStorefront()
-}
+  return ExpoIapModule.getStorefront();
+};
 
 // Android-only functions (no Platform.OS check needed in Android module)
 export const deepLinkToSubscriptionsAndroid = async ({
   sku,
   packageName,
 }: {
-  sku: string
-  packageName: string
+  sku: string;
+  packageName: string;
 }): Promise<void> => {
   // Android implementation
   return Linking.openURL(
-    `https://play.google.com/store/account/subscriptions?package=${packageName}&sku=${sku}`
-  )
-}
+    `https://play.google.com/store/account/subscriptions?package=${packageName}&sku=${sku}`,
+  );
+};
 ```
 
 **Note**: Platform-specific modules (ios.ts, android.ts) don't need Platform.OS checks. The main API (index.ts) handles platform routing.
@@ -140,8 +140,8 @@ export const deepLinkToSubscriptionsAndroid = async ({
 ```typescript
 // These functions handle platform differences internally
 export const fetchProducts = async (params: {
-  skus: string[]
-  type?: 'inapp' | 'subs'
+  skus: string[];
+  type?: 'inapp' | 'subs';
 }): Promise<Product[]> => {
   return (
     Platform.select({
@@ -152,8 +152,8 @@ export const fetchProducts = async (params: {
         /* Android implementation */
       },
     })() || []
-  )
-}
+  );
+};
 
 // New v2.7.0+ API - No Platform.OS checks needed!
 export const requestPurchase = async (productId: string): Promise<Purchase> => {
@@ -166,8 +166,8 @@ export const requestPurchase = async (productId: string): Promise<Purchase> => {
         skus: [productId],
       },
     },
-  })
-}
+  });
+};
 ```
 
 #### ❌ Incorrect: Missing Platform Suffix
@@ -175,13 +175,13 @@ export const requestPurchase = async (productId: string): Promise<Purchase> => {
 ```typescript
 // BAD: iOS-only function without suffix
 export const getStorefront = (): Promise<string> => {
-  return ExpoIapModule.getStorefront() // Only works on iOS!
-}
+  return ExpoIapModule.getStorefront(); // Only works on iOS!
+};
 
 // GOOD: Should be
 export const getStorefrontIOS = (): Promise<string> => {
   // Platform check and implementation
-}
+};
 ```
 
 ### Type Naming Convention
@@ -215,12 +215,12 @@ Cross-platform types:
 
 ```typescript
 // ✅ Good
-const purchaseHistory: Purchase[] = []
-const MAX_RETRY_COUNT = 3
+const purchaseHistory: Purchase[] = [];
+const MAX_RETRY_COUNT = 3;
 
 // ❌ Bad
-const ph = [] // Too abbreviated
-const maxretrycount = 3 // Wrong case
+const ph = []; // Too abbreviated
+const maxretrycount = 3; // Wrong case
 ```
 
 ### Error Handling
@@ -230,18 +230,18 @@ Always use descriptive error messages and proper error types:
 ```typescript
 // ✅ Good - Clear error message
 try {
-  await requestPurchase({ request: { ios: { sku: 'invalid' } } })
+  await requestPurchase({request: {ios: {sku: 'invalid'}}});
 } catch (error) {
   if (error.code === 'E_ITEM_UNAVAILABLE') {
-    console.error('Product not found in store')
+    console.error('Product not found in store');
   }
 }
 
 // ❌ Bad - Generic error handling
 try {
-  await requestPurchase({ request: { sku: 'invalid' } })
+  await requestPurchase({request: {sku: 'invalid'}});
 } catch (error) {
-  console.error('Error')
+  console.error('Error');
 }
 ```
 
@@ -251,18 +251,18 @@ When using platform-specific functions, handle errors gracefully:
 // ✅ Good - Let the function handle platform checks internally
 getStorefrontIOS()
   .then((storefront) => {
-    console.log('Storefront:', storefront)
+    console.log('Storefront:', storefront);
   })
   .catch((error) => {
     // Will throw on non-iOS platforms
-    console.log('Storefront not available:', error.message)
-  })
+    console.log('Storefront not available:', error.message);
+  });
 
 // ❌ Bad - Redundant platform check
 if (Platform.OS === 'ios') {
   getStorefrontIOS().then((storefront) => {
-    console.log('Storefront:', storefront)
-  })
+    console.log('Storefront:', storefront);
+  });
 }
 ```
 
@@ -273,27 +273,27 @@ Always use async/await over promises:
 ```typescript
 // ✅ Good
 export const fetchProducts = async (params: {
-  skus: string[]
-  type?: 'inapp' | 'subs'
+  skus: string[];
+  type?: 'inapp' | 'subs';
 }): Promise<Product[]> => {
   try {
-    const products = await ExpoIapModule.fetchProducts(params)
-    return products
+    const products = await ExpoIapModule.fetchProducts(params);
+    return products;
   } catch (error) {
-    console.error('Failed to get products:', error)
-    throw error
+    console.error('Failed to get products:', error);
+    throw error;
   }
-}
+};
 
 // ❌ Bad
 export const fetchProducts = (params): Promise<Product[]> => {
   return ExpoIapModule.fetchProducts(params)
     .then((products) => products)
     .catch((error) => {
-      console.error('Failed to get products:', error)
-      throw error
-    })
-}
+      console.error('Failed to get products:', error);
+      throw error;
+    });
+};
 ```
 
 ## Documentation
@@ -318,11 +318,11 @@ All public APIs must have JSDoc comments:
  * @platform iOS
  */
 export const fetchProductsIOS = async (params: {
-  skus: string[]
-  type?: 'inapp' | 'subs'
+  skus: string[];
+  type?: 'inapp' | 'subs';
 }): Promise<ProductIOS[]> => {
   // implementation
-}
+};
 ````
 
 ### README Files
@@ -351,30 +351,30 @@ export const fetchProductsIOS = async (params: {
 describe('PurchaseManager', () => {
   describe('iOS', () => {
     beforeEach(() => {
-      Platform.OS = 'ios'
-    })
+      Platform.OS = 'ios';
+    });
 
     it('should get products on iOS', async () => {
       const products = await fetchProductsIOS({
         skus: ['com.example.product'],
         type: 'inapp',
-      })
-      expect(products).toHaveLength(1)
-    })
-  })
+      });
+      expect(products).toHaveLength(1);
+    });
+  });
 
   describe('Android', () => {
     beforeEach(() => {
-      Platform.OS = 'android'
-    })
+      Platform.OS = 'android';
+    });
 
     it('should throw error on Android', async () => {
       await expect(
-        fetchProductsIOS({ skus: ['com.example.product'], type: 'inapp' })
-      ).rejects.toThrow('This method is only available on iOS')
-    })
-  })
-})
+        fetchProductsIOS({skus: ['com.example.product'], type: 'inapp'}),
+      ).rejects.toThrow('This method is only available on iOS');
+    });
+  });
+});
 ```
 
 ### Test Naming
@@ -453,17 +453,17 @@ Example:
 ```typescript
 // Step 1: Add new function with correct naming
 export const getStorefrontIOS = async (): Promise<string> => {
-  return ExpoIapModule.getStorefront()
-}
+  return ExpoIapModule.getStorefront();
+};
 
 // Step 2: Deprecate old function
 /**
  * @deprecated Use getStorefrontIOS instead
  */
 export const getStorefront = async (): Promise<string> => {
-  console.warn('getStorefront is deprecated. Use getStorefrontIOS instead.')
-  return getStorefrontIOS()
-}
+  console.warn('getStorefront is deprecated. Use getStorefrontIOS instead.');
+  return getStorefrontIOS();
+};
 ```
 
 ## New v2.7.0 API Guidelines
@@ -487,17 +487,17 @@ await requestPurchase({
     },
   },
   type: 'inapp',
-})
+});
 
 // ❌ Bad - Old API with Platform.OS checks
 if (Platform.OS === 'ios') {
   await requestPurchase({
-    request: { sku: productId },
-  })
+    request: {sku: productId},
+  });
 } else {
   await requestPurchase({
-    request: { skus: [productId] },
-  })
+    request: {skus: [productId]},
+  });
 }
 ```
 
@@ -522,13 +522,13 @@ await requestPurchase({
     },
   },
   type: 'subs',
-})
+});
 
 // ❌ Bad - Using deprecated requestSubscription
 await requestSubscription({
   sku: subscriptionId,
   skus: [subscriptionId],
-})
+});
 ```
 
 ## Benefits

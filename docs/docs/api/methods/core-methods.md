@@ -26,8 +26,8 @@ This difference exists because:
 - iOS App Store processes purchases individually
 - Google Play Store supports batch purchases
 
-| Method              | iOS                | Android               | Cross-Platform Solution             |
-| ------------------- | ------------------ | --------------------- | ----------------------------------- |
+| Method | iOS | Android | Cross-Platform Solution |
+| --- | --- | --- | --- |
 | `requestPurchase()` | Uses `sku: string` | Uses `skus: string[]` | Platform-specific handling required |
 
 **💡 Best Practice:** Use the new platform-specific API (v14.0+) to avoid platform checks:
@@ -36,11 +36,11 @@ This difference exists because:
 // New API - no Platform.OS checks needed!
 await requestPurchase({
   request: {
-    ios: { sku: productId },
-    android: { skus: [productId] },
+    ios: {sku: productId},
+    android: {skus: [productId]},
   },
   type: 'inapp',
-})
+});
 ```
 
 **🎯 Recommended Approach:** For the best developer experience, use the [`useIAP` hook](/docs/api/use-iap) which handles platform differences automatically and provides a cleaner callback-based API.
@@ -52,16 +52,16 @@ await requestPurchase({
 Initializes the connection to the store. This method must be called before any other store operations.
 
 ```tsx
-import { initConnection } from 'react-native-iap'
+import {initConnection} from 'react-native-iap';
 
 const initialize = async () => {
   try {
-    const result = await initConnection()
-    console.log('Store connection initialized:', result)
+    const result = await initConnection();
+    console.log('Store connection initialized:', result);
   } catch (error) {
-    console.error('Failed to initialize connection:', error)
+    console.error('Failed to initialize connection:', error);
   }
-}
+};
 ```
 
 **Returns:** `Promise<boolean>` — True if connection was successful
@@ -73,16 +73,16 @@ const initialize = async () => {
 Ends the connection to the store and cleans up resources.
 
 ```tsx
-import { endConnection } from 'react-native-iap'
+import {endConnection} from 'react-native-iap';
 
 const cleanup = async () => {
   try {
-    const result = await endConnection()
-    console.log('Store connection ended:', result)
+    const result = await endConnection();
+    console.log('Store connection ended:', result);
   } catch (error) {
-    console.error('Failed to end connection:', error)
+    console.error('Failed to end connection:', error);
   }
-}
+};
 ```
 
 **Returns:** `Promise<Purchase[]>` — Array of subscriptions whose auto-renewal status changed
@@ -96,7 +96,7 @@ const cleanup = async () => {
 Fetches product or subscription information from the store.
 
 ```tsx
-import { fetchProducts } from 'react-native-iap'
+import {fetchProducts} from 'react-native-iap';
 
 // Fetch in-app products
 const loadProducts = async () => {
@@ -104,14 +104,14 @@ const loadProducts = async () => {
     const products = await fetchProducts({
       skus: ['com.example.product1', 'com.example.product2'],
       type: 'inapp',
-    })
+    });
 
-    console.log('Products:', products)
-    return products
+    console.log('Products:', products);
+    return products;
   } catch (error) {
-    console.error('Failed to fetch products:', error)
+    console.error('Failed to fetch products:', error);
   }
-}
+};
 
 // Fetch subscriptions
 const loadSubscriptions = async () => {
@@ -119,14 +119,14 @@ const loadSubscriptions = async () => {
     const subscriptions = await fetchProducts({
       skus: ['com.example.premium_monthly', 'com.example.premium_yearly'],
       type: 'subs',
-    })
+    });
 
-    console.log('Subscriptions:', subscriptions)
-    return subscriptions
+    console.log('Subscriptions:', subscriptions);
+    return subscriptions;
   } catch (error) {
-    console.error('Failed to fetch subscriptions:', error)
+    console.error('Failed to fetch subscriptions:', error);
   }
-}
+};
 ```
 
 **Parameters:**
@@ -153,7 +153,7 @@ Initiates a purchase request for products or subscriptions.
 #### Platform-Specific API (v14.0+) - Recommended
 
 ```tsx
-import { requestPurchase } from 'react-native-iap'
+import {requestPurchase} from 'react-native-iap';
 
 // Product purchase
 const buyProduct = async (productId: string) => {
@@ -169,11 +169,11 @@ const buyProduct = async (productId: string) => {
         },
       },
       type: 'inapp',
-    })
+    });
   } catch (error) {
-    console.error('Purchase failed:', error)
+    console.error('Purchase failed:', error);
   }
-}
+};
 
 // Subscription purchase
 const buySubscription = async (subscriptionId: string, subscription?: any) => {
@@ -194,11 +194,11 @@ const buySubscription = async (subscriptionId: string, subscription?: any) => {
         },
       },
       type: 'subs',
-    })
+    });
   } catch (error) {
-    console.error('Subscription failed:', error)
+    console.error('Subscription failed:', error);
   }
-}
+};
 ```
 
 **Parameters:**
@@ -217,27 +217,27 @@ const buySubscription = async (subscriptionId: string, subscription?: any) => {
 Retrieves available purchases for restoration (non-consumable products and subscriptions).
 
 ```tsx
-import { getAvailablePurchases } from 'react-native-iap'
+import {getAvailablePurchases} from 'react-native-iap';
 
 const restorePurchases = async () => {
   try {
     const purchases = await getAvailablePurchases({
       onlyIncludeActiveItemsIOS: true,
-    })
+    });
 
     for (const purchase of purchases) {
       // Validate and restore each purchase
-      const isValid = await validateReceiptOnServer(purchase)
+      const isValid = await validateReceiptOnServer(purchase);
       if (isValid) {
-        await grantPurchaseToUser(purchase)
+        await grantPurchaseToUser(purchase);
       }
     }
 
-    console.log('Purchases restored')
+    console.log('Purchases restored');
   } catch (error) {
-    console.error('Failed to restore purchases:', error)
+    console.error('Failed to restore purchases:', error);
   }
-}
+};
 ```
 
 **Parameters:**
@@ -253,29 +253,29 @@ const restorePurchases = async () => {
 Completes a purchase transaction. Must be called after successful receipt validation.
 
 ```tsx
-import { finishTransaction } from 'react-native-iap'
+import {finishTransaction} from 'react-native-iap';
 
 const completePurchase = async (purchase) => {
   try {
     // Validate receipt on your server first
-    const isValid = await validateReceiptOnServer(purchase)
+    const isValid = await validateReceiptOnServer(purchase);
 
     if (isValid) {
       // Grant purchase to user
-      await grantPurchaseToUser(purchase)
+      await grantPurchaseToUser(purchase);
 
       // Finish the transaction
       await finishTransaction({
         purchase,
         isConsumable: true, // Set to true for consumable products
-      })
+      });
 
-      console.log('Transaction completed')
+      console.log('Transaction completed');
     }
   } catch (error) {
-    console.error('Failed to finish transaction:', error)
+    console.error('Failed to finish transaction:', error);
   }
-}
+};
 ```
 
 **Parameters:**
@@ -293,17 +293,17 @@ const completePurchase = async (purchase) => {
 Fired when a purchase is successful or when a pending purchase is completed.
 
 ```tsx
-import { purchaseUpdatedListener } from 'react-native-iap'
+import {purchaseUpdatedListener} from 'react-native-iap';
 
 const subscription = purchaseUpdatedListener((purchase) => {
-  console.log('Purchase successful:', purchase)
+  console.log('Purchase successful:', purchase);
   // 1. Validate receipt with backend
   // 2. Deliver content to user
   // 3. Call finishTransaction to acknowledge
-})
+});
 
 // Later, clean up
-subscription.remove()
+subscription.remove();
 ```
 
 **Returns:** `EventSubscription` object with `remove()` method
@@ -313,24 +313,24 @@ subscription.remove()
 Fired when a purchase fails or is cancelled by the user.
 
 ```tsx
-import { purchaseErrorListener } from 'react-native-iap'
+import {purchaseErrorListener} from 'react-native-iap';
 
 const subscription = purchaseErrorListener((error) => {
   switch (error.code) {
     case 'E_USER_CANCELLED':
       // User cancelled - no action needed
-      break
+      break;
     case 'E_ITEM_UNAVAILABLE':
       // Product not available
-      break
+      break;
     case 'E_NETWORK_ERROR':
       // Retry with backoff
-      break
+      break;
   }
-})
+});
 
 // Later, clean up
-subscription.remove()
+subscription.remove();
 ```
 
 **Returns:** `EventSubscription` object with `remove()` method
@@ -342,28 +342,28 @@ subscription.remove()
 Validates receipt on both iOS and Android platforms.
 
 ```tsx
-import { validateReceipt, Platform } from 'react-native-iap'
+import {validateReceipt, Platform} from 'react-native-iap';
 
 const validatePurchase = async (productId: string, purchase: any) => {
   try {
     if (Platform.OS === 'ios') {
       // iOS: Simple validation with just product ID
-      const result = await validateReceipt(productId)
-      return result
+      const result = await validateReceipt(productId);
+      return result;
     } else if (Platform.OS === 'android') {
       // Android: Requires additional parameters
       const result = await validateReceipt(productId, {
         packageName: purchase.packageNameAndroid,
         productToken: purchase.purchaseToken,
         isSub: false, // Set to true for subscriptions
-      })
-      return result
+      });
+      return result;
     }
   } catch (error) {
-    console.error('Validation failed:', error)
-    throw error
+    console.error('Validation failed:', error);
+    throw error;
   }
-}
+};
 ```
 
 **Parameters:**
@@ -384,28 +384,28 @@ const validatePurchase = async (productId: string, purchase: any) => {
 Retrieves all active subscriptions with detailed status information.
 
 ```tsx
-import { getActiveSubscriptions } from 'react-native-iap'
+import {getActiveSubscriptions} from 'react-native-iap';
 
 const checkSubscriptions = async () => {
   try {
     // Get all active subscriptions
-    const allActiveSubscriptions = await getActiveSubscriptions()
+    const allActiveSubscriptions = await getActiveSubscriptions();
 
     // Or filter by specific subscription IDs
     const specificSubscriptions = await getActiveSubscriptions([
       'premium_monthly',
       'premium_yearly',
-    ])
+    ]);
 
     for (const subscription of allActiveSubscriptions) {
-      console.log('Product ID:', subscription.productId)
-      console.log('Is Active:', subscription.isActive)
-      console.log('Will expire soon:', subscription.willExpireSoon)
+      console.log('Product ID:', subscription.productId);
+      console.log('Is Active:', subscription.isActive);
+      console.log('Will expire soon:', subscription.willExpireSoon);
     }
   } catch (error) {
-    console.error('Failed to get active subscriptions:', error)
+    console.error('Failed to get active subscriptions:', error);
   }
-}
+};
 ```
 
 **Returns:** `Promise<ActiveSubscription[]>`
@@ -415,26 +415,26 @@ const checkSubscriptions = async () => {
 Checks if the user has any active subscriptions.
 
 ```tsx
-import { hasActiveSubscriptions } from 'react-native-iap'
+import {hasActiveSubscriptions} from 'react-native-iap';
 
 const checkIfUserHasSubscription = async () => {
   try {
     // Check if user has any active subscriptions
-    const hasAny = await hasActiveSubscriptions()
+    const hasAny = await hasActiveSubscriptions();
 
     // Or check for specific subscriptions
     const hasPremium = await hasActiveSubscriptions([
       'premium_monthly',
       'premium_yearly',
-    ])
+    ]);
 
     if (hasPremium) {
-      console.log('User has premium subscription')
+      console.log('User has premium subscription');
     }
   } catch (error) {
-    console.error('Failed to check subscription status:', error)
+    console.error('Failed to check subscription status:', error);
   }
-}
+};
 ```
 
 **Returns:** `Promise<boolean>`
@@ -448,16 +448,16 @@ Acknowledges a purchase on Android (required for non-consumable products).
 > **Note:** This is called automatically by [`finishTransaction()`](#finishtransaction) when `isConsumable` is `false`. You typically don't need to call this directly.
 
 ```tsx
-import { acknowledgePurchaseAndroid } from 'react-native-iap'
+import {acknowledgePurchaseAndroid} from 'react-native-iap';
 
 const acknowledgePurchase = async (purchaseToken: string) => {
   try {
-    const result = await acknowledgePurchaseAndroid(purchaseToken)
-    console.log('Purchase acknowledged:', result)
+    const result = await acknowledgePurchaseAndroid(purchaseToken);
+    console.log('Purchase acknowledged:', result);
   } catch (error) {
-    console.error('Failed to acknowledge purchase:', error)
+    console.error('Failed to acknowledge purchase:', error);
   }
-}
+};
 ```
 
 **Platform:** Android only
@@ -473,16 +473,16 @@ Consumes a purchase on Android (required for consumable products).
 > **Note:** This is called automatically by [`finishTransaction()`](#finishtransaction) when `isConsumable` is `true`. You typically don't need to call this directly.
 
 ```tsx
-import { consumePurchaseAndroid } from 'react-native-iap'
+import {consumePurchaseAndroid} from 'react-native-iap';
 
 const consumePurchase = async (purchaseToken: string) => {
   try {
-    const result = await consumePurchaseAndroid(purchaseToken)
-    console.log('Purchase consumed:', result)
+    const result = await consumePurchaseAndroid(purchaseToken);
+    console.log('Purchase consumed:', result);
   } catch (error) {
-    console.error('Failed to consume purchase:', error)
+    console.error('Failed to consume purchase:', error);
   }
-}
+};
 ```
 
 **Platform:** Android only
@@ -498,15 +498,15 @@ const consumePurchase = async (purchaseToken: string) => {
 Listener for App Store promoted product events.
 
 ```tsx
-import { promotedProductListenerIOS } from 'react-native-iap'
+import {promotedProductListenerIOS} from 'react-native-iap';
 
 const subscription = promotedProductListenerIOS((product) => {
-  console.log('Promoted product:', product)
+  console.log('Promoted product:', product);
   // Trigger purchase flow for the promoted product
-})
+});
 
 // Later, clean up
-subscription.remove()
+subscription.remove();
 ```
 
 **Platform:** iOS only
@@ -518,16 +518,16 @@ subscription.remove()
 Syncs iOS purchases with App Store.
 
 ```tsx
-import { syncIOS } from 'react-native-iap'
+import {syncIOS} from 'react-native-iap';
 
 const syncPurchases = async () => {
   try {
-    const result = await syncIOS()
-    console.log('Sync successful:', result)
+    const result = await syncIOS();
+    console.log('Sync successful:', result);
   } catch (error) {
-    console.error('Failed to sync:', error)
+    console.error('Failed to sync:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -539,18 +539,18 @@ const syncPurchases = async () => {
 Requests the promoted product from the App Store.
 
 ```tsx
-import { requestPromotedProductIOS } from 'react-native-iap'
+import {requestPromotedProductIOS} from 'react-native-iap';
 
 const getPromotedProduct = async () => {
   try {
-    const product = await requestPromotedProductIOS()
+    const product = await requestPromotedProductIOS();
     if (product) {
-      console.log('Promoted product:', product)
+      console.log('Promoted product:', product);
     }
   } catch (error) {
-    console.error('Failed to get promoted product:', error)
+    console.error('Failed to get promoted product:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -562,16 +562,16 @@ const getPromotedProduct = async () => {
 Presents the code redemption sheet for offer codes.
 
 ```tsx
-import { presentCodeRedemptionSheetIOS } from 'react-native-iap'
+import {presentCodeRedemptionSheetIOS} from 'react-native-iap';
 
 const showRedemptionSheet = async () => {
   try {
-    const result = await presentCodeRedemptionSheetIOS()
-    console.log('Sheet presented:', result)
+    const result = await presentCodeRedemptionSheetIOS();
+    console.log('Sheet presented:', result);
   } catch (error) {
-    console.error('Failed to present sheet:', error)
+    console.error('Failed to present sheet:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -583,16 +583,16 @@ const showRedemptionSheet = async () => {
 Completes the purchase of a promoted product.
 
 ```tsx
-import { buyPromotedProductIOS } from 'react-native-iap'
+import {buyPromotedProductIOS} from 'react-native-iap';
 
 const purchasePromotedProduct = async () => {
   try {
-    await buyPromotedProductIOS()
-    console.log('Promoted product purchased')
+    await buyPromotedProductIOS();
+    console.log('Promoted product purchased');
   } catch (error) {
-    console.error('Failed to purchase promoted product:', error)
+    console.error('Failed to purchase promoted product:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -604,16 +604,16 @@ const purchasePromotedProduct = async () => {
 Clears unfinished transactions.
 
 ```tsx
-import { clearTransactionIOS } from 'react-native-iap'
+import {clearTransactionIOS} from 'react-native-iap';
 
 const clearTransactions = async () => {
   try {
-    await clearTransactionIOS()
-    console.log('Transactions cleared')
+    await clearTransactionIOS();
+    console.log('Transactions cleared');
   } catch (error) {
-    console.error('Failed to clear transactions:', error)
+    console.error('Failed to clear transactions:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -625,16 +625,16 @@ const clearTransactions = async () => {
 Begins a refund request for a product (iOS 15+).
 
 ```tsx
-import { beginRefundRequestIOS } from 'react-native-iap'
+import {beginRefundRequestIOS} from 'react-native-iap';
 
 const requestRefund = async (sku: string) => {
   try {
-    const status = await beginRefundRequestIOS(sku)
-    console.log('Refund status:', status)
+    const status = await beginRefundRequestIOS(sku);
+    console.log('Refund status:', status);
   } catch (error) {
-    console.error('Failed to begin refund:', error)
+    console.error('Failed to begin refund:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS 15+ only
@@ -646,16 +646,16 @@ const requestRefund = async (sku: string) => {
 Gets subscription status for a product.
 
 ```tsx
-import { subscriptionStatusIOS } from 'react-native-iap'
+import {subscriptionStatusIOS} from 'react-native-iap';
 
 const getSubscriptionStatus = async (sku: string) => {
   try {
-    const statuses = await subscriptionStatusIOS(sku)
-    console.log('Subscription statuses:', statuses)
+    const statuses = await subscriptionStatusIOS(sku);
+    console.log('Subscription statuses:', statuses);
   } catch (error) {
-    console.error('Failed to get status:', error)
+    console.error('Failed to get status:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -667,18 +667,18 @@ const getSubscriptionStatus = async (sku: string) => {
 Gets current entitlement for a product.
 
 ```tsx
-import { currentEntitlementIOS } from 'react-native-iap'
+import {currentEntitlementIOS} from 'react-native-iap';
 
 const getEntitlement = async (sku: string) => {
   try {
-    const entitlement = await currentEntitlementIOS(sku)
+    const entitlement = await currentEntitlementIOS(sku);
     if (entitlement) {
-      console.log('Current entitlement:', entitlement)
+      console.log('Current entitlement:', entitlement);
     }
   } catch (error) {
-    console.error('Failed to get entitlement:', error)
+    console.error('Failed to get entitlement:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -690,18 +690,18 @@ const getEntitlement = async (sku: string) => {
 Gets latest transaction for a product.
 
 ```tsx
-import { latestTransactionIOS } from 'react-native-iap'
+import {latestTransactionIOS} from 'react-native-iap';
 
 const getLatestTransaction = async (sku: string) => {
   try {
-    const transaction = await latestTransactionIOS(sku)
+    const transaction = await latestTransactionIOS(sku);
     if (transaction) {
-      console.log('Latest transaction:', transaction)
+      console.log('Latest transaction:', transaction);
     }
   } catch (error) {
-    console.error('Failed to get transaction:', error)
+    console.error('Failed to get transaction:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -713,16 +713,16 @@ const getLatestTransaction = async (sku: string) => {
 Gets all pending transactions.
 
 ```tsx
-import { getPendingTransactionsIOS } from 'react-native-iap'
+import {getPendingTransactionsIOS} from 'react-native-iap';
 
 const getPendingTransactions = async () => {
   try {
-    const transactions = await getPendingTransactionsIOS()
-    console.log('Pending transactions:', transactions)
+    const transactions = await getPendingTransactionsIOS();
+    console.log('Pending transactions:', transactions);
   } catch (error) {
-    console.error('Failed to get pending transactions:', error)
+    console.error('Failed to get pending transactions:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -734,16 +734,16 @@ const getPendingTransactions = async () => {
 Shows the manage subscriptions screen.
 
 ```tsx
-import { showManageSubscriptionsIOS } from 'react-native-iap'
+import {showManageSubscriptionsIOS} from 'react-native-iap';
 
 const showManageSubscriptions = async () => {
   try {
-    const result = await showManageSubscriptionsIOS()
-    console.log('Manage subscriptions shown:', result)
+    const result = await showManageSubscriptionsIOS();
+    console.log('Manage subscriptions shown:', result);
   } catch (error) {
-    console.error('Failed to show manage subscriptions:', error)
+    console.error('Failed to show manage subscriptions:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -755,16 +755,16 @@ const showManageSubscriptions = async () => {
 Checks if user is eligible for intro offer.
 
 ```tsx
-import { isEligibleForIntroOfferIOS } from 'react-native-iap'
+import {isEligibleForIntroOfferIOS} from 'react-native-iap';
 
 const checkEligibility = async (groupID: string) => {
   try {
-    const isEligible = await isEligibleForIntroOfferIOS(groupID)
-    console.log('Eligible for intro offer:', isEligible)
+    const isEligible = await isEligibleForIntroOfferIOS(groupID);
+    console.log('Eligible for intro offer:', isEligible);
   } catch (error) {
-    console.error('Failed to check eligibility:', error)
+    console.error('Failed to check eligibility:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -776,16 +776,16 @@ const checkEligibility = async (groupID: string) => {
 Gets receipt data.
 
 ```tsx
-import { getReceiptDataIOS } from 'react-native-iap'
+import {getReceiptDataIOS} from 'react-native-iap';
 
 const getReceiptData = async () => {
   try {
-    const receiptData = await getReceiptDataIOS()
-    console.log('Receipt data:', receiptData)
+    const receiptData = await getReceiptDataIOS();
+    console.log('Receipt data:', receiptData);
   } catch (error) {
-    console.error('Failed to get receipt data:', error)
+    console.error('Failed to get receipt data:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -797,16 +797,16 @@ const getReceiptData = async () => {
 Checks if a transaction is verified.
 
 ```tsx
-import { isTransactionVerifiedIOS } from 'react-native-iap'
+import {isTransactionVerifiedIOS} from 'react-native-iap';
 
 const checkVerification = async (sku: string) => {
   try {
-    const isVerified = await isTransactionVerifiedIOS(sku)
-    console.log('Transaction verified:', isVerified)
+    const isVerified = await isTransactionVerifiedIOS(sku);
+    console.log('Transaction verified:', isVerified);
   } catch (error) {
-    console.error('Failed to check verification:', error)
+    console.error('Failed to check verification:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -818,18 +818,18 @@ const checkVerification = async (sku: string) => {
 Gets transaction JWS representation.
 
 ```tsx
-import { getTransactionJwsIOS } from 'react-native-iap'
+import {getTransactionJwsIOS} from 'react-native-iap';
 
 const getTransactionJws = async (sku: string) => {
   try {
-    const jws = await getTransactionJwsIOS(sku)
+    const jws = await getTransactionJwsIOS(sku);
     if (jws) {
-      console.log('Transaction JWS:', jws)
+      console.log('Transaction JWS:', jws);
     }
   } catch (error) {
-    console.error('Failed to get JWS:', error)
+    console.error('Failed to get JWS:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -841,16 +841,16 @@ const getTransactionJws = async (sku: string) => {
 Gets the storefront identifier for the user's App Store account.
 
 ```tsx
-import { getStorefrontIOS } from 'react-native-iap'
+import {getStorefrontIOS} from 'react-native-iap';
 
 const getStorefront = async () => {
   try {
-    const storefront = await getStorefrontIOS()
-    console.log('User storefront:', storefront) // e.g., 'USA', 'GBR', 'KOR'
+    const storefront = await getStorefrontIOS();
+    console.log('User storefront:', storefront); // e.g., 'USA', 'GBR', 'KOR'
   } catch (error) {
-    console.error('Failed to get storefront:', error)
+    console.error('Failed to get storefront:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -862,20 +862,20 @@ const getStorefront = async () => {
 Gets the original app transaction ID if the app was purchased from the App Store.
 
 ```tsx
-import { getAppTransactionIOS } from 'react-native-iap'
+import {getAppTransactionIOS} from 'react-native-iap';
 
 const getAppTransaction = async () => {
   try {
-    const appTransaction = await getAppTransactionIOS()
+    const appTransaction = await getAppTransactionIOS();
     if (appTransaction) {
-      console.log('App was purchased, transaction ID:', appTransaction)
+      console.log('App was purchased, transaction ID:', appTransaction);
     } else {
-      console.log('App was not purchased from App Store')
+      console.log('App was not purchased from App Store');
     }
   } catch (error) {
-    console.error('Failed to get app transaction:', error)
+    console.error('Failed to get app transaction:', error);
   }
-}
+};
 ```
 
 **Platform:** iOS only
@@ -887,26 +887,26 @@ const getAppTransaction = async () => {
 All methods can throw errors that should be handled appropriately:
 
 ```tsx
-import { PurchaseError } from 'react-native-iap'
+import {PurchaseError} from 'react-native-iap';
 
 try {
   await requestPurchase({
     request: {
-      ios: { sku: 'product_id' },
-      android: { skus: ['product_id'] },
+      ios: {sku: 'product_id'},
+      android: {skus: ['product_id']},
     },
-  })
+  });
 } catch (error) {
   if (error instanceof PurchaseError) {
     switch (error.code) {
       case 'E_USER_CANCELLED':
-        console.log('User cancelled purchase')
-        break
+        console.log('User cancelled purchase');
+        break;
       case 'E_NETWORK_ERROR':
-        console.log('Network error, please try again')
-        break
+        console.log('Network error, please try again');
+        break;
       default:
-        console.error('Purchase failed:', error.message)
+        console.error('Purchase failed:', error.message);
     }
   }
 }

@@ -149,13 +149,13 @@ class App extends Component {
 For a more modern approach using React hooks, here's a comprehensive implementation:
 
 ```tsx
-import React, { useEffect, useState, useCallback } from 'react'
-import { Platform, Alert, InteractionManager } from 'react-native'
-import { useIAP } from 'react-native-iap'
+import React, {useEffect, useState, useCallback} from 'react';
+import {Platform, Alert, InteractionManager} from 'react-native';
+import {useIAP} from 'react-native-iap';
 
 // Define your product SKUs
-const bulbPackSkus = ['dev.hyo.martie.10bulbs', 'dev.hyo.martie.30bulbs']
-const subscriptionSkus = ['dev.hyo.martie.premium']
+const bulbPackSkus = ['dev.hyo.martie.10bulbs', 'dev.hyo.martie.30bulbs'];
+const subscriptionSkus = ['dev.hyo.martie.premium'];
 
 export default function PurchaseScreen() {
   const {
@@ -168,134 +168,135 @@ export default function PurchaseScreen() {
     requestPurchase,
     finishTransaction,
     validateReceipt,
-  } = useIAP()
+  } = useIAP();
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isReady, setIsReady] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   // Initialize products when IAP connection is established
   useEffect(() => {
-    if (!connected) return
+    if (!connected) return;
 
     const initializeIAP = async () => {
       try {
         // Get both products and subscriptions
-        await fetchProducts({ skus: bulbPackSkus, type: 'inapp' })
-        await fetchProducts({ skus: subscriptionSkus, type: 'subs' })
-        setIsReady(true)
+        await fetchProducts({skus: bulbPackSkus, type: 'inapp'});
+        await fetchProducts({skus: subscriptionSkus, type: 'subs'});
+        setIsReady(true);
       } catch (error) {
-        console.error('Error initializing IAP:', error)
+        console.error('Error initializing IAP:', error);
       }
-    }
+    };
 
-    initializeIAP()
-  }, [connected, fetchProducts])
+    initializeIAP();
+  }, [connected, fetchProducts]);
 
   // Validate receipt helper
   const handleValidateReceipt = useCallback(
     async (sku: string, purchase: any) => {
       try {
         if (Platform.OS === 'ios') {
-          return await validateReceipt(sku)
+          return await validateReceipt(sku);
         } else if (Platform.OS === 'android') {
-          const purchaseToken = purchase.purchaseToken // Unified field for both iOS and Android
-          const packageName = purchase.packageNameAndroid || 'your.package.name'
-          const isSub = subscriptionSkus.includes(sku)
+          const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+          const packageName =
+            purchase.packageNameAndroid || 'your.package.name';
+          const isSub = subscriptionSkus.includes(sku);
 
           return await validateReceipt(sku, {
             packageName,
             productToken: purchaseToken,
             isSub,
-          })
+          });
         }
-        return { isValid: true } // Default for unsupported platforms
+        return {isValid: true}; // Default for unsupported platforms
       } catch (error) {
-        console.error('Receipt validation failed:', error)
-        return { isValid: false }
+        console.error('Receipt validation failed:', error);
+        return {isValid: false};
       }
     },
-    [validateReceipt]
-  )
+    [validateReceipt],
+  );
 
   // Handle successful purchases
   useEffect(() => {
     if (currentPurchase) {
-      handlePurchaseUpdate(currentPurchase)
+      handlePurchaseUpdate(currentPurchase);
     }
-  }, [currentPurchase])
+  }, [currentPurchase]);
 
   // Handle purchase errors
   useEffect(() => {
     if (currentPurchaseError) {
-      setIsLoading(false)
+      setIsLoading(false);
 
       // Don't show error for user cancellation
       if (currentPurchaseError.code === 'E_USER_CANCELLED') {
-        return
+        return;
       }
 
       Alert.alert(
         'Purchase Error',
-        'Failed to complete purchase. Please try again.'
-      )
-      console.error('Purchase error:', currentPurchaseError)
+        'Failed to complete purchase. Please try again.',
+      );
+      console.error('Purchase error:', currentPurchaseError);
     }
-  }, [currentPurchaseError])
+  }, [currentPurchaseError]);
 
   const handlePurchaseUpdate = async (purchase: any) => {
     try {
-      setIsLoading(true)
-      console.log('Processing purchase:', purchase)
+      setIsLoading(true);
+      console.log('Processing purchase:', purchase);
 
-      const productId = purchase.id
+      const productId = purchase.id;
 
       // Validate receipt on your server
-      const validationResult = await handleValidateReceipt(productId, purchase)
+      const validationResult = await handleValidateReceipt(productId, purchase);
 
       if (validationResult.isValid) {
         // Determine if this is a consumable product
-        const isConsumable = bulbPackSkus.includes(productId)
+        const isConsumable = bulbPackSkus.includes(productId);
 
         // Finish the transaction
         await finishTransaction({
           purchase,
           isConsumable, // Set to true for consumable products
-        })
+        });
 
         // Record purchase in your database
-        await recordPurchaseInDatabase(purchase, productId)
+        await recordPurchaseInDatabase(purchase, productId);
 
         // Update local state (e.g., add bulbs, enable premium features)
-        await updateLocalState(productId)
+        await updateLocalState(productId);
 
         // Show success message
-        showSuccessMessage(productId)
+        showSuccessMessage(productId);
       } else {
         Alert.alert(
           'Validation Error',
-          'Purchase could not be validated. Please contact support.'
-        )
+          'Purchase could not be validated. Please contact support.',
+        );
       }
     } catch (error) {
-      console.error('Error handling purchase:', error)
-      Alert.alert('Error', 'Failed to process purchase.')
+      console.error('Error handling purchase:', error);
+      Alert.alert('Error', 'Failed to process purchase.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Request purchase for products
   const handlePurchaseBulbs = async (productId: string) => {
     if (!connected) {
       Alert.alert(
         'Not Connected',
-        'Store connection unavailable. Please try again later.'
-      )
-      return
+        'Store connection unavailable. Please try again later.',
+      );
+      return;
     }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
 
       // Platform-specific purchase request (v2.7.0+)
       await requestPurchase({
@@ -308,34 +309,34 @@ export default function PurchaseScreen() {
             skus: [productId],
           },
         },
-      })
+      });
     } catch (error) {
-      setIsLoading(false)
-      console.error('Purchase request failed:', error)
+      setIsLoading(false);
+      console.error('Purchase request failed:', error);
     }
-  }
+  };
 
   // Request purchase for subscriptions
   const handlePurchaseSubscription = async (subscriptionId: string) => {
     if (!connected) {
       Alert.alert(
         'Not Connected',
-        'Store connection unavailable. Please try again later.'
-      )
-      return
+        'Store connection unavailable. Please try again later.',
+      );
+      return;
     }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
 
       // Find subscription to get offer details
-      const subscription = subscriptions.find((s) => s.id === subscriptionId)
+      const subscription = subscriptions.find((s) => s.id === subscriptionId);
       const subscriptionOffers = subscription?.subscriptionOfferDetails?.map(
         (offer) => ({
           sku: subscriptionId,
           offerToken: offer.offerToken,
-        })
-      ) || [{ sku: subscriptionId, offerToken: '' }]
+        }),
+      ) || [{sku: subscriptionId, offerToken: ''}];
 
       // Platform-specific subscription request (v2.7.0+)
       await requestPurchase({
@@ -349,46 +350,46 @@ export default function PurchaseScreen() {
           },
         },
         type: 'subs',
-      })
+      });
     } catch (error) {
-      setIsLoading(false)
-      console.error('Subscription request failed:', error)
+      setIsLoading(false);
+      console.error('Subscription request failed:', error);
     }
-  }
+  };
 
   const recordPurchaseInDatabase = async (purchase: any, productId: string) => {
     // Implement your database recording logic here
-    console.log('Recording purchase in database:', { purchase, productId })
-  }
+    console.log('Recording purchase in database:', {purchase, productId});
+  };
 
   const updateLocalState = async (productId: string) => {
     // Update your local app state based on the purchase
     if (bulbPackSkus.includes(productId)) {
       // Add bulbs to user's account
-      const bulbCount = productId.includes('10bulbs') ? 10 : 30
-      console.log(`Adding ${bulbCount} bulbs to user account`)
+      const bulbCount = productId.includes('10bulbs') ? 10 : 30;
+      console.log(`Adding ${bulbCount} bulbs to user account`);
     } else if (subscriptionSkus.includes(productId)) {
       // Enable premium features
-      console.log('Enabling premium features')
+      console.log('Enabling premium features');
     }
-  }
+  };
 
   const showSuccessMessage = (productId: string) => {
     InteractionManager.runAfterInteractions(() => {
       if (bulbPackSkus.includes(productId)) {
-        const bulbCount = productId.includes('10bulbs') ? 10 : 30
+        const bulbCount = productId.includes('10bulbs') ? 10 : 30;
         Alert.alert(
           'Thank You!',
-          `${bulbCount} bulbs have been added to your account.`
-        )
+          `${bulbCount} bulbs have been added to your account.`,
+        );
       } else if (subscriptionSkus.includes(productId)) {
         Alert.alert(
           'Thank You!',
-          'Premium subscription activated successfully.'
-        )
+          'Premium subscription activated successfully.',
+        );
       }
-    })
-  }
+    });
+  };
 
   return (
     <View>
@@ -397,7 +398,7 @@ export default function PurchaseScreen() {
       <Text>Products Ready: {isReady ? 'Yes' : 'No'}</Text>
       {/* Add your purchase buttons and UI here */}
     </View>
-  )
+  );
 }
 ```
 
@@ -413,7 +414,7 @@ This fundamental difference requires platform-specific handling. Starting from v
 ### New Platform-Specific API (v2.7.0+)
 
 ```tsx
-import { requestPurchase } from 'react-native-iap'
+import {requestPurchase} from 'react-native-iap';
 
 // Cleaner approach with platform-specific parameters
 const handleBuyProduct = async (productId: string) => {
@@ -429,17 +430,17 @@ const handleBuyProduct = async (productId: string) => {
           obfuscatedAccountIdAndroid: 'user-123', // Optional: user identifier
         },
       },
-    })
+    });
   } catch (err) {
-    console.warn(err.code, err.message)
+    console.warn(err.code, err.message);
   }
-}
+};
 ```
 
 ### Legacy API (Still Supported)
 
 ```tsx
-import { requestPurchase, Platform } from 'react-native-iap'
+import {requestPurchase, Platform} from 'react-native-iap';
 
 // For regular products (consumables/non-consumables)
 const handleBuyProduct = async (productId) => {
@@ -447,18 +448,18 @@ const handleBuyProduct = async (productId) => {
     if (Platform.OS === 'ios') {
       // iOS: single product purchase
       await requestPurchase({
-        request: { sku: productId },
-      })
+        request: {sku: productId},
+      });
     } else if (Platform.OS === 'android') {
       // Android: array of products (even for single purchase)
       await requestPurchase({
-        request: { skus: [productId] },
-      })
+        request: {skus: [productId]},
+      });
     }
   } catch (err) {
-    console.warn(err.code, err.message)
+    console.warn(err.code, err.message);
   }
-}
+};
 ```
 
 **For subscriptions, the platform differences are even more significant:**
@@ -469,7 +470,7 @@ const handleBuyProduct = async (productId) => {
 const handleBuySubscription = async (subscriptionId: string) => {
   try {
     // Find the subscription product to get offer details (Android)
-    const subscription = subscriptions.find((s) => s.id === subscriptionId)
+    const subscription = subscriptions.find((s) => s.id === subscriptionId);
 
     await requestPurchase({
       request: {
@@ -488,11 +489,11 @@ const handleBuySubscription = async (subscriptionId: string) => {
         },
       },
       type: 'subs',
-    })
+    });
   } catch (err) {
-    console.warn(err.code, err.message)
+    console.warn(err.code, err.message);
   }
-}
+};
 ```
 
 ### Legacy Subscription API
@@ -502,28 +503,28 @@ const handleBuySubscription = async (subscriptionId: string) => {
   try {
     if (Platform.OS === 'ios') {
       await requestPurchase({
-        request: { sku: subscriptionId },
+        request: {sku: subscriptionId},
         type: 'subs',
-      })
+      });
     } else if (Platform.OS === 'android') {
       // Find the subscription product to get its offer details
-      const subscription = subscriptions.find((s) => s.id === subscriptionId)
+      const subscription = subscriptions.find((s) => s.id === subscriptionId);
 
       if (!subscription) {
-        throw new Error(`Subscription with ID ${subscriptionId} not found`)
+        throw new Error(`Subscription with ID ${subscriptionId} not found`);
       }
 
       // Check if the subscription has offer details
       if (subscription.subscriptionOfferDetails?.length > 0) {
         // Android requires offerToken for each subscription SKU
         // Use the first available offer or let user choose
-        const firstOffer = subscription.subscriptionOfferDetails[0]
+        const firstOffer = subscription.subscriptionOfferDetails[0];
         const subscriptionOffers = [
           {
             sku: subscriptionId,
             offerToken: firstOffer.offerToken,
           },
-        ]
+        ];
 
         await requestPurchase({
           request: {
@@ -531,16 +532,16 @@ const handleBuySubscription = async (subscriptionId: string) => {
             subscriptionOffers, // Required: Must match number of SKUs
           },
           type: 'subs',
-        })
+        });
       } else {
         // This should not happen with properly configured subscriptions
-        throw new Error('No subscription offers available')
+        throw new Error('No subscription offers available');
       }
     }
   } catch (err) {
-    console.warn(err.code, err.message)
+    console.warn(err.code, err.message);
   }
-}
+};
 ```
 
 ## Important Notes
@@ -572,22 +573,22 @@ On iOS, if you don't call `finishTransaction` after a successful purchase, the t
 **Solution**: Always finish transactions after processing:
 
 ```tsx
-const { finishTransaction, validateReceipt } = useIAP({
+const {finishTransaction, validateReceipt} = useIAP({
   onPurchaseSuccess: async (purchase) => {
     try {
       // 1. Validate the receipt (IMPORTANT: Server-side validation required for both platforms)
       if (Platform.OS === 'ios') {
-        const receiptData = await validateReceipt()
+        const receiptData = await validateReceipt();
         // Send to your server for validation with Apple
-        const isValid = await validateReceiptOnServer(receiptData)
+        const isValid = await validateReceiptOnServer(receiptData);
         if (!isValid) {
-          console.error('Invalid receipt')
-          return
+          console.error('Invalid receipt');
+          return;
         }
       } else if (Platform.OS === 'android') {
         // Android also requires server-side validation
-        const purchaseToken = purchase.purchaseToken // Unified field for both iOS and Android
-        const packageName = purchase.packageNameAndroid
+        const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+        const packageName = purchase.packageNameAndroid;
 
         // Your server should:
         // 1. Get Google Play service account credentials
@@ -596,27 +597,27 @@ const { finishTransaction, validateReceipt } = useIAP({
           purchaseToken,
           packageName,
           productId: purchase.id,
-        })
+        });
 
         if (!isValid) {
-          console.error('Invalid Android purchase')
-          return
+          console.error('Invalid Android purchase');
+          return;
         }
       }
 
       // 2. Process the purchase
-      await processPurchase(purchase)
+      await processPurchase(purchase);
 
       // 3. IMPORTANT: Finish the transaction
       await finishTransaction({
         purchase,
         isConsumable: false, // defaults to false
-      })
+      });
     } catch (error) {
-      console.error('Purchase processing failed:', error)
+      console.error('Purchase processing failed:', error);
     }
   },
-})
+});
 ```
 
 **Handle unfinished transactions on startup**:
@@ -651,49 +652,49 @@ Here's how to get product prices across platforms:
 // Get product price by ID with proper platform checking
 const getProductPrice = (productId: string): string => {
   if (!isReady || products.length === 0) {
-    return Platform.OS === 'ios' ? '$0.99' : '₩1,200' // Default prices
+    return Platform.OS === 'ios' ? '$0.99' : '₩1,200'; // Default prices
   }
 
-  const product = products.find((p) => p.id === productId)
-  if (!product) return Platform.OS === 'ios' ? '$0.99' : '₩1,200'
+  const product = products.find((p) => p.id === productId);
+  if (!product) return Platform.OS === 'ios' ? '$0.99' : '₩1,200';
 
   if (Platform.OS === 'ios') {
-    return product.displayPrice || '$0.99'
+    return product.displayPrice || '$0.99';
   } else {
     // Android
-    const androidProduct = product as ProductAndroid
+    const androidProduct = product as ProductAndroid;
     return (
       androidProduct.oneTimePurchaseOfferDetails?.formattedPrice || '₩1,200'
-    )
+    );
   }
-}
+};
 
 // Get subscription price by ID with proper platform checking
 const getSubscriptionPrice = (subscriptionId: string): string => {
   if (!isReady || subscriptions.length === 0) {
-    return Platform.OS === 'ios' ? '$9.99' : '₩11,000' // Default prices
+    return Platform.OS === 'ios' ? '$9.99' : '₩11,000'; // Default prices
   }
 
-  const subscription = subscriptions.find((s) => s.id === subscriptionId)
-  if (!subscription) return Platform.OS === 'ios' ? '$9.99' : '₩11,000'
+  const subscription = subscriptions.find((s) => s.id === subscriptionId);
+  if (!subscription) return Platform.OS === 'ios' ? '$9.99' : '₩11,000';
 
   if (Platform.OS === 'ios') {
-    return subscription.displayPrice || '$9.99'
+    return subscription.displayPrice || '$9.99';
   } else {
     // Android
-    const androidSubscription = subscription as ProductAndroid
+    const androidSubscription = subscription as ProductAndroid;
     if (androidSubscription.subscriptionOfferDetails?.length > 0) {
-      const firstOffer = androidSubscription.subscriptionOfferDetails[0]
+      const firstOffer = androidSubscription.subscriptionOfferDetails[0];
       if (firstOffer.pricingPhases.pricingPhaseList.length > 0) {
         return (
           firstOffer.pricingPhases.pricingPhaseList[0].formattedPrice ||
           '₩11,000'
-        )
+        );
       }
     }
-    return '₩11,000' // Default Android price
+    return '₩11,000'; // Default Android price
   }
-}
+};
 ```
 
 ## Platform Support
@@ -702,18 +703,18 @@ const getSubscriptionPrice = (subscriptionId: string): string => {
 
 ```tsx
 // Define supported platforms
-const SUPPORTED_PLATFORMS = ['ios', 'android']
+const SUPPORTED_PLATFORMS = ['ios', 'android'];
 
 export default function PurchaseScreen() {
-  const isPlatformSupported = SUPPORTED_PLATFORMS.includes(Platform.OS)
+  const isPlatformSupported = SUPPORTED_PLATFORMS.includes(Platform.OS);
 
   if (!isPlatformSupported) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
         <Text>Platform Not Supported</Text>
         <Text>In-app purchases are only available on iOS and Android.</Text>
       </View>
-    )
+    );
   }
 
   // Rest of your purchase implementation
@@ -728,10 +729,10 @@ Consumable products can be purchased multiple times (e.g., coins, gems):
 
 ```tsx
 const buyConsumable = async (productId) => {
-  await requestPurchase({ sku: productId })
+  await requestPurchase({sku: productId});
   // After successful validation and finishing transaction,
   // the product can be purchased again
-}
+};
 ```
 
 ### Non-Consumable Products
@@ -740,9 +741,9 @@ Non-consumable products are purchased once and remain available (e.g., premium f
 
 ```tsx
 const buyNonConsumable = async (productId) => {
-  await requestPurchase({ sku: productId })
+  await requestPurchase({sku: productId});
   // After purchase, check availablePurchases to restore
-}
+};
 ```
 
 ### Subscriptions
@@ -754,19 +755,19 @@ const buySubscription = async (subscriptionId: string) => {
   if (Platform.OS === 'ios') {
     // iOS: Simple SKU-based purchase
     await requestPurchase({
-      request: { sku: subscriptionId },
+      request: {sku: subscriptionId},
       type: 'subs',
-    })
+    });
   } else {
     // Android: Requires offerToken for each subscription
-    const subscription = subscriptions.find((s) => s.id === subscriptionId)
+    const subscription = subscriptions.find((s) => s.id === subscriptionId);
 
     if (!subscription?.subscriptionOfferDetails?.length) {
-      throw new Error('No subscription offers available')
+      throw new Error('No subscription offers available');
     }
 
     // Use the first available offer (or let user choose)
-    const firstOffer = subscription.subscriptionOfferDetails[0]
+    const firstOffer = subscription.subscriptionOfferDetails[0];
 
     await requestPurchase({
       request: {
@@ -779,9 +780,9 @@ const buySubscription = async (subscriptionId: string) => {
         ],
       },
       type: 'subs',
-    })
+    });
   }
-}
+};
 ```
 
 **Important Android Notes:**
@@ -810,13 +811,13 @@ const buySubscription = async (subscriptionId: string) => {
 // Send purchase info directly to your server
 const response = await fetch('https://your-server.com/validate-ios-receipt', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {'Content-Type': 'application/json'},
   body: JSON.stringify({
     transactionId: purchase.transactionId,
     productId: purchase.id,
     // Your server will fetch the receipt from Apple
   }),
-})
+});
 ```
 
 Your server should:
@@ -834,17 +835,17 @@ const purchaseDetails = {
   purchaseToken: purchase.purchaseToken, // Unified field for both iOS and Android
   packageName: purchase.packageNameAndroid,
   productId: purchase.id,
-}
+};
 
 // Send to your server
 const response = await fetch(
   'https://your-server.com/validate-android-purchase',
   {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(purchaseDetails),
-  }
-)
+  },
+);
 ```
 
 Your server should:
@@ -863,23 +864,23 @@ Your server should:
 For non-consumable products and subscriptions, implement purchase restoration:
 
 ```tsx
-const { getAvailablePurchases } = useIAP()
+const {getAvailablePurchases} = useIAP();
 
 const restorePurchases = async () => {
   try {
-    const purchases = await getAvailablePurchases()
+    const purchases = await getAvailablePurchases();
 
     for (const purchase of purchases) {
       // Validate and restore each purchase
-      const isValid = await validateReceiptOnServer(purchase)
+      const isValid = await validateReceiptOnServer(purchase);
       if (isValid) {
-        await grantPurchaseToUser(purchase)
+        await grantPurchaseToUser(purchase);
       }
     }
   } catch (error) {
-    console.error('Failed to restore purchases:', error)
+    console.error('Failed to restore purchases:', error);
   }
-}
+};
 ```
 
 ### Handling Pending Purchases
@@ -890,9 +891,9 @@ Some purchases may be in a pending state (e.g., awaiting parental approval):
 useEffect(() => {
   if (currentPurchase?.purchaseState === 'pending') {
     // Inform user that purchase is pending
-    showPendingPurchaseMessage()
+    showPendingPurchaseMessage();
   }
-}, [currentPurchase])
+}, [currentPurchase]);
 ```
 
 ### Subscription Management
@@ -903,37 +904,37 @@ Platform-specific properties are available to check if a subscription is active:
 
 ```tsx
 const isSubscriptionActive = (purchase: Purchase): boolean => {
-  const currentTime = Date.now()
+  const currentTime = Date.now();
 
   if (Platform.OS === 'ios') {
     // iOS: Check expiration date
     if (purchase.expirationDateIos) {
       // expirationDateIos is in milliseconds
-      return purchase.expirationDateIos > currentTime
+      return purchase.expirationDateIos > currentTime;
     }
 
     // For Sandbox environment, consider recent purchases as active
     if (purchase.environmentIOS === 'Sandbox') {
-      const dayInMs = 24 * 60 * 60 * 1000
+      const dayInMs = 24 * 60 * 60 * 1000;
       return (
         purchase.transactionDate &&
         currentTime - purchase.transactionDate < dayInMs
-      )
+      );
     }
   } else if (Platform.OS === 'android') {
     // Android: Check auto-renewal status
     if (purchase.autoRenewingAndroid !== undefined) {
-      return purchase.autoRenewingAndroid
+      return purchase.autoRenewingAndroid;
     }
 
     // Check purchase state (0 = purchased, 1 = canceled)
     if (purchase.purchaseStateAndroid === 0) {
-      return true
+      return true;
     }
   }
 
-  return false
-}
+  return false;
+};
 ```
 
 **Key Properties for Subscription Status:**
@@ -956,18 +957,18 @@ const handleValidateReceipt = useCallback(
     try {
       if (Platform.OS === 'ios') {
         // iOS: Simple validation with just SKU
-        return await validateReceipt(sku)
+        return await validateReceipt(sku);
       } else if (Platform.OS === 'android') {
         // Android: Requires additional validation parameters
-        const purchaseToken = purchase.purchaseToken // Unified field for both iOS and Android
-        const packageName = purchase.packageNameAndroid || 'your.package.name'
-        const isSub = subscriptionSkus.includes(sku)
+        const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+        const packageName = purchase.packageNameAndroid || 'your.package.name';
+        const isSub = subscriptionSkus.includes(sku);
 
         // Check required Android parameters before validation
         if (!purchaseToken || !packageName) {
           throw new Error(
-            'Android validation requires packageName and productToken'
-          )
+            'Android validation requires packageName and productToken',
+          );
         }
 
         return await validateReceipt(sku, {
@@ -975,42 +976,42 @@ const handleValidateReceipt = useCallback(
           productToken: purchaseToken,
           isSub,
           // accessToken may be required for server-side validation
-        })
+        });
       }
-      return { isValid: true } // Default for unsupported platforms
+      return {isValid: true}; // Default for unsupported platforms
     } catch (error) {
-      console.error('Receipt validation failed:', error)
-      return { isValid: false }
+      console.error('Receipt validation failed:', error);
+      return {isValid: false};
     }
   },
-  [validateReceipt]
-)
+  [validateReceipt],
+);
 
 // Use in purchase handler
 const handlePurchaseUpdate = async (purchase: any) => {
   try {
-    const productId = purchase.id
+    const productId = purchase.id;
 
     // Validate receipt on your server
-    const validationResult = await handleValidateReceipt(productId, purchase)
+    const validationResult = await handleValidateReceipt(productId, purchase);
 
     if (validationResult.isValid) {
       // Process the purchase
       await finishTransaction({
         purchase,
         isConsumable: bulbPackSkus.includes(productId),
-      })
+      });
 
       // Update user's purchase state in your app
-      updateUserPurchases(productId)
+      updateUserPurchases(productId);
     } else {
-      console.error('Receipt validation failed for:', productId)
+      console.error('Receipt validation failed for:', productId);
       // Handle invalid receipt
     }
   } catch (error) {
-    console.error('Purchase processing failed:', error)
+    console.error('Purchase processing failed:', error);
   }
-}
+};
 ```
 
 **Best Practices:**
@@ -1029,29 +1030,29 @@ const handlePurchaseError = (error) => {
   switch (error.code) {
     case 'E_USER_CANCELLED':
       // User cancelled - no action needed
-      break
+      break;
 
     case 'E_NETWORK_ERROR':
       // Show retry option
-      showRetryDialog()
-      break
+      showRetryDialog();
+      break;
 
     case 'E_ITEM_UNAVAILABLE':
       // Product not available
-      showProductUnavailableMessage()
-      break
+      showProductUnavailableMessage();
+      break;
 
     case 'E_ALREADY_OWNED':
       // User already owns this product
-      showAlreadyOwnedMessage()
-      break
+      showAlreadyOwnedMessage();
+      break;
 
     default:
       // Generic error handling
-      showGenericErrorMessage(error.message)
-      break
+      showGenericErrorMessage(error.message);
+      break;
   }
-}
+};
 ```
 
 ## Testing Purchases

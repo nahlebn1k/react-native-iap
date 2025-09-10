@@ -10,10 +10,10 @@ React Native IAP provides comprehensive error handling through standardized erro
 
 ```typescript
 interface IapError {
-  code: string
-  message: string
-  debugMessage?: string
-  underlyingError?: any
+  code: string;
+  message: string;
+  debugMessage?: string;
+  underlyingError?: any;
 }
 ```
 
@@ -24,16 +24,16 @@ interface IapError {
 Handle network connectivity issues gracefully:
 
 ```typescript
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 
-const { purchaseProduct } = useIAP()
+const {purchaseProduct} = useIAP();
 
 try {
-  await purchaseProduct('product_id')
+  await purchaseProduct('product_id');
 } catch (error) {
   if (error.code === 'E_NETWORK_ERROR') {
     // Handle network issues
-    showRetryDialog()
+    showRetryDialog();
   }
 }
 ```
@@ -44,12 +44,12 @@ Gracefully handle when users cancel purchases:
 
 ```typescript
 try {
-  await purchaseProduct('product_id')
+  await purchaseProduct('product_id');
 } catch (error) {
   if (error.code === 'E_USER_CANCELLED') {
     // User cancelled the purchase
     // Don't show error message, just continue
-    return
+    return;
   }
 }
 ```
@@ -60,20 +60,22 @@ Handle various payment-related errors:
 
 ```typescript
 try {
-  await purchaseProduct('product_id')
+  await purchaseProduct('product_id');
 } catch (error) {
   switch (error.code) {
     case 'E_PAYMENT_INVALID':
-      showMessage('Invalid payment method. Please check your payment settings.')
-      break
+      showMessage(
+        'Invalid payment method. Please check your payment settings.',
+      );
+      break;
     case 'E_PAYMENT_NOT_ALLOWED':
-      showMessage('Payments are not allowed on this device.')
-      break
+      showMessage('Payments are not allowed on this device.');
+      break;
     case 'E_INSUFFICIENT_FUNDS':
-      showMessage('Insufficient funds. Please add payment method.')
-      break
+      showMessage('Insufficient funds. Please add payment method.');
+      break;
     default:
-      showMessage('Purchase failed. Please try again.')
+      showMessage('Purchase failed. Please try again.');
   }
 }
 ```
@@ -88,21 +90,21 @@ Implement exponential backoff for transient errors:
 const retryWithBackoff = async (fn: () => Promise<any>, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      return await fn()
+      return await fn();
     } catch (error) {
-      if (i === maxRetries - 1) throw error
+      if (i === maxRetries - 1) throw error;
 
       // Only retry on network or temporary errors
       if (['E_NETWORK_ERROR', 'E_SERVICE_UNAVAILABLE'].includes(error.code)) {
         await new Promise((resolve) =>
-          setTimeout(resolve, Math.pow(2, i) * 1000)
-        )
+          setTimeout(resolve, Math.pow(2, i) * 1000),
+        );
       } else {
-        throw error
+        throw error;
       }
     }
   }
-}
+};
 ```
 
 ### Graceful Degradation
@@ -112,16 +114,16 @@ Provide fallback experiences:
 ```typescript
 const handlePurchase = async (productId: string) => {
   try {
-    await purchaseProduct(productId)
+    await purchaseProduct(productId);
   } catch (error) {
     if (error.code === 'E_IAP_NOT_AVAILABLE') {
       // Redirect to web subscription
-      redirectToWebPurchase(productId)
+      redirectToWebPurchase(productId);
     } else {
-      showErrorMessage(error.message)
+      showErrorMessage(error.message);
     }
   }
-}
+};
 ```
 
 ## Logging and Analytics
@@ -130,7 +132,7 @@ Track errors for debugging and analytics:
 
 ```typescript
 const trackError = (error: IapError, context: string) => {
-  console.error(`IAP Error in ${context}:`, error)
+  console.error(`IAP Error in ${context}:`, error);
 
   // Send to analytics
   analytics.track('iap_error', {
@@ -138,8 +140,8 @@ const trackError = (error: IapError, context: string) => {
     error_message: error.message,
     context,
     platform: Platform.OS,
-  })
-}
+  });
+};
 ```
 
 ## Best Practices
@@ -150,13 +152,13 @@ Never leave IAP operations without error handling:
 
 ```typescript
 // ❌ Bad
-purchaseProduct('product_id')
+purchaseProduct('product_id');
 
 // ✅ Good
 try {
-  await purchaseProduct('product_id')
+  await purchaseProduct('product_id');
 } catch (error) {
-  handlePurchaseError(error)
+  handlePurchaseError(error);
 }
 ```
 
@@ -168,15 +170,15 @@ Convert technical errors to user-friendly messages:
 const getUserFriendlyMessage = (error: IapError): string => {
   switch (error.code) {
     case 'E_USER_CANCELLED':
-      return null // Don't show message
+      return null; // Don't show message
     case 'E_NETWORK_ERROR':
-      return 'Please check your internet connection and try again.'
+      return 'Please check your internet connection and try again.';
     case 'E_PAYMENT_INVALID':
-      return 'There was an issue with your payment method.'
+      return 'There was an issue with your payment method.';
     default:
-      return 'Something went wrong. Please try again later.'
+      return 'Something went wrong. Please try again later.';
   }
-}
+};
 ```
 
 ### 3. Handle Platform Differences
@@ -189,12 +191,12 @@ const handlePlatformSpecificError = (error: IapError) => {
     Platform.OS === 'ios' &&
     error.code === 'E_STOREFRONT_COUNTRY_NOT_SUPPORTED'
   ) {
-    showMessage('This product is not available in your country.')
+    showMessage('This product is not available in your country.');
   } else if (Platform.OS === 'android' && error.code === 'E_DEVELOPER_ERROR') {
     // Log for debugging but don't show to user
-    console.error('Google Play configuration error:', error)
+    console.error('Google Play configuration error:', error);
   }
-}
+};
 ```
 
 ## See Also

@@ -60,7 +60,7 @@ await requestPurchase({
       skus: [productId],
     },
   },
-})
+});
 ```
 
 **Platform-specific Implementation (v2.7.0+):**
@@ -78,7 +78,7 @@ await requestPurchase({
       skus: [productId],
     },
   },
-})
+});
 ```
 
 ### Key iOS Options
@@ -94,15 +94,15 @@ Purchase objects have different properties on iOS and Android. When accessing pl
 
 ```tsx
 // ✅ New unified approach (recommended)
-const purchaseToken = purchase.purchaseToken // Works on both iOS and Android
+const purchaseToken = purchase.purchaseToken; // Works on both iOS and Android
 
 // ❌ Old platform-specific approach (deprecated)
 // const purchaseToken = (purchase as ProductPurchaseAndroid).purchaseTokenAndroid;
 // const jwsToken = (purchase as ProductPurchaseIos).jwsRepresentationIos;
 
 // Platform-specific fields that are still needed
-const packageName = (purchase as ProductPurchaseAndroid).packageNameAndroid
-const transactionReceipt = purchase.transactionReceipt // Available on both platforms
+const packageName = (purchase as ProductPurchaseAndroid).packageNameAndroid;
+const transactionReceipt = purchase.transactionReceipt; // Available on both platforms
 ```
 
 ### Receipt Validation
@@ -117,16 +117,16 @@ This is handled in the `validatePurchase` function with platform-specific logic.
 ## Usage
 
 ```tsx
-import React from 'react'
-import { NavigationContainer } from '@react-navigation/native'
-import Store from './Store'
+import React from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import Store from './Store';
 
 export default function App() {
   return (
     <NavigationContainer>
       <Store />
     </NavigationContainer>
-  )
+  );
 }
 ```
 

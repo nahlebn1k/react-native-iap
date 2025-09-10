@@ -24,57 +24,52 @@ The guide covers:
 ### Basic Setup
 
 ```tsx
-import { useIAP, ErrorCode } from 'react-native-iap'
+import {useIAP, ErrorCode} from 'react-native-iap';
 
 const productIds = [
   'com.yourapp.premium',
   'com.yourapp.coins_100',
   'com.yourapp.subscription_monthly',
-]
+];
 
 function App() {
-  const {
-    connected,
-    products,
-    fetchProducts,
-    requestPurchase,
-    validateReceipt,
-  } = useIAP({
-    onPurchaseSuccess: (purchase) => {
-      console.log('Purchase successful:', purchase)
-      // Handle successful purchase
-      validatePurchase(purchase)
-    },
-    onPurchaseError: (error) => {
-      console.error('Purchase failed:', error)
-      // Handle purchase error
-    },
-  })
+  const {connected, products, fetchProducts, requestPurchase, validateReceipt} =
+    useIAP({
+      onPurchaseSuccess: (purchase) => {
+        console.log('Purchase successful:', purchase);
+        // Handle successful purchase
+        validatePurchase(purchase);
+      },
+      onPurchaseError: (error) => {
+        console.error('Purchase failed:', error);
+        // Handle purchase error
+      },
+    });
 
   React.useEffect(() => {
     if (connected) {
-      fetchProducts({ skus: productIds, type: 'inapp' })
+      fetchProducts({skus: productIds, type: 'inapp'});
     }
-  }, [connected])
+  }, [connected]);
 
   const validatePurchase = async (purchase) => {
     try {
-      const result = await validateReceipt(purchase.transactionId)
+      const result = await validateReceipt(purchase.transactionId);
       if (result.isValid) {
         // Grant user the purchased content
-        console.log('Receipt is valid')
+        console.log('Receipt is valid');
       }
     } catch (error) {
-      console.error('Validation failed:', error)
+      console.error('Validation failed:', error);
     }
-  }
+  };
 
   return (
     <View>
       {products.map((product) => (
         <TouchableOpacity
           key={product.id}
-          onPress={() => requestPurchase({ request: { sku: product.id } })}
+          onPress={() => requestPurchase({request: {sku: product.id}})}
         >
           <Text>
             {product.title} - {product.displayPrice}
@@ -82,7 +77,7 @@ function App() {
         </TouchableOpacity>
       ))}
     </View>
-  )
+  );
 }
 ```
 
@@ -95,20 +90,20 @@ function App() {
 ```tsx
 const validateReceipt = async (productId: string) => {
   try {
-    const result = await validateReceipt(productId)
+    const result = await validateReceipt(productId);
 
     console.log('Receipt validation result:', {
       isValid: result.isValid,
       receiptData: result.receiptData,
       jwsRepresentation: result.jwsRepresentation, // iOS 15+
-    })
+    });
 
-    return result.isValid
+    return result.isValid;
   } catch (error) {
-    console.error('Receipt validation failed:', error)
-    return false
+    console.error('Receipt validation failed:', error);
+    return false;
   }
-}
+};
 ```
 
 #### Handling StoreKit Errors
@@ -118,17 +113,17 @@ const handlePurchaseError = (error: any) => {
   switch (error.code) {
     case ErrorCode.E_USER_CANCELLED:
       // User cancelled - don't show error
-      break
+      break;
     case ErrorCode.E_PAYMENT_NOT_ALLOWED:
-      Alert.alert('Purchases are not allowed on this device')
-      break
+      Alert.alert('Purchases are not allowed on this device');
+      break;
     case ErrorCode.E_PAYMENT_INVALID:
-      Alert.alert('Invalid payment information')
-      break
+      Alert.alert('Invalid payment information');
+      break;
     default:
-      Alert.alert('Purchase failed', error.message)
+      Alert.alert('Purchase failed', error.message);
   }
-}
+};
 ```
 
 ## Common Issues

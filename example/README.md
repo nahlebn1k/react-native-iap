@@ -11,18 +11,20 @@ This project is part of a **Yarn workspace** structure. All commands should be r
 ### Recommended Development Workflow
 
 1. **Install dependencies** from the root:
+
    ```sh
    yarn install
    ```
 
 2. **Run the example app** from the root:
+
    ```sh
    # iOS
    yarn example:ios
-   
-   # Android  
+
+   # Android
    yarn example:android
-   
+
    # Start Metro bundler
    yarn example:start
    ```
@@ -34,7 +36,7 @@ If you're using **VSCode**, you can use the pre-configured **launch.json** confi
 1. Open the Run and Debug panel (`⌘⇧D` or `Ctrl+Shift+D`)
 2. Select from available configurations:
    - **Nitrogen + iOS Simulator** - Generates Nitro files and runs on iOS simulator
-   - **Nitrogen + iOS Device** - Generates Nitro files and runs on physical iOS device  
+   - **Nitrogen + iOS Device** - Generates Nitro files and runs on physical iOS device
    - **Nitrogen + Android** - Generates Nitro files and runs on Android
 
 This provides a one-click development experience with automatic Nitro code generation.

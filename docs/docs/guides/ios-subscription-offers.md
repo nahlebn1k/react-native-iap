@@ -30,17 +30,17 @@ Available only to new subscribers who haven't previously subscribed to any produ
 
 ```typescript
 type SubscriptionOffer = {
-  displayPrice: string // Localized price string
-  id: string // Offer identifier
-  paymentMode: PaymentMode // 'FREETRIAL' | 'PAYASYOUGO' | 'PAYUPFRONT'
+  displayPrice: string; // Localized price string
+  id: string; // Offer identifier
+  paymentMode: PaymentMode; // 'FREETRIAL' | 'PAYASYOUGO' | 'PAYUPFRONT'
   period: {
-    unit: 'DAY' | 'WEEK' | 'MONTH' | 'YEAR'
-    value: number
-  }
-  periodCount: number // Number of periods
-  price: number // Price in decimal
-  type: 'introductory'
-}
+    unit: 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
+    value: number;
+  };
+  periodCount: number; // Number of periods
+  price: number; // Price in decimal
+  type: 'introductory';
+};
 ```
 
 ### Payment Modes Explained
@@ -54,28 +54,28 @@ type SubscriptionOffer = {
 ### With react-native-iap v2.6.0+
 
 ```typescript
-import { fetchProducts } from 'react-native-iap'
+import {fetchProducts} from 'react-native-iap';
 
 const subscriptions = await fetchProducts({
   skus: ['com.example.premium'],
   type: 'subs',
-})
-const subscription = subscriptions[0]
+});
+const subscription = subscriptions[0];
 
 // Access introductory offer
 if (subscription.subscription?.introductoryOffer) {
-  const offer = subscription.subscription.introductoryOffer
+  const offer = subscription.subscription.introductoryOffer;
   console.log(
-    `Offer: ${offer.displayPrice} for ${offer.periodCount} ${offer.period.unit}(s)`
-  )
-  console.log(`Payment mode: ${offer.paymentMode}`)
+    `Offer: ${offer.displayPrice} for ${offer.periodCount} ${offer.period.unit}(s)`,
+  );
+  console.log(`Payment mode: ${offer.paymentMode}`);
 }
 
 // Access promotional offers
-const promotionalOffers = subscription.subscription?.promotionalOffers || []
+const promotionalOffers = subscription.subscription?.promotionalOffers || [];
 promotionalOffers.forEach((offer) => {
-  console.log(`Promo: ${offer.id} - ${offer.displayPrice}`)
-})
+  console.log(`Promo: ${offer.id} - ${offer.displayPrice}`);
+});
 ```
 
 ### For Earlier Versions (< v2.6.0)
@@ -83,16 +83,16 @@ promotionalOffers.forEach((offer) => {
 If you're using an earlier version, you can parse the `jsonRepresentation`:
 
 ```typescript
-const subscription = subscriptions[0]
-const jsonData = JSON.parse(subscription.jsonRepresentation)
+const subscription = subscriptions[0];
+const jsonData = JSON.parse(subscription.jsonRepresentation);
 
 // Access offers through discounts array
-const discounts = jsonData.discounts || []
+const discounts = jsonData.discounts || [];
 discounts.forEach((discount) => {
-  console.log(`Offer ID: ${discount.id}`)
-  console.log(`Price: ${discount.price}`)
-  console.log(`Period: ${discount.subscriptionPeriod}`)
-})
+  console.log(`Offer ID: ${discount.id}`);
+  console.log(`Price: ${discount.price}`);
+  console.log(`Period: ${discount.subscriptionPeriod}`);
+});
 ```
 
 ## Checking Eligibility
@@ -106,18 +106,18 @@ const checkEligibility = async () => {
   const subscriptions = await fetchProducts({
     skus: ['com.example.premium'],
     type: 'subs',
-  })
-  const subscription = subscriptions[0]
+  });
+  const subscription = subscriptions[0];
 
   // This property indicates if the user is eligible for intro offer
   if (subscription.isEligibleForIntroOffer) {
     // Show introductory offer UI
-    displayIntroductoryOffer(subscription.subscription?.introductoryOffer)
+    displayIntroductoryOffer(subscription.subscription?.introductoryOffer);
   } else {
     // Show regular pricing
-    displayRegularPrice(subscription)
+    displayRegularPrice(subscription);
   }
-}
+};
 ```
 
 ## Implementing Purchase Flow
@@ -127,14 +127,14 @@ const checkEligibility = async () => {
 When a user is eligible for an introductory offer, the purchase flow remains the same:
 
 ```typescript
-import { requestPurchase } from 'react-native-iap'
-import { Platform } from 'react-native'
+import {requestPurchase} from 'react-native-iap';
+import {Platform} from 'react-native';
 
 const purchaseWithOffer = async (subscription: any) => {
   try {
     // Check if eligible for intro offer
     if (subscription.isEligibleForIntroOffer) {
-      console.log('User is eligible for introductory offer')
+      console.log('User is eligible for introductory offer');
     }
 
     // Purchase request (offers are automatically applied)
@@ -143,13 +143,13 @@ const purchaseWithOffer = async (subscription: any) => {
         sku: subscription.id,
       },
       type: 'subs',
-    })
+    });
 
     // Handle success in purchase listener
   } catch (error) {
-    console.error('Purchase failed:', error)
+    console.error('Purchase failed:', error);
   }
-}
+};
 ```
 
 ### With Promotional Offer
@@ -162,8 +162,8 @@ const purchasePromotionalOffer = async (subscription: any, offerId: string) => {
     // 1. Get offer details from your server
     const offerDetails = await fetchOfferDetailsFromServer(
       offerId,
-      subscription.id
-    )
+      subscription.id,
+    );
 
     // 2. Purchase with promotional offer
     await requestPurchase({
@@ -173,11 +173,11 @@ const purchasePromotionalOffer = async (subscription: any, offerId: string) => {
         // Additional offer parameters may be required
       },
       type: 'subs',
-    })
+    });
   } catch (error) {
-    console.error('Promotional purchase failed:', error)
+    console.error('Promotional purchase failed:', error);
   }
-}
+};
 ```
 
 ## Displaying Offers in UI
@@ -249,25 +249,25 @@ Example server endpoint:
 ```javascript
 // Node.js example
 app.post('/generate-offer-signature', async (req, res) => {
-  const { userId, productId, offerId } = req.body
+  const {userId, productId, offerId} = req.body;
 
   // 1. Verify user eligibility
-  const isEligible = await checkUserEligibility(userId, productId)
+  const isEligible = await checkUserEligibility(userId, productId);
 
   if (!isEligible) {
-    return res.status(403).json({ error: 'User not eligible' })
+    return res.status(403).json({error: 'User not eligible'});
   }
 
   // 2. Generate signature using Apple's StoreKit API
-  const signature = await generateOfferSignature(productId, offerId)
+  const signature = await generateOfferSignature(productId, offerId);
 
   res.json({
     signature,
     nonce: generateNonce(),
     timestamp: Date.now(),
     keyIdentifier: process.env.APPLE_KEY_ID,
-  })
-})
+  });
+});
 ```
 
 ## Migration from react-native-iap

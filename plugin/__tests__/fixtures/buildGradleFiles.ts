@@ -19,7 +19,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 34
         versionName "1.16.2"
-        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()`
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()`;
 
 const appBuildGradleWithPlayStoreIAP = `
 apply plugin: "com.android.application"
@@ -43,7 +43,7 @@ missingDimensionStrategy "store", "play"
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 34
         versionName "1.16.2"
-        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()`
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()`;
 
 const appBuildGradleWithBothIAP = `
 apply plugin: "com.android.application"
@@ -74,7 +74,7 @@ productFlavors {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 34
         versionName "1.16.2"
-        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()`
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()`;
 
 const projectBuildGradleWithoutIAP = `
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
@@ -98,7 +98,7 @@ buildscript {
             ndkVersion = '21.4.7075529'
         }
     }
-  }`
+  }`;
 
 const projectBuildGradleWithIAP = `
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
@@ -123,7 +123,7 @@ supportLibVersion = "28.0.0"
             ndkVersion = '21.4.7075529'
         }
     }
-  }`
+  }`;
 
 export {
   appBuildGradleWithBothIAP,
@@ -131,4 +131,4 @@ export {
   appBuildGradleWithPlayStoreIAP,
   projectBuildGradleWithIAP,
   projectBuildGradleWithoutIAP,
-}
+};

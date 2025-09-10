@@ -28,26 +28,26 @@ React Native IAP automatically handles most Android configuration. The required 
 ### Basic Setup
 
 ```tsx
-import { useIAP, ErrorCode } from 'react-native-iap'
+import {useIAP, ErrorCode} from 'react-native-iap';
 
 const androidProductIds = [
   'premium_upgrade',
   'coins_100',
   'monthly_subscription',
-]
+];
 
 function App() {
-  const { connected, products, subscriptions, fetchProducts, requestPurchase } =
+  const {connected, products, subscriptions, fetchProducts, requestPurchase} =
     useIAP({
       onPurchaseSuccess: (purchase) => {
-        console.log('Purchase successful:', purchase)
-        handleSuccessfulPurchase(purchase)
+        console.log('Purchase successful:', purchase);
+        handleSuccessfulPurchase(purchase);
       },
       onPurchaseError: (error) => {
-        console.error('Purchase failed:', error)
-        handlePurchaseError(error)
+        console.error('Purchase failed:', error);
+        handlePurchaseError(error);
       },
-    })
+    });
 
   React.useEffect(() => {
     if (connected) {
@@ -55,13 +55,13 @@ function App() {
       fetchProducts({
         skus: androidProductIds.filter((id) => !id.includes('subscription')),
         type: 'inapp',
-      })
+      });
       fetchProducts({
         skus: androidProductIds.filter((id) => id.includes('subscription')),
         type: 'subs',
-      })
+      });
     }
-  }, [connected])
+  }, [connected]);
 
   return (
     <View>
@@ -78,34 +78,34 @@ function App() {
         />
       ))}
     </View>
-  )
+  );
 }
 ```
 
 ### Android-Specific Product Handling
 
 ```tsx
-const AndroidProductItem = ({ product }: { product: Product }) => {
-  const { requestPurchase } = useIAP()
+const AndroidProductItem = ({product}: {product: Product}) => {
+  const {requestPurchase} = useIAP();
 
   const handlePurchase = () => {
     if (product.platform === 'android') {
       requestPurchase({
-        request: { skus: [product.id] },
+        request: {skus: [product.id]},
         type: 'inapp',
-      })
+      });
     }
-  }
+  };
 
-  if (product.platform !== 'android') return null
+  if (product.platform !== 'android') return null;
 
   return (
     <TouchableOpacity onPress={handlePurchase}>
       <Text>{product.title}</Text>
       <Text>{product.oneTimePurchaseOfferDetails?.formattedPrice}</Text>
     </TouchableOpacity>
-  )
-}
+  );
+};
 ```
 
 > **💡 Cross-Platform Note:** This example shows Android-specific usage with `skus`. For cross-platform compatibility, include both `sku` and `skus` in your request object. See the [Core Methods](/docs/api/methods/core-methods#requestpurchase) documentation for details.
@@ -116,9 +116,9 @@ const AndroidProductItem = ({ product }: { product: Product }) => {
 const AndroidSubscriptionItem = ({
   subscription,
 }: {
-  subscription: SubscriptionProduct
+  subscription: SubscriptionProduct;
 }) => {
-  const { requestPurchase } = useIAP()
+  const {requestPurchase} = useIAP();
 
   const handleSubscribe = (offer: any) => {
     if (subscription.platform === 'android') {
@@ -133,11 +133,11 @@ const AndroidSubscriptionItem = ({
           ],
         },
         type: 'subs',
-      })
+      });
     }
-  }
+  };
 
-  if (subscription.platform !== 'android') return null
+  if (subscription.platform !== 'android') return null;
 
   return (
     <View>
@@ -155,8 +155,8 @@ const AndroidSubscriptionItem = ({
         </TouchableOpacity>
       ))}
     </View>
-  )
-}
+  );
+};
 ```
 
 ### Error Handling for Android
@@ -166,23 +166,23 @@ const handleAndroidError = (error: PurchaseError) => {
   switch (error.code) {
     case ErrorCode.E_USER_CANCELLED:
       // User cancelled - no action needed
-      break
+      break;
     case ErrorCode.E_ITEM_UNAVAILABLE:
       Alert.alert(
         'Product Unavailable',
-        'This item is not available for purchase'
-      )
-      break
+        'This item is not available for purchase',
+      );
+      break;
     case ErrorCode.E_SERVICE_ERROR:
-      Alert.alert('Service Error', 'Google Play services are unavailable')
-      break
+      Alert.alert('Service Error', 'Google Play services are unavailable');
+      break;
     case ErrorCode.E_DEVELOPER_ERROR:
-      Alert.alert('Configuration Error', 'Please contact support')
-      break
+      Alert.alert('Configuration Error', 'Please contact support');
+      break;
     default:
-      Alert.alert('Purchase Failed', error.message)
+      Alert.alert('Purchase Failed', error.message);
   }
-}
+};
 ```
 
 ## Common Issues
@@ -238,7 +238,7 @@ const handleAndroidError = (error: PurchaseError) => {
 ```tsx
 const upgradeSubscription = async (
   newSkuId: string,
-  oldPurchaseToken: string
+  oldPurchaseToken: string,
 ) => {
   try {
     await requestPurchase({
@@ -254,11 +254,11 @@ const upgradeSubscription = async (
         oldPurchaseToken: oldPurchaseToken,
       },
       type: 'subs',
-    })
+    });
   } catch (error) {
-    console.error('Subscription upgrade failed:', error)
+    console.error('Subscription upgrade failed:', error);
   }
-}
+};
 ```
 
 ### Pending Purchases
@@ -271,13 +271,13 @@ const handlePendingPurchase = (purchase: Purchase) => {
     // Show pending message to user
     Alert.alert(
       'Purchase Pending',
-      'Your purchase is being processed. You will receive access once payment is confirmed.'
-    )
+      'Your purchase is being processed. You will receive access once payment is confirmed.',
+    );
 
     // Store pending purchase for later verification
-    storePendingPurchase(purchase)
+    storePendingPurchase(purchase);
   }
-}
+};
 ```
 
 ## Next Steps

@@ -1,8 +1,8 @@
 import {
   parseErrorStringToJsonObj,
   isUserCancelledError,
-} from '../../utils/error'
-import { ErrorCode } from '../../types'
+} from '../../utils/error';
+import {ErrorCode} from '../../types';
 
 describe('Error utilities', () => {
   describe('parseErrorStringToJsonObj', () => {
@@ -11,133 +11,133 @@ describe('Error utilities', () => {
         code: ErrorCode.E_USER_CANCELLED,
         message: 'User cancelled',
         responseCode: 1,
-      })
+      });
 
-      const result = parseErrorStringToJsonObj(errorString)
+      const result = parseErrorStringToJsonObj(errorString);
 
       expect(result).toEqual({
         code: ErrorCode.E_USER_CANCELLED,
         message: 'User cancelled',
         responseCode: 1,
-      })
-    })
+      });
+    });
 
     it('should handle Error object with JSON message', () => {
       const errorObj = {
         code: ErrorCode.E_NETWORK_ERROR,
         message: 'Network error',
-      }
-      const error = new Error(JSON.stringify(errorObj))
+      };
+      const error = new Error(JSON.stringify(errorObj));
 
-      const result = parseErrorStringToJsonObj(error)
+      const result = parseErrorStringToJsonObj(error);
 
-      expect(result).toEqual(errorObj)
-    })
+      expect(result).toEqual(errorObj);
+    });
 
     it('should handle plain Error object', () => {
-      const error = new Error('Something went wrong')
+      const error = new Error('Something went wrong');
 
-      const result = parseErrorStringToJsonObj(error)
+      const result = parseErrorStringToJsonObj(error);
 
       expect(result).toEqual({
         code: ErrorCode.E_UNKNOWN,
         message: 'Something went wrong',
-      })
-    })
+      });
+    });
 
     it('should handle non-JSON string', () => {
-      const errorString = 'Not a JSON string'
+      const errorString = 'Not a JSON string';
 
-      const result = parseErrorStringToJsonObj(errorString)
+      const result = parseErrorStringToJsonObj(errorString);
 
       expect(result).toEqual({
         code: ErrorCode.E_UNKNOWN,
         message: 'Not a JSON string',
-      })
-    })
+      });
+    });
 
     it('should handle undefined input', () => {
-      const result = parseErrorStringToJsonObj(undefined)
+      const result = parseErrorStringToJsonObj(undefined);
 
       expect(result).toEqual({
         code: ErrorCode.E_UNKNOWN,
         message: 'Unknown error occurred',
-      })
-    })
+      });
+    });
 
     it('should handle null input', () => {
-      const result = parseErrorStringToJsonObj(null)
+      const result = parseErrorStringToJsonObj(null);
 
       expect(result).toEqual({
         code: ErrorCode.E_UNKNOWN,
         message: 'Unknown error occurred',
-      })
-    })
+      });
+    });
 
     it('should handle empty string', () => {
-      const result = parseErrorStringToJsonObj('')
+      const result = parseErrorStringToJsonObj('');
 
       expect(result).toEqual({
         code: ErrorCode.E_UNKNOWN,
         message: '',
-      })
-    })
+      });
+    });
 
     it('should handle object input', () => {
       const errorObj = {
         code: ErrorCode.E_ITEM_UNAVAILABLE,
         message: 'Item not available',
-      }
+      };
 
-      const result = parseErrorStringToJsonObj(errorObj)
+      const result = parseErrorStringToJsonObj(errorObj);
 
       expect(result).toEqual({
         code: ErrorCode.E_UNKNOWN,
         message: 'Unknown error occurred',
-      })
-    })
+      });
+    });
 
     it('should parse error code format "CODE: message"', () => {
-      const errorString = 'E_NETWORK_ERROR: Network connection failed'
+      const errorString = 'E_NETWORK_ERROR: Network connection failed';
 
-      const result = parseErrorStringToJsonObj(errorString)
+      const result = parseErrorStringToJsonObj(errorString);
 
       expect(result).toEqual({
         code: 'E_NETWORK_ERROR',
         message: 'Network connection failed',
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('isUserCancelledError', () => {
     it('should return true for user cancelled error', () => {
       const error = {
         code: ErrorCode.E_USER_CANCELLED,
         message: 'User cancelled the purchase',
-      }
+      };
 
-      expect(isUserCancelledError(error)).toBe(true)
-    })
+      expect(isUserCancelledError(error)).toBe(true);
+    });
 
     it('should return false for other errors', () => {
       const error = {
         code: ErrorCode.E_NETWORK_ERROR,
         message: 'Network error occurred',
-      }
+      };
 
-      expect(isUserCancelledError(error)).toBe(false)
-    })
+      expect(isUserCancelledError(error)).toBe(false);
+    });
 
     it('should return false for undefined', () => {
-      expect(isUserCancelledError(undefined)).toBe(false)
-    })
+      expect(isUserCancelledError(undefined)).toBe(false);
+    });
 
     it('should return false for error without code', () => {
       const error = {
         message: 'Some error',
-      }
+      };
 
-      expect(isUserCancelledError(error)).toBe(false)
-    })
-  })
-})
+      expect(isUserCancelledError(error)).toBe(false);
+    });
+  });
+});

@@ -18,7 +18,8 @@ module.exports = {
         paths: [
           {
             name: '.',
-            message: "Avoid `import from '.'`; use './index' or an explicit path.",
+            message:
+              "Avoid `import from '.'`; use './index' or an explicit path.",
           },
         ],
       },
@@ -29,8 +30,7 @@ module.exports = {
         paths: [
           {
             name: '.',
-            message:
-              "Avoid `require('.')`; use './index' or an explicit path.",
+            message: "Avoid `require('.')`; use './index' or an explicit path.",
           },
         ],
       },

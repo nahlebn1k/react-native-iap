@@ -92,8 +92,8 @@
 Example:
 
 ```ts
-const { fetchProducts, products } = useIAP()
-await fetchProducts({ skus: ['p1'] })
+const {fetchProducts, products} = useIAP();
+await fetchProducts({skus: ['p1']});
 // then read products from state
 ```
 
@@ -145,11 +145,11 @@ Usage example:
 try {
   await requestPurchase({
     /* ... */
-  })
+  });
 } catch (e) {
-  const err = parseErrorStringToJsonObj(e)
-  if (isUserCancelledError(err)) return
-  console.error('IAP failed:', err.code, err.message)
+  const err = parseErrorStringToJsonObj(e);
+  if (isUserCancelledError(err)) return;
+  console.error('IAP failed:', err.code, err.message);
 }
 ```
 
@@ -201,20 +201,20 @@ try {
 
 ```ts
 // src/specs/RnIap.nitro.ts
-export type Purchase = { id: string; productId: string; date: Date }
+export type Purchase = {id: string; productId: string; date: Date};
 export type Result<T> =
-  | { kind: 'ok'; value: T }
-  | { kind: 'err'; code: string; message: string }
+  | {kind: 'ok'; value: T}
+  | {kind: 'err'; code: string; message: string};
 
 export interface RnIapSpec {
-  init(): Promise<void>
-  fetchProducts(ids: string[]): Promise<Product[]>
+  init(): Promise<void>;
+  fetchProducts(ids: string[]): Promise<Product[]>;
   requestPurchase(
     id: string,
-    opts?: { quantity?: number }
-  ): Promise<Result<Purchase>>
-  addPurchaseListener(cb: (p: Purchase) => void): void
-  getStorefrontIOS?(): string
+    opts?: {quantity?: number},
+  ): Promise<Result<Purchase>>;
+  addPurchaseListener(cb: (p: Purchase) => void): void;
+  getStorefrontIOS?(): string;
 }
 ```
 

@@ -14,9 +14,9 @@ During hot reload, concurrent IAP operations would fail:
 ```typescript
 // Would fail on iOS during hot reload
 await Promise.all([
-  fetchProducts({ skus: productIds }),
+  fetchProducts({skus: productIds}),
   getAvailablePurchases(), // Returns empty or fails
-])
+]);
 ```
 
 ## The Solution
@@ -38,9 +38,9 @@ The iOS native module now:
 ```typescript
 // Now works correctly during hot reload
 const [products, purchases] = await Promise.all([
-  fetchProducts({ skus: productIds }),
+  fetchProducts({skus: productIds}),
   getAvailablePurchases(),
-])
+]);
 ```
 
 ## Notes

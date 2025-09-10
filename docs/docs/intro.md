@@ -47,7 +47,7 @@ npm install react-native-iap react-native-nitro-modules
 First, import and initialize the IAP hook:
 
 ```tsx
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 
 function MyStore() {
   const {
@@ -57,9 +57,9 @@ function MyStore() {
     requestPurchase,
     currentPurchase,
     finishTransaction,
-  } = useIAP()
+  } = useIAP();
 
-  const productIds = ['your.product.id', 'your.premium.subscription']
+  const productIds = ['your.product.id', 'your.premium.subscription'];
 }
 ```
 
@@ -71,9 +71,9 @@ Load your products when the store connects:
 useEffect(() => {
   if (connected) {
     // Fetch your products
-    fetchProducts({ skus: productIds, type: 'inapp' })
+    fetchProducts({skus: productIds, type: 'inapp'});
   }
-}, [connected])
+}, [connected]);
 ```
 
 ### 3. Display Products
@@ -93,7 +93,7 @@ return (
       </View>
     ))}
   </View>
-)
+);
 ```
 
 ### 4. Handle Purchases
@@ -112,11 +112,11 @@ const handlePurchase = async (productId: string) => {
           skus: [productId],
         },
       },
-    })
+    });
   } catch (error) {
-    console.error('Purchase failed:', error)
+    console.error('Purchase failed:', error);
   }
-}
+};
 ```
 
 **No more Platform.OS checks!** The new API automatically handles platform differences. iOS can only purchase one product at a time, while Android supports purchasing multiple products in a single transaction.
@@ -131,21 +131,21 @@ useEffect(() => {
     const completePurchase = async () => {
       try {
         // Grant the purchase to user here
-        console.log('Purchase completed:', currentPurchase.id)
+        console.log('Purchase completed:', currentPurchase.id);
 
         // Finish the transaction
         await finishTransaction({
           purchase: currentPurchase,
           isConsumable: true, // Set based on your product type
-        })
+        });
       } catch (error) {
-        console.error('Failed to complete purchase:', error)
+        console.error('Failed to complete purchase:', error);
       }
-    }
+    };
 
-    completePurchase()
+    completePurchase();
   }
-}, [currentPurchase])
+}, [currentPurchase]);
 ```
 
 ### Complete Basic Example
@@ -153,9 +153,9 @@ useEffect(() => {
 Here's a complete working example:
 
 ```tsx
-import React, { useEffect } from 'react'
-import { View, Text, Button, StyleSheet } from 'react-native'
-import { useIAP } from 'react-native-iap'
+import React, {useEffect} from 'react';
+import {View, Text, Button, StyleSheet} from 'react-native';
+import {useIAP} from 'react-native-iap';
 
 export default function SimpleStore() {
   const {
@@ -165,32 +165,32 @@ export default function SimpleStore() {
     requestPurchase,
     currentPurchase,
     finishTransaction,
-  } = useIAP()
+  } = useIAP();
 
-  const productIds = ['com.example.coins.pack1', 'com.example.premium']
+  const productIds = ['com.example.coins.pack1', 'com.example.premium'];
 
   useEffect(() => {
     if (connected) {
-      fetchProducts({ skus: productIds, type: 'inapp' })
+      fetchProducts({skus: productIds, type: 'inapp'});
     }
-  }, [connected])
+  }, [connected]);
 
   useEffect(() => {
     if (currentPurchase) {
       const completePurchase = async () => {
         try {
-          console.log('Purchase completed:', currentPurchase.id)
+          console.log('Purchase completed:', currentPurchase.id);
           await finishTransaction({
             purchase: currentPurchase,
             isConsumable: true,
-          })
+          });
         } catch (error) {
-          console.error('Failed to complete purchase:', error)
+          console.error('Failed to complete purchase:', error);
         }
-      }
-      completePurchase()
+      };
+      completePurchase();
     }
-  }, [currentPurchase])
+  }, [currentPurchase]);
 
   const handlePurchase = async (productId: string) => {
     try {
@@ -203,11 +203,11 @@ export default function SimpleStore() {
             skus: [productId],
           },
         },
-      })
+      });
     } catch (error) {
-      console.error('Purchase failed:', error)
+      console.error('Purchase failed:', error);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -223,21 +223,21 @@ export default function SimpleStore() {
         </View>
       ))}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  status: { fontSize: 16, marginBottom: 20 },
+  container: {padding: 20},
+  status: {fontSize: 16, marginBottom: 20},
   product: {
     padding: 15,
     marginVertical: 5,
     backgroundColor: '#f0f0f0',
     borderRadius: 8,
   },
-  title: { fontSize: 16, fontWeight: 'bold' },
-  price: { fontSize: 14, color: '#666', marginVertical: 5 },
-})
+  title: {fontSize: 16, fontWeight: 'bold'},
+  price: {fontSize: 14, color: '#666', marginVertical: 5},
+});
 ```
 
 ## 🏗️ Architecture

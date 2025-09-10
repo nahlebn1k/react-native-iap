@@ -39,16 +39,16 @@ This is one of the most common issues. Here are the potential causes and solutio
 #### 1. Connection not established
 
 ```tsx
-const { connected, fetchProducts } = useIAP()
+const {connected, fetchProducts} = useIAP();
 
 useEffect(() => {
   if (connected) {
     // ✅ Only call fetchProducts when connected
-    fetchProducts({ skus: productIds, type: 'inapp' })
+    fetchProducts({skus: productIds, type: 'inapp'});
   } else {
-    console.log('Not connected to store yet')
+    console.log('Not connected to store yet');
   }
-}, [connected])
+}, [connected]);
 ```
 
 #### 2. Product IDs don't match
@@ -57,10 +57,10 @@ Ensure your product IDs exactly match those configured in the stores:
 
 ```tsx
 // ❌ Wrong: Using different IDs
-const productIds = ['my_product_1', 'my_product_2']
+const productIds = ['my_product_1', 'my_product_2'];
 
 // ✅ Correct: Using exact IDs from store
-const productIds = ['com.yourapp.product1', 'com.yourapp.premium']
+const productIds = ['com.yourapp.product1', 'com.yourapp.premium'];
 ```
 
 #### 3. Products not approved (iOS)
@@ -91,24 +91,24 @@ Ensure you're using the hook within the provider context:
 ```tsx
 // ❌ Wrong: Hook used outside provider
 function App() {
-  const { connected } = useIAP() // This will fail
-  return <MyApp />
+  const {connected} = useIAP(); // This will fail
+  return <MyApp />;
 }
 
 // ✅ Correct: Hook used within provider
-import { IAPProvider } from 'react-native-iap'
+import {IAPProvider} from 'react-native-iap';
 
 function AppWithProvider() {
   return (
     <IAPProvider>
       <App />
     </IAPProvider>
-  )
+  );
 }
 
 function App() {
-  const { connected } = useIAP() // This works
-  return <MyApp />
+  const {connected} = useIAP(); // This works
+  return <MyApp />;
 }
 ```
 
@@ -137,33 +137,33 @@ Don't wrap your app with multiple IAP providers:
 Always handle purchase updates and finish transactions:
 
 ```tsx
-const { currentPurchase, finishTransaction } = useIAP()
+const {currentPurchase, finishTransaction} = useIAP();
 
 useEffect(() => {
   if (currentPurchase) {
-    handlePurchase(currentPurchase)
+    handlePurchase(currentPurchase);
   }
-}, [currentPurchase])
+}, [currentPurchase]);
 
 const handlePurchase = async (purchase) => {
   try {
     // Validate receipt
-    const isValid = await validateOnServer(purchase)
+    const isValid = await validateOnServer(purchase);
 
     if (isValid) {
       // Grant purchase to user
-      await grantPurchase(purchase)
+      await grantPurchase(purchase);
 
       // ✅ Always finish the transaction
       await finishTransaction({
         purchase,
         isConsumable: false, // default is false
-      })
+      });
     }
   } catch (error) {
-    console.error('Purchase handling failed:', error)
+    console.error('Purchase handling failed:', error);
   }
-}
+};
 ```
 
 **Important - Transaction Acknowledgment Requirements**:
@@ -184,9 +184,9 @@ This happens when transactions are not properly finished. iOS stores unfinished 
 **Solution**: Always call `finishTransaction` after successfully processing a purchase:
 
 ```tsx
-const { finishTransaction } = useIAP({
+const {finishTransaction} = useIAP({
   onPurchaseSuccess: async (purchase) => {
-    console.log('Purchase successful:', purchase)
+    console.log('Purchase successful:', purchase);
 
     try {
       // 1. Validate the receipt (IMPORTANT: Server-side validation required for both platforms)
@@ -202,15 +202,15 @@ const { finishTransaction } = useIAP({
         const isValid = await validateReceiptOnServer({
           transactionId: purchase.transactionId,
           productId: purchase.id,
-        })
+        });
         if (!isValid) {
-          console.error('Invalid receipt')
-          return
+          console.error('Invalid receipt');
+          return;
         }
       } else if (Platform.OS === 'android') {
         // Android also requires server-side validation
-        const purchaseToken = purchase.purchaseToken // Unified field for both iOS and Android
-        const packageName = purchase.packageNameAndroid
+        const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+        const packageName = purchase.packageNameAndroid;
 
         // Get Google Play access token on your server (not in client)
         // Then validate the purchase with Google Play API
@@ -218,54 +218,54 @@ const { finishTransaction } = useIAP({
           purchaseToken,
           packageName,
           productId: purchase.id,
-        })
+        });
 
         if (!isValid) {
-          console.error('Invalid Android purchase')
-          return
+          console.error('Invalid Android purchase');
+          return;
         }
       }
 
       // 2. Process the purchase (unlock content, update backend, etc.)
-      await processSubscription(purchase)
+      await processSubscription(purchase);
 
       // 3. IMPORTANT: Finish the transaction to prevent replay
       await finishTransaction({
         purchase,
         // isConsumable defaults to false, which is correct for subscriptions and non-consumables
-      })
+      });
     } catch (error) {
-      console.error('Purchase processing failed:', error)
+      console.error('Purchase processing failed:', error);
     }
   },
-})
+});
 ```
 
 **Prevention**: Handle pending transactions on app startup:
 
 ```tsx
-const { getAvailablePurchases, finishTransaction } = useIAP()
+const {getAvailablePurchases, finishTransaction} = useIAP();
 
 useEffect(() => {
   const checkPendingPurchases = async () => {
     // Get all unfinished transactions
-    const purchases = await getAvailablePurchases()
+    const purchases = await getAvailablePurchases();
 
     for (const purchase of purchases) {
       // Process and finish any pending transactions
       if (await isAlreadyProcessed(purchase)) {
         // If already processed, just finish the transaction
-        await finishTransaction({ purchase }) // isConsumable: false by default
+        await finishTransaction({purchase}); // isConsumable: false by default
       } else {
         // Process the purchase first, then finish
-        await processPurchase(purchase)
-        await finishTransaction({ purchase })
+        await processPurchase(purchase);
+        await finishTransaction({purchase});
       }
     }
-  }
+  };
 
-  checkPendingPurchases()
-}, [])
+  checkPendingPurchases();
+}, []);
 ```
 
 **Important Notes**:
@@ -281,19 +281,19 @@ useEffect(() => {
 In-app purchases only work on real devices:
 
 ```tsx
-import { Platform } from 'react-native'
-import { isEmulator } from 'react-native-device-info'
+import {Platform} from 'react-native';
+import {isEmulator} from 'react-native-device-info';
 
 const checkDeviceSupport = async () => {
   if (__DEV__) {
-    const emulator = await isEmulator()
+    const emulator = await isEmulator();
     if (emulator) {
-      console.warn('In-app purchases not supported on simulators/emulators')
-      return false
+      console.warn('In-app purchases not supported on simulators/emulators');
+      return false;
     }
   }
-  return true
-}
+  return true;
+};
 ```
 
 ### Connection issues
@@ -303,7 +303,7 @@ const checkDeviceSupport = async () => {
 Handle network errors gracefully:
 
 ```tsx
-const { connectionError } = useIAP()
+const {connectionError} = useIAP();
 
 if (connectionError) {
   return (
@@ -314,11 +314,11 @@ if (connectionError) {
         title="Retry"
         onPress={() => {
           // Implement retry logic
-          retryConnection()
+          retryConnection();
         }}
       />
     </View>
-  )
+  );
 }
 ```
 
@@ -332,9 +332,9 @@ const handleStoreUnavailable = () => {
   Alert.alert(
     'Store Unavailable',
     'The App Store is temporarily unavailable. Please try again later.',
-    [{ text: 'OK' }]
-  )
-}
+    [{text: 'OK'}],
+  );
+};
 ```
 
 ### Platform-specific issues
@@ -388,46 +388,46 @@ const handleStoreUnavailable = () => {
 ### 1. Enable verbose logging
 
 ```tsx
-import { setDebugMode } from 'react-native-iap'
+import {setDebugMode} from 'react-native-iap';
 
 // Enable debug mode in development
 if (__DEV__) {
-  setDebugMode(true)
+  setDebugMode(true);
 }
 ```
 
 ### 2. Log purchase events
 
 ```tsx
-const { currentPurchase, currentPurchaseError } = useIAP()
+const {currentPurchase, currentPurchaseError} = useIAP();
 
 useEffect(() => {
   if (currentPurchase) {
-    console.log('Purchase received:', JSON.stringify(currentPurchase, null, 2))
+    console.log('Purchase received:', JSON.stringify(currentPurchase, null, 2));
   }
-}, [currentPurchase])
+}, [currentPurchase]);
 
 useEffect(() => {
   if (currentPurchaseError) {
     console.error(
       'Purchase error:',
-      JSON.stringify(currentPurchaseError, null, 2)
-    )
+      JSON.stringify(currentPurchaseError, null, 2),
+    );
   }
-}, [currentPurchaseError])
+}, [currentPurchaseError]);
 ```
 
 ### 3. Monitor connection state
 
 ```tsx
-const { connected, connectionError } = useIAP()
+const {connected, connectionError} = useIAP();
 
 useEffect(() => {
   console.log('Connection state changed:', {
     connected,
     error: connectionError,
-  })
-}, [connected, connectionError])
+  });
+}, [connected, connectionError]);
 ```
 
 ## Testing Strategies
@@ -449,7 +449,7 @@ const testScenarios = [
   'insufficient_funds',
   'product_unavailable',
   'pending_purchase',
-]
+];
 
 // Test each scenario with appropriate mocks
 ```
@@ -465,14 +465,14 @@ Test on various devices and OS versions:
 
 Common error codes and their meanings:
 
-| Code                   | Description                | Action                   |
-| ---------------------- | -------------------------- | ------------------------ |
-| `E_USER_CANCELLED`     | User cancelled purchase    | No action needed         |
-| `E_NETWORK_ERROR`      | Network connectivity issue | Show retry option        |
-| `E_ITEM_UNAVAILABLE`   | Product not available      | Check product setup      |
-| `E_ALREADY_OWNED`      | User already owns product  | Check ownership status   |
-| `E_INSUFFICIENT_FUNDS` | Not enough funds           | Direct to payment method |
-| `E_UNKNOWN`            | Unknown error              | Log for investigation    |
+| Code | Description | Action |
+| --- | --- | --- |
+| `E_USER_CANCELLED` | User cancelled purchase | No action needed |
+| `E_NETWORK_ERROR` | Network connectivity issue | Show retry option |
+| `E_ITEM_UNAVAILABLE` | Product not available | Check product setup |
+| `E_ALREADY_OWNED` | User already owns product | Check ownership status |
+| `E_INSUFFICIENT_FUNDS` | Not enough funds | Direct to payment method |
+| `E_UNKNOWN` | Unknown error | Log for investigation |
 
 ## Getting Help
 

@@ -58,9 +58,9 @@ When checking subscription status, different platforms provide different propert
 ### 1. Load Subscriptions
 
 ```tsx
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 
-const SUBSCRIPTION_IDS = ['com.app.monthly', 'com.app.yearly']
+const SUBSCRIPTION_IDS = ['com.app.monthly', 'com.app.yearly'];
 
 const {
   connected,
@@ -68,29 +68,29 @@ const {
   activeSubscriptions,
   fetchProducts,
   getActiveSubscriptions,
-} = useIAP()
+} = useIAP();
 
 useEffect(() => {
   if (connected) {
-    fetchProducts({ skus: SUBSCRIPTION_IDS, type: 'subs' })
-    getActiveSubscriptions()
+    fetchProducts({skus: SUBSCRIPTION_IDS, type: 'subs'});
+    getActiveSubscriptions();
   }
-}, [connected])
+}, [connected]);
 ```
 
 ### 2. Check Active Subscription Status
 
 ```tsx
 const checkSubscriptionStatus = async () => {
-  const subs = await getActiveSubscriptions()
+  const subs = await getActiveSubscriptions();
 
   // Check if user has specific subscription
   const hasActiveSubscription = subs.some(
-    (sub) => sub.productId === 'com.app.monthly' && sub.isActive
-  )
+    (sub) => sub.productId === 'com.app.monthly' && sub.isActive,
+  );
 
-  return hasActiveSubscription
-}
+  return hasActiveSubscription;
+};
 ```
 
 ### 3. Handle Subscription Purchase
@@ -114,33 +114,33 @@ const handleSubscription = async (productId: string) => {
         },
       },
       type: 'subs',
-    })
+    });
   } catch (error) {
-    console.error('Subscription failed:', error)
+    console.error('Subscription failed:', error);
   }
-}
+};
 ```
 
 ### 4. Process Successful Purchase
 
 ```tsx
-const { finishTransaction } = useIAP({
+const {finishTransaction} = useIAP({
   onPurchaseSuccess: async (purchase) => {
     // Validate receipt on your server
-    const isValid = await validateReceiptOnServer(purchase)
+    const isValid = await validateReceiptOnServer(purchase);
 
     if (isValid) {
       // Grant subscription benefits
-      await grantSubscriptionAccess(purchase)
+      await grantSubscriptionAccess(purchase);
 
       // Finish the transaction
       await finishTransaction({
         purchase,
         isConsumable: false, // Subscriptions are non-consumable
-      })
+      });
     }
   },
-})
+});
 ```
 
 ## Server-Side Validation
@@ -149,31 +149,31 @@ const { finishTransaction } = useIAP({
 
 ```javascript
 app.post('/validate-subscription', async (req, res) => {
-  const { receipt, productId, purchaseToken } = req.body
+  const {receipt, productId, purchaseToken} = req.body;
 
   try {
-    let validationResult
+    let validationResult;
 
     if (purchaseToken) {
       // Android: Validate with Google Play
       validationResult = await validateGooglePlaySubscription(
         productId,
-        purchaseToken
-      )
+        purchaseToken,
+      );
     } else {
       // iOS: Validate with App Store
-      validationResult = await validateAppStoreReceipt(receipt)
+      validationResult = await validateAppStoreReceipt(receipt);
     }
 
     res.json({
       isActive: validationResult.isActive,
       expirationDate: validationResult.expirationDate,
       autoRenewing: validationResult.autoRenewing,
-    })
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Validation failed' })
+    res.status(500).json({error: 'Validation failed'});
   }
-})
+});
 ```
 
 ## Platform-Specific Features
@@ -206,15 +206,15 @@ app.post('/validate-subscription', async (req, res) => {
 ### Check if User Has Any Active Subscription
 
 ```tsx
-const hasAnyActiveSubscription = activeSubscriptions.length > 0
+const hasAnyActiveSubscription = activeSubscriptions.length > 0;
 ```
 
 ### Check for Specific Subscription Tier
 
 ```tsx
 const hasPremium = activeSubscriptions.some(
-  (sub) => sub.productId === 'com.app.premium_yearly' && sub.isActive
-)
+  (sub) => sub.productId === 'com.app.premium_yearly' && sub.isActive,
+);
 ```
 
 ### Display Subscription Expiration
@@ -233,7 +233,7 @@ const hasPremium = activeSubscriptions.some(
         <Text>Auto-renewing: {sub.autoRenewingAndroid ? 'Yes' : 'No'}</Text>
       )}
     </View>
-  ))
+  ));
 }
 ```
 

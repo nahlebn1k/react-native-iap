@@ -40,21 +40,21 @@ When you use the `useIAP` hook, it automatically:
 4. Cleans up when the component unmounts
 
 ```tsx
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 
 export default function App() {
-  const { connected, products, fetchProducts } = useIAP()
+  const {connected, products, fetchProducts} = useIAP();
 
   useEffect(() => {
     // Connection is automatically established
     if (connected) {
-      console.log('Connected to store')
+      console.log('Connected to store');
       // You can now safely call store methods
-      fetchProducts({ skus: ['product1', 'product2'], type: 'inapp' })
+      fetchProducts({skus: ['product1', 'product2'], type: 'inapp'});
     }
-  }, [connected, fetchProducts])
+  }, [connected, fetchProducts]);
 
-  return <YourAppContent />
+  return <YourAppContent />;
 }
 ```
 
@@ -68,17 +68,17 @@ The connection can be in several states:
 - **Error**: Connection failed
 
 ```tsx
-const { connected, connectionError } = useIAP()
+const {connected, connectionError} = useIAP();
 
 if (connectionError) {
-  return <ErrorView error={connectionError} />
+  return <ErrorView error={connectionError} />;
 }
 
 if (!connected) {
-  return <LoadingView message="Connecting to store..." />
+  return <LoadingView message="Connecting to store..." />;
 }
 
-return <StoreView />
+return <StoreView />;
 ```
 
 ## Component Lifecycle Integration
@@ -86,59 +86,59 @@ return <StoreView />
 ### Class Components
 
 ```tsx
-import React, { Component } from 'react'
+import React, {Component} from 'react';
 import {
   initConnection,
   endConnection,
   purchaseUpdatedListener,
   purchaseErrorListener,
-} from 'react-native-iap'
+} from 'react-native-iap';
 
 class StoreComponent extends Component {
-  purchaseUpdateSubscription = null
-  purchaseErrorSubscription = null
+  purchaseUpdateSubscription = null;
+  purchaseErrorSubscription = null;
 
   async componentDidMount() {
     try {
-      await initConnection()
+      await initConnection();
 
       // Set up purchase listeners
       this.purchaseUpdateSubscription = purchaseUpdatedListener((purchase) => {
-        this.handlePurchaseUpdate(purchase)
-      })
+        this.handlePurchaseUpdate(purchase);
+      });
 
       this.purchaseErrorSubscription = purchaseErrorListener((error) => {
-        this.handlePurchaseError(error)
-      })
+        this.handlePurchaseError(error);
+      });
     } catch (error) {
-      console.error('Failed to initialize:', error)
+      console.error('Failed to initialize:', error);
     }
   }
 
   componentWillUnmount() {
     // Clean up listeners
     if (this.purchaseUpdateSubscription) {
-      this.purchaseUpdateSubscription.remove()
+      this.purchaseUpdateSubscription.remove();
     }
 
     if (this.purchaseErrorSubscription) {
-      this.purchaseErrorSubscription.remove()
+      this.purchaseErrorSubscription.remove();
     }
 
     // End connection
-    endConnection()
+    endConnection();
   }
 
   handlePurchaseUpdate = (purchase) => {
     // Handle purchase updates
-  }
+  };
 
   handlePurchaseError = (error) => {
     // Handle purchase errors
-  }
+  };
 
   render() {
-    return <div>Your store UI</div>
+    return <div>Your store UI</div>;
   }
 }
 ```
@@ -146,68 +146,68 @@ class StoreComponent extends Component {
 ### Functional Components
 
 ```tsx
-import React, { useEffect, useRef } from 'react'
+import React, {useEffect, useRef} from 'react';
 import {
   initConnection,
   endConnection,
   purchaseUpdatedListener,
   purchaseErrorListener,
-} from 'react-native-iap'
+} from 'react-native-iap';
 
 export default function StoreComponent() {
-  const listenersRef = useRef([])
+  const listenersRef = useRef([]);
 
   useEffect(() => {
     const setupStore = async () => {
       try {
-        await initConnection()
+        await initConnection();
 
         // Set up listeners
         const purchaseUpdateSubscription = purchaseUpdatedListener(
           (purchase) => {
-            handlePurchaseUpdate(purchase)
-          }
-        )
+            handlePurchaseUpdate(purchase);
+          },
+        );
 
         const purchaseErrorSubscription = purchaseErrorListener((error) => {
-          handlePurchaseError(error)
-        })
+          handlePurchaseError(error);
+        });
 
         // Store references for cleanup
         listenersRef.current = [
           purchaseUpdateSubscription,
           purchaseErrorSubscription,
-        ]
+        ];
       } catch (error) {
-        console.error('Failed to setup store:', error)
+        console.error('Failed to setup store:', error);
       }
-    }
+    };
 
-    setupStore()
+    setupStore();
 
     // Cleanup function
     return () => {
       // Remove listeners
       listenersRef.current.forEach((subscription) => {
         if (subscription && subscription.remove) {
-          subscription.remove()
+          subscription.remove();
         }
-      })
+      });
 
       // End connection
-      endConnection()
-    }
-  }, [])
+      endConnection();
+    };
+  }, []);
 
   const handlePurchaseUpdate = (purchase) => {
     // Handle purchase updates
-  }
+  };
 
   const handlePurchaseError = (error) => {
     // Handle purchase errors
-  }
+  };
 
-  return <div>Your store UI</div>
+  return <div>Your store UI</div>;
 }
 ```
 
@@ -223,15 +223,15 @@ export default function StoreComponent() {
 ```tsx
 // ✅ Good: Using useIAP hook
 function MyApp() {
-  const { connected, products, fetchProducts } = useIAP()
+  const {connected, products, fetchProducts} = useIAP();
 
   useEffect(() => {
     if (connected) {
-      fetchProducts({ skus: productIds, type: 'inapp' })
+      fetchProducts({skus: productIds, type: 'inapp'});
     }
-  }, [connected])
+  }, [connected]);
 
-  return <AppContent />
+  return <AppContent />;
 }
 ```
 
@@ -244,17 +244,17 @@ function MyApp() {
 ```tsx
 // ❌ Bad: Initializing for every operation
 const badPurchaseFlow = async (productId) => {
-  await initConnection() // Don't do this
-  await requestPurchase({ sku: productId })
-  await endConnection() // Don't do this
-}
+  await initConnection(); // Don't do this
+  await requestPurchase({sku: productId});
+  await endConnection(); // Don't do this
+};
 
 // ✅ Good: Use existing connection
 const goodPurchaseFlow = async (productId) => {
   if (connected) {
-    await requestPurchase({ sku: productId })
+    await requestPurchase({sku: productId});
   }
-}
+};
 ```
 
 ## Purchase Flow Best Practices
@@ -300,9 +300,9 @@ const goodPurchaseFlow = async (productId) => {
 ```tsx
 // Wrong - forgetting to finish transaction
 const handlePurchase = async (purchase) => {
-  await validateReceipt(purchase)
+  await validateReceipt(purchase);
   // Missing: finishTransaction call
-}
+};
 ```
 
 ✅ **Always finish transactions after validation**:
@@ -310,11 +310,11 @@ const handlePurchase = async (purchase) => {
 ```tsx
 // Correct - always finish transaction
 const handlePurchase = async (purchase) => {
-  const isValid = await validateReceipt(purchase)
+  const isValid = await validateReceipt(purchase);
   if (isValid) {
-    await finishTransaction({ purchase, isConsumable: true })
+    await finishTransaction({purchase, isConsumable: true});
   }
-}
+};
 ```
 
 ### Security Issues
@@ -325,8 +325,8 @@ const handlePurchase = async (purchase) => {
 // Wrong - never trust client-side validation alone
 const handlePurchase = async (purchase) => {
   // This is not secure for production
-  grantPremiumFeature()
-}
+  grantPremiumFeature();
+};
 ```
 
 ✅ **Always validate server-side**:
@@ -334,12 +334,12 @@ const handlePurchase = async (purchase) => {
 ```tsx
 // Correct - validate on secure server
 const handlePurchase = async (purchase) => {
-  const isValid = await yourAPI.validateReceipt(purchase.transactionReceipt)
+  const isValid = await yourAPI.validateReceipt(purchase.transactionReceipt);
   if (isValid) {
-    grantPremiumFeature()
-    await finishTransaction({ purchase })
+    grantPremiumFeature();
+    await finishTransaction({purchase});
   }
-}
+};
 ```
 
 ### Development and Testing Issues
@@ -356,18 +356,18 @@ const handlePurchaseError = (error) => {
   switch (error.code) {
     case 'E_USER_CANCELLED':
       // Silent - user intentionally cancelled
-      break
+      break;
     case 'E_NETWORK_ERROR':
-      showRetryDialog()
-      break
+      showRetryDialog();
+      break;
     case 'E_ITEM_UNAVAILABLE':
-      showUnavailableMessage()
-      break
+      showUnavailableMessage();
+      break;
     default:
-      showGenericErrorMessage()
-      break
+      showGenericErrorMessage();
+      break;
   }
-}
+};
 ```
 
 ### App Lifecycle Issues
@@ -382,15 +382,15 @@ useEffect(() => {
   const checkPendingPurchases = async () => {
     if (connected) {
       // Check for any purchases that completed while app was closed
-      const purchases = await getAvailablePurchases()
+      const purchases = await getAvailablePurchases();
       for (const purchase of purchases) {
-        await processPurchase(purchase)
+        await processPurchase(purchase);
       }
     }
-  }
+  };
 
-  checkPendingPurchases()
-}, [connected])
+  checkPendingPurchases();
+}, [connected]);
 ```
 
 ### Connection Management Issues
@@ -400,10 +400,10 @@ useEffect(() => {
 ```tsx
 // Wrong - don't initialize for every operation
 const purchaseProduct = async (sku) => {
-  await initConnection() // Don't do this
-  await requestPurchase({ sku })
-  await endConnection() // Don't do this
-}
+  await initConnection(); // Don't do this
+  await requestPurchase({sku});
+  await endConnection(); // Don't do this
+};
 ```
 
 ✅ **Maintain single connection**:
@@ -412,11 +412,11 @@ const purchaseProduct = async (sku) => {
 // Correct - use existing connection
 const purchaseProduct = async (sku) => {
   if (connected) {
-    await requestPurchase({ sku })
+    await requestPurchase({sku});
   } else {
-    console.error('Store not connected')
+    console.error('Store not connected');
   }
-}
+};
 ```
 
 ## Next Steps

@@ -18,18 +18,18 @@ On iOS, react-native-iap provides a native method to present Apple's code redemp
 ### Usage
 
 ```typescript
-import { presentCodeRedemptionSheet } from 'react-native-iap'
+import {presentCodeRedemptionSheet} from 'react-native-iap';
 
 // Present the code redemption sheet
 try {
-  const result = await presentCodeRedemptionSheet()
+  const result = await presentCodeRedemptionSheet();
   if (result) {
-    console.log('Code redemption sheet presented successfully')
+    console.log('Code redemption sheet presented successfully');
     // The system will handle the redemption process
     // Listen for purchase updates via purchaseUpdatedListener
   }
 } catch (error) {
-  console.error('Failed to present code redemption sheet:', error)
+  console.error('Failed to present code redemption sheet:', error);
 }
 ```
 
@@ -47,14 +47,14 @@ Google Play does not provide a direct API to redeem codes within the app. Instea
 ### Usage
 
 ```typescript
-import { openRedeemOfferCodeAndroid } from 'react-native-iap'
+import {openRedeemOfferCodeAndroid} from 'react-native-iap';
 
 // Open Google Play Store redemption page
 try {
-  await openRedeemOfferCodeAndroid()
+  await openRedeemOfferCodeAndroid();
   // This will open the Play Store where users can enter their codes
 } catch (error) {
-  console.error('Failed to open Play Store:', error)
+  console.error('Failed to open Play Store:', error);
 }
 ```
 
@@ -63,12 +63,12 @@ try {
 You can also direct users to redeem codes via a custom deep link:
 
 ```typescript
-import { Linking } from 'react-native'
+import {Linking} from 'react-native';
 
 const redeemCode = async (code: string) => {
-  const url = `https://play.google.com/redeem?code=${code}`
-  await Linking.openURL(url)
-}
+  const url = `https://play.google.com/redeem?code=${code}`;
+  await Linking.openURL(url);
+};
 ```
 
 ## Complete Example
@@ -76,41 +76,41 @@ const redeemCode = async (code: string) => {
 Here's a complete example that handles both platforms:
 
 ```typescript
-import { Platform } from 'react-native'
+import {Platform} from 'react-native';
 import {
   presentCodeRedemptionSheet,
   openRedeemOfferCodeAndroid,
   purchaseUpdatedListener,
-} from 'react-native-iap'
+} from 'react-native-iap';
 
 const handleRedeemCode = async () => {
   try {
     if (Platform.OS === 'ios') {
       // Present native iOS redemption sheet
-      const result = await presentCodeRedemptionSheet()
+      const result = await presentCodeRedemptionSheet();
       if (result) {
-        console.log('Redemption sheet presented')
+        console.log('Redemption sheet presented');
       }
     } else if (Platform.OS === 'android') {
       // Open Play Store for Android
-      await openRedeemOfferCodeAndroid()
+      await openRedeemOfferCodeAndroid();
     }
   } catch (error) {
-    console.error('Error redeeming code:', error)
+    console.error('Error redeeming code:', error);
   }
-}
+};
 
 // Set up listener for purchase updates after redemption
 useEffect(() => {
   const subscription = purchaseUpdatedListener((purchase) => {
-    console.log('Purchase updated after redemption:', purchase)
+    console.log('Purchase updated after redemption:', purchase);
     // Handle the new purchase/subscription
-  })
+  });
 
   return () => {
-    subscription.remove()
-  }
-}, [])
+    subscription.remove();
+  };
+}, []);
 ```
 
 ## Best Practices

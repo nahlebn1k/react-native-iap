@@ -110,7 +110,7 @@ Before testing in-app purchases on Android, you must:
 ### 1. Initialize the connection
 
 ```tsx
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 
 export default function App() {
   const {
@@ -120,19 +120,19 @@ export default function App() {
     fetchProducts,
     requestPurchase,
     finishTransaction,
-  } = useIAP()
+  } = useIAP();
 
   // Initialize connection when component mounts
   useEffect(() => {
     // Connection is automatically handled by useIAP
-  }, [])
+  }, []);
 
   return (
     <View>
       <Text>Connection Status: {connected ? 'Connected' : 'Disconnected'}</Text>
       {/* Your app content */}
     </View>
-  )
+  );
 }
 ```
 
@@ -143,13 +143,13 @@ const productIds = [
   'com.example.product1',
   'com.example.product2',
   'com.example.subscription1',
-]
+];
 
 useEffect(() => {
   if (connected) {
-    fetchProducts({ skus: productIds, type: 'inapp' })
+    fetchProducts({skus: productIds, type: 'inapp'});
   }
-}, [connected, fetchProducts])
+}, [connected, fetchProducts]);
 ```
 
 ### 3. Request a purchase
@@ -157,21 +157,21 @@ useEffect(() => {
 **Important**: iOS and Android have different parameter requirements:
 
 ```tsx
-import { Platform } from 'react-native'
+import {Platform} from 'react-native';
 
 const handlePurchase = async (productId: string) => {
   try {
     // Platform-specific purchase request (v2.7.0+)
     await requestPurchase({
       request: {
-        ios: { sku: productId },
-        android: { skus: [productId] },
+        ios: {sku: productId},
+        android: {skus: [productId]},
       },
-    })
+    });
   } catch (error) {
-    console.error('Purchase failed:', error)
+    console.error('Purchase failed:', error);
   }
-}
+};
 ```
 
 This platform difference exists because iOS can only purchase one product at a time, while Android supports purchasing multiple products in a single transaction.
@@ -196,35 +196,35 @@ useEffect(() => {
           await validateReceiptOnServer({
             receiptData: currentPurchase.transactionReceipt,
             productId: currentPurchase.productId,
-          })
+          });
         } else if (Platform.OS === 'android') {
           // Android: Check required parameters first
-          const purchaseToken = currentPurchase.purchaseToken
-          const packageName = currentPurchase.packageNameAndroid
+          const purchaseToken = currentPurchase.purchaseToken;
+          const packageName = currentPurchase.packageNameAndroid;
 
           if (!purchaseToken || !packageName) {
             throw new Error(
-              'Android validation requires packageName and purchaseToken'
-            )
+              'Android validation requires packageName and purchaseToken',
+            );
           }
 
           await validateReceiptOnServer({
             packageName,
             purchaseToken,
             productId: currentPurchase.productId,
-          })
+          });
         }
 
         // If validation successful, finish the transaction
-        await finishTransaction({ purchase: currentPurchase })
+        await finishTransaction({purchase: currentPurchase});
       } catch (error) {
-        console.error('Receipt validation failed:', error)
+        console.error('Receipt validation failed:', error);
       }
-    }
+    };
 
-    validateAndFinish()
+    validateAndFinish();
   }
-}, [currentPurchase, finishTransaction])
+}, [currentPurchase, finishTransaction]);
 ```
 
 ## Best Practices

@@ -1,9 +1,5 @@
 import {getAvailablePurchases} from '../';
-import type {
-  ActiveSubscription,
-  PurchaseIOS,
-  PurchaseAndroid,
-} from '../types';
+import type {ActiveSubscription, PurchaseIOS, PurchaseAndroid} from '../types';
 
 /**
  * Get active subscriptions
@@ -16,7 +12,7 @@ export const getActiveSubscriptions = async (
   try {
     // Get available purchases and filter for subscriptions
     const purchases = await getAvailablePurchases();
-    
+
     // Filter for subscriptions and map to ActiveSubscription format
     const subscriptions = purchases
       .filter((purchase) => {
@@ -35,31 +31,35 @@ export const getActiveSubscriptions = async (
           // Backend validation fields
           transactionId: purchase.transactionId || purchase.id,
           purchaseToken:
-            androidPurchase.purchaseToken || androidPurchase.purchaseTokenAndroid || iosPurchase.purchaseToken,
+            androidPurchase.purchaseToken ||
+            androidPurchase.purchaseTokenAndroid ||
+            iosPurchase.purchaseToken,
           transactionDate: purchase.transactionDate,
           // Platform-specific fields
           expirationDateIOS: iosPurchase.expirationDateIOS
             ? new Date(iosPurchase.expirationDateIOS)
             : undefined,
-          autoRenewingAndroid: androidPurchase.autoRenewingAndroid ?? androidPurchase.isAutoRenewing, // deprecated - use isAutoRenewing instead
+          autoRenewingAndroid:
+            androidPurchase.autoRenewingAndroid ??
+            androidPurchase.isAutoRenewing, // deprecated - use isAutoRenewing instead
           environmentIOS: iosPurchase.environmentIOS,
           // Convenience fields
           willExpireSoon: false, // Would need to calculate based on expiration date
           daysUntilExpirationIOS: iosPurchase.expirationDateIOS
             ? Math.ceil(
-                (iosPurchase.expirationDateIOS - Date.now()) / (1000 * 60 * 60 * 24),
+                (iosPurchase.expirationDateIOS - Date.now()) /
+                  (1000 * 60 * 60 * 24),
               )
             : undefined,
         };
       });
-    
+
     return subscriptions;
   } catch (error) {
     console.error('Failed to get active subscriptions:', error);
     throw error;
   }
 };
-
 
 /**
  * Check if there are any active subscriptions

@@ -8,11 +8,11 @@ interface PackageJson {
 }
 
 const rootPackageJson: PackageJson = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8')
+  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'),
 );
 
 const examplePackageJson: PackageJson = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../example/package.json'), 'utf8')
+  fs.readFileSync(path.join(__dirname, '../example/package.json'), 'utf8'),
 );
 
 const rootNitroVersion =
@@ -41,12 +41,12 @@ if (!rootNitroVersion || !exampleNitroVersion) {
   console.error('\n❌ Missing Nitro Modules dependency!');
   if (!rootNitroVersion) {
     console.error(
-      '   react-native-nitro-modules not found in root package.json'
+      '   react-native-nitro-modules not found in root package.json',
     );
   }
   if (!exampleNitroVersion) {
     console.error(
-      '   react-native-nitro-modules not found in example/package.json'
+      '   react-native-nitro-modules not found in example/package.json',
     );
   }
   process.exit(1);
@@ -55,10 +55,10 @@ if (!rootNitroVersion || !exampleNitroVersion) {
 if (rootNitroNormalized !== exampleNitroNormalized) {
   console.error('\n❌ Version mismatch detected!');
   console.error(
-    `   Root has ${rootNitroVersion} but example has ${exampleNitroVersion}`
+    `   Root has ${rootNitroVersion} but example has ${exampleNitroVersion}`,
   );
   console.error(
-    '   Please update example/package.json to match the root version.'
+    '   Please update example/package.json to match the root version.',
   );
   process.exit(1);
 }
@@ -66,7 +66,7 @@ if (rootNitroNormalized !== exampleNitroNormalized) {
 const rootCodegenNormalized = normalizeVersion(rootNitroCodegenVersion);
 if (rootCodegenNormalized && rootNitroNormalized !== rootCodegenNormalized) {
   console.warn(
-    '\n⚠️  Warning: nitro-codegen version differs from react-native-nitro-modules'
+    '\n⚠️  Warning: nitro-codegen version differs from react-native-nitro-modules',
   );
   console.warn(`   Consider aligning both to the same version.`);
 }

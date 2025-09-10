@@ -9,14 +9,11 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import {
-  presentCodeRedemptionSheetIOS,
-  useIAP,
-} from 'react-native-iap';
+import {presentCodeRedemptionSheetIOS, useIAP} from 'react-native-iap';
 
 /**
  * Offer Code Redemption Example
- * 
+ *
  * This example demonstrates how to implement offer code redemption
  * functionality for both iOS and Android platforms.
  */
@@ -66,15 +63,13 @@ export default function OfferCodeScreen() {
         Alert.alert(
           'Android Offer Codes',
           'On Android, offer codes must be redeemed through the Google Play Store.\n\n' +
-          'Steps:\n' +
-          '1. Open Google Play Store\n' +
-          '2. Tap profile icon → Payments & subscriptions\n' +
-          '3. Select "Redeem code"\n' +
-          '4. Enter your promo code\n' +
-          '5. Return to this app',
-          [
-            {text: 'OK', style: 'default'},
-          ]
+            'Steps:\n' +
+            '1. Open Google Play Store\n' +
+            '2. Tap profile icon → Payments & subscriptions\n' +
+            '3. Select "Redeem code"\n' +
+            '4. Enter your promo code\n' +
+            '5. Return to this app',
+          [{text: 'OK', style: 'default'}],
         );
       }
     } catch (error) {
@@ -92,7 +87,7 @@ export default function OfferCodeScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Offer Code Redemption</Text>
-        
+
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>How it works:</Text>
           <Text style={styles.infoText}>{platformContent.howItWorks}</Text>
@@ -111,14 +106,20 @@ export default function OfferCodeScreen() {
             <ActivityIndicator color="white" />
           ) : (
             <>
-              <Text style={styles.buttonText}>{platformContent.buttonText}</Text>
-              <Text style={styles.buttonSubtext}>{platformContent.buttonSubtext}</Text>
+              <Text style={styles.buttonText}>
+                {platformContent.buttonText}
+              </Text>
+              <Text style={styles.buttonSubtext}>
+                {platformContent.buttonSubtext}
+              </Text>
             </>
           )}
         </TouchableOpacity>
 
         <View style={styles.platformNote}>
-          <Text style={styles.noteTitle}>Platform: {isIOS ? 'iOS' : 'Android'}</Text>
+          <Text style={styles.noteTitle}>
+            Platform: {isIOS ? 'iOS' : 'Android'}
+          </Text>
           <Text style={styles.noteText}>{platformContent.platformNote}</Text>
         </View>
 
@@ -146,8 +147,9 @@ export default function OfferCodeScreen() {
           <View style={styles.androidNote}>
             <Text style={styles.androidNoteTitle}>⚠️ Android Note</Text>
             <Text style={styles.androidNoteText}>
-              React Native IAP does not have a direct API for opening the Play Store redemption screen. 
-              Users need to manually navigate to the Play Store to redeem their codes.
+              React Native IAP does not have a direct API for opening the Play
+              Store redemption screen. Users need to manually navigate to the
+              Play Store to redeem their codes.
             </Text>
           </View>
         )}

@@ -38,74 +38,74 @@ import {
   purchaseErrorListener,
   type Purchase,
   type NitroPurchaseResult,
-} from 'react-native-iap'
+} from 'react-native-iap';
 
 useEffect(() => {
   // Set up purchase success listener
   const updateSubscription = purchaseUpdatedListener((purchase: Purchase) => {
-    handlePurchaseUpdate(purchase)
-  })
+    handlePurchaseUpdate(purchase);
+  });
 
   // Set up purchase error listener
   const errorSubscription = purchaseErrorListener(
     (error: NitroPurchaseResult) => {
-      handlePurchaseError(error)
-    }
-  )
+      handlePurchaseError(error);
+    },
+  );
 
   // Cleanup
   return () => {
-    updateSubscription.remove()
-    errorSubscription.remove()
-  }
-}, [])
+    updateSubscription.remove();
+    errorSubscription.remove();
+  };
+}, []);
 ```
 
 ### 2. Handle Successful Purchase
 
 ```tsx
 const handlePurchaseUpdate = async (purchase: Purchase) => {
-  console.log('✅ Purchase successful:', purchase)
+  console.log('✅ Purchase successful:', purchase);
 
   try {
     // Step 1: Validate receipt (implement server-side validation)
-    const isValid = await validateReceiptOnServer(purchase)
+    const isValid = await validateReceiptOnServer(purchase);
 
     if (isValid) {
       // Step 2: Grant purchase to user
-      await grantPurchaseToUser(purchase)
+      await grantPurchaseToUser(purchase);
 
       // Step 3: Finish the transaction (required)
       await finishTransaction({
         purchase,
         isConsumable: true, // Set based on your product type
-      })
+      });
 
-      console.log('Transaction finished successfully')
-      Alert.alert('Success', 'Thank you for your purchase!')
+      console.log('Transaction finished successfully');
+      Alert.alert('Success', 'Thank you for your purchase!');
     } else {
-      Alert.alert('Error', 'Purchase validation failed')
+      Alert.alert('Error', 'Purchase validation failed');
     }
   } catch (error) {
-    console.error('Failed to complete purchase:', error)
-    Alert.alert('Error', 'Failed to process purchase')
+    console.error('Failed to complete purchase:', error);
+    Alert.alert('Error', 'Failed to process purchase');
   }
-}
+};
 ```
 
 ### 3. Handle Purchase Errors
 
 ```tsx
 const handlePurchaseError = (error: NitroPurchaseResult) => {
-  console.error('❌ Purchase failed:', error)
+  console.error('❌ Purchase failed:', error);
 
   if (error.code === 'E_USER_CANCELLED') {
     // User cancelled - no action needed
-    console.log('User cancelled the purchase')
+    console.log('User cancelled the purchase');
   } else {
-    Alert.alert('Purchase Failed', error.message || 'Unknown error')
+    Alert.alert('Purchase Failed', error.message || 'Unknown error');
   }
-}
+};
 ```
 
 ### 4. Initiate Purchase
@@ -125,15 +125,15 @@ const handlePurchase = async (productId: string) => {
         },
       },
       type: 'inapp',
-    })
+    });
 
     // Purchase result will be handled by purchaseUpdatedListener
-    console.log('Purchase request sent - waiting for result')
+    console.log('Purchase request sent - waiting for result');
   } catch (error) {
-    console.error('Purchase request failed:', error)
-    Alert.alert('Error', 'Failed to initiate purchase')
+    console.error('Purchase request failed:', error);
+    Alert.alert('Error', 'Failed to initiate purchase');
   }
-}
+};
 ```
 
 ## Key Implementation Points
@@ -145,22 +145,24 @@ Always validate receipts server-side before granting purchases:
 ```tsx
 const validateReceiptOnServer = async (purchase: Purchase) => {
   const receipt =
-    Platform.OS === 'ios' ? purchase.transactionReceipt : purchase.purchaseToken
+    Platform.OS === 'ios'
+      ? purchase.transactionReceipt
+      : purchase.purchaseToken;
 
   const response = await fetch('https://your-server.com/validate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
       platform: Platform.OS,
       productId: purchase.productId,
       receipt: receipt,
       transactionId: purchase.transactionId,
     }),
-  })
+  });
 
-  const result = await response.json()
-  return result.isValid
-}
+  const result = await response.json();
+  return result.isValid;
+};
 ```
 
 ### Platform-Specific Receipt Data
@@ -169,13 +171,13 @@ Different platforms provide different receipt formats:
 
 ```tsx
 // iOS Receipt
-const iosReceipt = purchase.transactionReceipt // Base64 receipt
-const purchaseToken = purchase.purchaseToken // JWS representation on iOS (StoreKit 2), purchase token on Android
+const iosReceipt = purchase.transactionReceipt; // Base64 receipt
+const purchaseToken = purchase.purchaseToken; // JWS representation on iOS (StoreKit 2), purchase token on Android
 // Note: jwsRepresentationIOS is deprecated, use purchaseToken instead
 
 // Android Receipt
-const androidReceipt = (purchase as any).dataAndroid // Purchase data JSON
-const signature = (purchase as any).signatureAndroid // Signature for validation
+const androidReceipt = (purchase as any).dataAndroid; // Purchase data JSON
+const signature = (purchase as any).signatureAndroid; // Signature for validation
 ```
 
 ### Transaction Completion
@@ -186,7 +188,7 @@ Always call `finishTransaction` after processing:
 await finishTransaction({
   purchase,
   isConsumable: true, // true for consumable products
-})
+});
 ```
 
 - **Consumable products**: Set `isConsumable: true` (can be purchased multiple times)

@@ -24,7 +24,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "exclude": ["example-expo", "docs"]
 }

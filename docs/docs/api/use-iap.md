@@ -15,7 +15,7 @@ The `useIAP` hook is the main interface for interacting with in-app purchases in
 ## Import
 
 ```tsx
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 ```
 
 ## Important: Hook Behavior
@@ -31,13 +31,13 @@ The `useIAP` hook follows React Hooks conventions and differs from calling funct
 ## Basic Usage
 
 ```tsx
-import { useEffect } from 'react'
-import { View, Text, Button, Alert } from 'react-native'
-import { useIAP, requestPurchase, type PurchaseError } from 'react-native-iap'
+import {useEffect} from 'react';
+import {View, Text, Button, Alert} from 'react-native';
+import {useIAP, requestPurchase, type PurchaseError} from 'react-native-iap';
 
 // Product/Subscription IDs from your store configuration
-const PRODUCT_IDS = ['com.example.premium', 'com.example.coins100']
-const SUBSCRIPTION_IDS = ['com.example.monthly', 'com.example.yearly']
+const PRODUCT_IDS = ['com.example.premium', 'com.example.coins100'];
+const SUBSCRIPTION_IDS = ['com.example.monthly', 'com.example.yearly'];
 
 export default function MyStore() {
   const {
@@ -52,7 +52,7 @@ export default function MyStore() {
     getActiveSubscriptions,
   } = useIAP({
     onPurchaseSuccess: async (purchase) => {
-      console.log('Purchase successful:', purchase)
+      console.log('Purchase successful:', purchase);
 
       // IMPORTANT: Validate receipt on your server here
       // const isValid = await validateReceiptOnServer(purchase.transactionReceipt);
@@ -62,41 +62,41 @@ export default function MyStore() {
       // }
 
       // Grant purchase to user
-      Alert.alert('Success', `Purchased: ${purchase.productId}`)
+      Alert.alert('Success', `Purchased: ${purchase.productId}`);
 
       // Finish the transaction (required)
       await finishTransaction({
         purchase,
         isConsumable: true, // Set based on your product type
-      })
+      });
     },
     onPurchaseError: (error: PurchaseError) => {
-      console.error('Purchase failed:', error)
+      console.error('Purchase failed:', error);
 
       if (error.code === 'E_USER_CANCELLED') {
         // User cancelled - no action needed
-        return
+        return;
       }
 
-      Alert.alert('Purchase Failed', error.message)
+      Alert.alert('Purchase Failed', error.message);
     },
-  })
+  });
 
   // Load products when connected
   useEffect(() => {
     if (connected) {
       // fetchProducts is event-based, not promise-based
       // Results will be available in 'products' and 'subscriptions' states
-      fetchProducts({ skus: PRODUCT_IDS, type: 'inapp' })
-      fetchProducts({ skus: SUBSCRIPTION_IDS, type: 'subs' })
+      fetchProducts({skus: PRODUCT_IDS, type: 'inapp'});
+      fetchProducts({skus: SUBSCRIPTION_IDS, type: 'subs'});
 
       // Check for active subscriptions
-      getActiveSubscriptions()
+      getActiveSubscriptions();
 
       // Load available purchases for restoration
-      getAvailablePurchases()
+      getAvailablePurchases();
     }
-  }, [connected, fetchProducts, getActiveSubscriptions, getAvailablePurchases])
+  }, [connected, fetchProducts, getActiveSubscriptions, getAvailablePurchases]);
 
   // Handle purchase
   const handlePurchase = async (productId: string, isSubscription: boolean) => {
@@ -113,12 +113,12 @@ export default function MyStore() {
           },
         },
         type: isSubscription ? 'subs' : 'inapp',
-      })
+      });
       // Note: Result comes through onPurchaseSuccess/onPurchaseError callbacks
     } catch (error) {
-      console.error('Request purchase failed:', error)
+      console.error('Request purchase failed:', error);
     }
-  }
+  };
 
   return (
     <View>
@@ -149,13 +149,13 @@ export default function MyStore() {
             title="Subscribe"
             onPress={() => handlePurchase(subscription.id, true)}
             disabled={activeSubscriptions.some(
-              (sub) => sub.productId === subscription.id
+              (sub) => sub.productId === subscription.id,
             )}
           />
         </View>
       ))}
     </View>
-  )
+  );
 }
 ```
 
@@ -171,10 +171,10 @@ export default function MyStore() {
 
 ```tsx
 interface UseIAPOptions {
-  onPurchaseSuccess?: (purchase: Purchase) => void
-  onPurchaseError?: (error: PurchaseError) => void
-  onSyncError?: (error: Error) => void
-  autoFinishTransactions?: boolean // Default: true
+  onPurchaseSuccess?: (purchase: Purchase) => void;
+  onPurchaseError?: (error: PurchaseError) => void;
+  onSyncError?: (error: Error) => void;
+  autoFinishTransactions?: boolean; // Default: true
 }
 ```
 
@@ -189,8 +189,8 @@ interface UseIAPOptions {
   ```tsx
   onPurchaseSuccess: (purchase) => {
     // Grant user access to purchased content
-    unlockFeature(purchase.productId)
-  }
+    unlockFeature(purchase.productId);
+  };
   ```
 
 #### onPurchaseError
@@ -202,9 +202,9 @@ interface UseIAPOptions {
   ```tsx
   onPurchaseError: (error) => {
     if (error.code !== ErrorCode.E_USER_CANCELLED) {
-      Alert.alert('Purchase Failed', error.message)
+      Alert.alert('Purchase Failed', error.message);
     }
-  }
+  };
   ```
 
 #### onSyncError
@@ -215,8 +215,8 @@ interface UseIAPOptions {
 
   ```tsx
   onSyncError: (error) => {
-    console.warn('Store sync error:', error.message)
-  }
+    console.warn('Store sync error:', error.message);
+  };
   ```
 
 #### autoFinishTransactions
@@ -238,7 +238,7 @@ interface UseIAPOptions {
   ```tsx
   if (connected) {
     // Safe to make IAP calls
-    fetchProducts({ skus: ['product.id'], type: 'inapp' })
+    fetchProducts({skus: ['product.id'], type: 'inapp'});
   }
   ```
 
@@ -249,7 +249,7 @@ interface UseIAPOptions {
 - **Example**:
 
   ```tsx
-  products.map((product) => <ProductItem key={product.id} product={product} />)
+  products.map((product) => <ProductItem key={product.id} product={product} />);
   ```
 
 #### subscriptions
@@ -261,7 +261,7 @@ interface UseIAPOptions {
   ```tsx
   subscriptions.map((subscription) => (
     <SubscriptionItem key={subscription.id} subscription={subscription} />
-  ))
+  ));
   ```
 
 #### currentPurchase
@@ -273,9 +273,9 @@ interface UseIAPOptions {
   ```tsx
   useEffect(() => {
     if (currentPurchase) {
-      console.log('Debug purchase event:', currentPurchase.id)
+      console.log('Debug purchase event:', currentPurchase.id);
     }
-  }, [currentPurchase])
+  }, [currentPurchase]);
   ```
 
 #### currentPurchaseError
@@ -287,9 +287,9 @@ interface UseIAPOptions {
   ```tsx
   useEffect(() => {
     if (currentPurchaseError) {
-      handlePurchaseError(currentPurchaseError)
+      handlePurchaseError(currentPurchaseError);
     }
-  }, [currentPurchaseError])
+  }, [currentPurchaseError]);
   ```
 
 #### purchaseHistories
@@ -301,7 +301,7 @@ interface UseIAPOptions {
   ```tsx
   purchaseHistories.map((purchase) => (
     <PurchaseHistoryItem key={purchase.transactionId} purchase={purchase} />
-  ))
+  ));
   ```
 
 #### availablePurchases
@@ -313,7 +313,7 @@ interface UseIAPOptions {
   ```tsx
   availablePurchases.map((purchase) => (
     <RestorableItem key={purchase.transactionId} purchase={purchase} />
-  ))
+  ));
   ```
 
 #### promotedProductIOS
@@ -326,9 +326,9 @@ interface UseIAPOptions {
   useEffect(() => {
     if (promotedProductIOS) {
       // Handle promoted product
-      handlePromotedProduct(promotedProductIOS)
+      handlePromotedProduct(promotedProductIOS);
     }
-  }, [promotedProductIOS])
+  }, [promotedProductIOS]);
   ```
 
 ### Methods
@@ -352,13 +352,13 @@ interface UseIAPOptions {
       await fetchProducts({
         skus: ['com.app.premium', 'com.app.coins_100'],
         type: 'inapp',
-      })
+      });
       // Read from state later: products
-      console.log('Products count:', products.length)
+      console.log('Products count:', products.length);
     } catch (error) {
-      console.error('Failed to fetch products:', error)
+      console.error('Failed to fetch products:', error);
     }
-  }
+  };
 
   // Fetch subscriptions
   const loadSubscriptions = async () => {
@@ -366,13 +366,13 @@ interface UseIAPOptions {
       await fetchProducts({
         skus: ['com.app.premium_monthly', 'com.app.premium_yearly'],
         type: 'subs',
-      })
+      });
       // Read from state later: subscriptions
-      console.log('Subscriptions count:', subscriptions.length)
+      console.log('Subscriptions count:', subscriptions.length);
     } catch (error) {
-      console.error('Failed to fetch subscriptions:', error)
+      console.error('Failed to fetch subscriptions:', error);
     }
-  }
+  };
   ```
 
 #### requestPurchase
@@ -388,14 +388,14 @@ interface UseIAPOptions {
     try {
       await requestPurchase({
         request: {
-          ios: { sku: productId },
-          android: { skus: [productId] },
+          ios: {sku: productId},
+          android: {skus: [productId]},
         },
-      })
+      });
     } catch (error) {
-      console.error('Purchase request failed:', error)
+      console.error('Purchase request failed:', error);
     }
-  }
+  };
   ```
 
 #### getAvailablePurchases
@@ -407,12 +407,12 @@ interface UseIAPOptions {
   ```tsx
   const restorePurchases = async () => {
     try {
-      await getAvailablePurchases() // updates `availablePurchases` state
-      console.log('Available purchases count:', availablePurchases.length)
+      await getAvailablePurchases(); // updates `availablePurchases` state
+      console.log('Available purchases count:', availablePurchases.length);
     } catch (error) {
-      console.error('Failed to fetch available purchases:', error)
+      console.error('Failed to fetch available purchases:', error);
     }
-  }
+  };
   ```
 
 #### Subscription helpers (hook)
@@ -449,31 +449,31 @@ interface UseIAPOptions {
     try {
       if (Platform.OS === 'ios') {
         // iOS: Simple validation with just product ID
-        const result = await validateReceipt(productId)
-        return result
+        const result = await validateReceipt(productId);
+        return result;
       } else if (Platform.OS === 'android') {
         // Android: Requires additional parameters
-        const purchaseToken = purchase.purchaseToken
-        const packageName = purchase.packageNameAndroid
+        const purchaseToken = purchase.purchaseToken;
+        const packageName = purchase.packageNameAndroid;
 
         if (!purchaseToken || !packageName) {
           throw new Error(
-            'Android validation requires packageName and productToken'
-          )
+            'Android validation requires packageName and productToken',
+          );
         }
 
         const result = await validateReceipt(productId, {
           packageName,
           productToken: purchaseToken,
           isSub: false, // Set to true for subscriptions
-        })
-        return result
+        });
+        return result;
       }
     } catch (error) {
-      console.error('Validation failed:', error)
-      throw error
+      console.error('Validation failed:', error);
+      throw error;
     }
-  }
+  };
   ```
 
 #### requestPromotedProductIOS
@@ -484,12 +484,12 @@ interface UseIAPOptions {
 
   ```tsx
   const handlePromotedProduct = async () => {
-    const promotedProduct = await requestPromotedProductIOS()
+    const promotedProduct = await requestPromotedProductIOS();
     if (promotedProduct) {
-      console.log('Promoted product:', promotedProduct)
+      console.log('Promoted product:', promotedProduct);
       // Show custom purchase UI
     }
-  }
+  };
   ```
 
 #### buyPromotedProductIOS
@@ -501,12 +501,12 @@ interface UseIAPOptions {
   ```tsx
   const completePurchase = async () => {
     try {
-      await buyPromotedProductIOS()
-      console.log('Promoted product purchase completed')
+      await buyPromotedProductIOS();
+      console.log('Promoted product purchase completed');
     } catch (error) {
-      console.error('Failed to purchase promoted product:', error)
+      console.error('Failed to purchase promoted product:', error);
     }
-  }
+  };
   ```
 
 ## Platform-Specific Usage
@@ -515,24 +515,24 @@ interface UseIAPOptions {
 
 ```tsx
 const IOSPurchaseExample = () => {
-  const { connected, products, requestPurchase, validateReceipt } = useIAP({
+  const {connected, products, requestPurchase, validateReceipt} = useIAP({
     onPurchaseSuccess: async (purchase) => {
       // Validate receipt on iOS
-      const validation = await validateReceipt(purchase.productId)
+      const validation = await validateReceipt(purchase.productId);
       if (validation.isValid) {
-        unlockContent(purchase.productId)
+        unlockContent(purchase.productId);
       }
     },
-  })
+  });
 
   const buyProduct = (product: Product) => {
     requestPurchase({
       request: {
-        ios: { sku: product.id },
-        android: { skus: [product.id] },
+        ios: {sku: product.id},
+        android: {skus: [product.id]},
       },
-    })
-  }
+    });
+  };
 
   return (
     <View>
@@ -546,29 +546,29 @@ const IOSPurchaseExample = () => {
           />
         ))}
     </View>
-  )
-}
+  );
+};
 ```
 
 ### Android Example
 
 ```tsx
 const AndroidPurchaseExample = () => {
-  const { connected, products, requestPurchase } = useIAP({
+  const {connected, products, requestPurchase} = useIAP({
     onPurchaseSuccess: (purchase) => {
       // Android purchases are automatically validated by Google Play
-      unlockContent(purchase.productId)
+      unlockContent(purchase.productId);
     },
-  })
+  });
 
   const buyProduct = (product: Product) => {
     requestPurchase({
       request: {
-        ios: { sku: product.id },
-        android: { skus: [product.id] },
+        ios: {sku: product.id},
+        android: {skus: [product.id]},
       },
-    })
-  }
+    });
+  };
 
   return (
     <View>
@@ -582,8 +582,8 @@ const AndroidPurchaseExample = () => {
           />
         ))}
     </View>
-  )
-}
+  );
+};
 ```
 
 ## Error Handling
@@ -591,27 +591,27 @@ const AndroidPurchaseExample = () => {
 The `useIAP` hook integrates with the centralized error handling system:
 
 ```tsx
-const { requestPurchase } = useIAP({
+const {requestPurchase} = useIAP({
   onPurchaseError: (error) => {
     // Error is automatically typed as PurchaseError
     switch (error.code) {
       case ErrorCode.E_USER_CANCELLED:
         // Don't show error for user cancellation
-        break
+        break;
       case ErrorCode.E_NETWORK_ERROR:
-        Alert.alert('Network Error', 'Please check your connection')
-        break
+        Alert.alert('Network Error', 'Please check your connection');
+        break;
       case ErrorCode.E_ITEM_UNAVAILABLE:
         Alert.alert(
           'Item Unavailable',
-          'This item is not available for purchase'
-        )
-        break
+          'This item is not available for purchase',
+        );
+        break;
       default:
-        Alert.alert('Purchase Failed', error.message)
+        Alert.alert('Purchase Failed', error.message);
     }
   },
-})
+});
 ```
 
 ## Best Practices
@@ -621,29 +621,29 @@ const { requestPurchase } = useIAP({
    ```tsx
    useEffect(() => {
      if (connected) {
-       fetchProducts({ skus: productIds, type: 'inapp' })
+       fetchProducts({skus: productIds, type: 'inapp'});
      }
-   }, [connected])
+   }, [connected]);
    ```
 
 2. **Handle loading states**:
 
    ```tsx
-   const [loading, setLoading] = useState(false)
+   const [loading, setLoading] = useState(false);
 
    const buyProduct = async (productId: string) => {
-     setLoading(true)
+     setLoading(true);
      try {
        await requestPurchase({
          request: {
-           ios: { sku: productId },
-           android: { skus: [productId] },
+           ios: {sku: productId},
+           android: {skus: [productId]},
          },
-       })
+       });
      } finally {
-       setLoading(false)
+       setLoading(false);
      }
-   }
+   };
    ```
 
 3. **Implement proper error handling**:
@@ -651,13 +651,13 @@ const { requestPurchase } = useIAP({
    ```tsx
    const handleError = (error: PurchaseError) => {
      // Log for debugging
-     console.error('IAP Error:', error)
+     console.error('IAP Error:', error);
 
      // Show user-friendly message
      if (error.code !== ErrorCode.E_USER_CANCELLED) {
-       Alert.alert('Purchase Failed', error.message)
+       Alert.alert('Purchase Failed', error.message);
      }
-   }
+   };
    ```
 
 ## Promoted Products (iOS Only)
@@ -666,31 +666,31 @@ Handle App Store promoted products when users tap on them in the App Store:
 
 ```tsx
 const PromotedProductExample = () => {
-  const { promotedProductIOS, requestPurchaseOnPromotedProductIOS } = useIAP({
+  const {promotedProductIOS, requestPurchaseOnPromotedProductIOS} = useIAP({
     onPromotedProductIOS: (product) => {
-      console.log('Promoted product detected:', product)
+      console.log('Promoted product detected:', product);
     },
-  })
+  });
 
   useEffect(() => {
     if (promotedProductIOS) {
-      handlePromotedProduct()
+      handlePromotedProduct();
     }
-  }, [promotedProductIOS])
+  }, [promotedProductIOS]);
 
   const handlePromotedProduct = async () => {
     try {
       // Show your custom purchase UI
-      const confirmed = await showPurchaseConfirmation(promotedProductIOS)
+      const confirmed = await showPurchaseConfirmation(promotedProductIOS);
 
       if (confirmed) {
         // Complete the promoted purchase
-        await requestPurchaseOnPromotedProductIOS()
+        await requestPurchaseOnPromotedProductIOS();
       }
     } catch (error) {
-      console.error('Error handling promoted product:', error)
+      console.error('Error handling promoted product:', error);
     }
-  }
+  };
 
   const showPurchaseConfirmation = async (product: any) => {
     return new Promise((resolve) => {
@@ -698,15 +698,15 @@ const PromotedProductExample = () => {
         'Purchase Product',
         `Would you like to purchase ${product.localizedTitle} for ${product.price}?`,
         [
-          { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
-          { text: 'Buy', onPress: () => resolve(true) },
-        ]
-      )
-    })
-  }
+          {text: 'Cancel', onPress: () => resolve(false), style: 'cancel'},
+          {text: 'Buy', onPress: () => resolve(true)},
+        ],
+      );
+    });
+  };
 
-  return <View>{/* Your regular store UI */}</View>
-}
+  return <View>{/* Your regular store UI */}</View>;
+};
 ```
 
 ## See Also

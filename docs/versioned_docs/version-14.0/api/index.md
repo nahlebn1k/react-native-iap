@@ -29,11 +29,11 @@ Comprehensive list of all error codes that can be returned by React Native IAP.
 ## Quick Start
 
 ```javascript
-import { useIAP } from 'react-native-iap'
+import {useIAP} from 'react-native-iap';
 
 function MyComponent() {
-  const { products, purchaseProduct, restorePurchases, isLoading, error } =
-    useIAP()
+  const {products, purchaseProduct, restorePurchases, isLoading, error} =
+    useIAP();
 
   // Your component logic here
 }

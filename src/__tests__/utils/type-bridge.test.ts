@@ -1,4 +1,4 @@
-import { Platform } from 'react-native'
+import {Platform} from 'react-native';
 import {
   convertNitroProductToProduct,
   convertProductToSubscriptionProduct,
@@ -6,26 +6,26 @@ import {
   validateNitroProduct,
   validateNitroPurchase,
   checkTypeSynchronization,
-} from '../../utils/type-bridge'
-import type { NitroProduct, NitroPurchase } from '../../specs/RnIap.nitro'
-import type { Product } from '../../types'
-import { ProductTypeIOS } from '../../types'
+} from '../../utils/type-bridge';
+import type {NitroProduct, NitroPurchase} from '../../specs/RnIap.nitro';
+import type {Product} from '../../types';
+import {ProductTypeIOS} from '../../types';
 
 jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
     select: jest.fn((obj) => obj.ios),
   },
-}))
+}));
 
 describe('type-bridge utilities', () => {
   describe('convertNitroProductToProduct', () => {
     beforeEach(() => {
-      jest.clearAllMocks()
-    })
+      jest.clearAllMocks();
+    });
 
     it('should convert basic NitroProduct fields for iOS', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.product',
@@ -39,25 +39,25 @@ describe('type-bridge utilities', () => {
         platform: 'ios',
         isFamilyShareableIOS: true,
         jsonRepresentationIOS: '{"test": "data"}',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
+      const result = convertNitroProductToProduct(nitroProduct);
 
-      expect(result.id).toBe('com.example.product')
-      expect(result.title).toBe('Test Product')
-      expect(result.description).toBe('Test Description')
-      expect(result.type).toBe('inapp')
-      expect(result.displayName).toBe('Display Name')
-      expect(result.displayPrice).toBe('$9.99')
-      expect(result.currency).toBe('USD')
-      expect(result.price).toBe(9.99)
-      expect(result.platform).toBe('ios')
-      expect((result as any).isFamilyShareable).toBe(true)
-      expect((result as any).jsonRepresentation).toBe('{"test": "data"}')
-    })
+      expect(result.id).toBe('com.example.product');
+      expect(result.title).toBe('Test Product');
+      expect(result.description).toBe('Test Description');
+      expect(result.type).toBe('inapp');
+      expect(result.displayName).toBe('Display Name');
+      expect(result.displayPrice).toBe('$9.99');
+      expect(result.currency).toBe('USD');
+      expect(result.price).toBe(9.99);
+      expect(result.platform).toBe('ios');
+      expect((result as any).isFamilyShareable).toBe(true);
+      expect((result as any).jsonRepresentation).toBe('{"test": "data"}');
+    });
 
     it('should convert iOS consumable product type', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.consumable',
@@ -70,14 +70,14 @@ describe('type-bridge utilities', () => {
         price: 0.99,
         platform: 'ios',
         typeIOS: 'consumable',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
-      expect((result as any).typeIOS).toBe(ProductTypeIOS.consumable)
-    })
+      const result = convertNitroProductToProduct(nitroProduct);
+      expect((result as any).typeIOS).toBe(ProductTypeIOS.consumable);
+    });
 
     it('should convert iOS non-consumable product type', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.nonconsumable',
@@ -90,14 +90,14 @@ describe('type-bridge utilities', () => {
         price: 4.99,
         platform: 'ios',
         typeIOS: 'nonConsumable',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
-      expect((result as any).typeIOS).toBe(ProductTypeIOS.nonConsumable)
-    })
+      const result = convertNitroProductToProduct(nitroProduct);
+      expect((result as any).typeIOS).toBe(ProductTypeIOS.nonConsumable);
+    });
 
     it('should convert iOS auto-renewable subscription type', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.subscription',
@@ -110,16 +110,16 @@ describe('type-bridge utilities', () => {
         price: 9.99,
         platform: 'ios',
         typeIOS: 'autoRenewableSubscription',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
+      const result = convertNitroProductToProduct(nitroProduct);
       expect((result as any).typeIOS).toBe(
-        ProductTypeIOS.autoRenewableSubscription
-      )
-    })
+        ProductTypeIOS.autoRenewableSubscription,
+      );
+    });
 
     it('should convert iOS non-renewing subscription type', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.nonrenewing',
@@ -132,16 +132,16 @@ describe('type-bridge utilities', () => {
         price: 19.99,
         platform: 'ios',
         typeIOS: 'nonRenewingSubscription',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
+      const result = convertNitroProductToProduct(nitroProduct);
       expect((result as any).typeIOS).toBe(
-        ProductTypeIOS.nonRenewingSubscription
-      )
-    })
+        ProductTypeIOS.nonRenewingSubscription,
+      );
+    });
 
     it('should handle undefined iOS product type', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.unknown',
@@ -154,14 +154,14 @@ describe('type-bridge utilities', () => {
         price: 2.99,
         platform: 'ios',
         typeIOS: 'unknownType',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
-      expect((result as any).typeIOS).toBeUndefined()
-    })
+      const result = convertNitroProductToProduct(nitroProduct);
+      expect((result as any).typeIOS).toBeUndefined();
+    });
 
     it('should convert basic NitroProduct fields for Android', () => {
-      ;(Platform.OS as any) = 'android'
+      (Platform.OS as any) = 'android';
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.product',
@@ -173,24 +173,22 @@ describe('type-bridge utilities', () => {
         currency: 'USD',
         price: 9.99,
         platform: 'android',
-        oneTimePurchaseOfferDetailsAndroid: { token: 'test-token' },
-        installmentPlanDetailsAndroid: { commitmentPaymentsCount: 3 },
-        subscriptionOfferDetailsAndroid: JSON.stringify([
-          { offerId: 'offer1' },
-        ]),
-      } as NitroProduct
+        oneTimePurchaseOfferDetailsAndroid: {token: 'test-token'},
+        installmentPlanDetailsAndroid: {commitmentPaymentsCount: 3},
+        subscriptionOfferDetailsAndroid: JSON.stringify([{offerId: 'offer1'}]),
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
+      const result = convertNitroProductToProduct(nitroProduct);
 
-      expect(result.id).toBe('com.example.product')
-      expect(result.platform).toBe('android')
+      expect(result.id).toBe('com.example.product');
+      expect(result.platform).toBe('android');
       // These fields are created by the converter as flattened fields
-      expect((result as any).oneTimePurchaseOfferFormattedPrice).toBe('$9.99')
-      expect((result as any).oneTimePurchaseOfferPriceCurrencyCode).toBe('USD')
+      expect((result as any).oneTimePurchaseOfferFormattedPrice).toBe('$9.99');
+      expect((result as any).oneTimePurchaseOfferPriceCurrencyCode).toBe('USD');
       expect((result as any).subscriptionOfferDetailsAndroid).toEqual([
-        { offerId: 'offer1' },
-      ])
-    })
+        {offerId: 'offer1'},
+      ]);
+    });
 
     it('should handle null/undefined optional fields', () => {
       const nitroProduct: NitroProduct = {
@@ -203,17 +201,17 @@ describe('type-bridge utilities', () => {
         currency: undefined as any,
         price: 9.99,
         platform: 'ios',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
+      const result = convertNitroProductToProduct(nitroProduct);
 
-      expect(result.displayPrice).toBe('')
-      expect(result.currency).toBe('')
-    })
+      expect(result.displayPrice).toBe('');
+      expect(result.currency).toBe('');
+    });
 
     it('should handle failed JSON parsing for Android subscription offers', () => {
-      ;(Platform.OS as any) = 'android'
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+      (Platform.OS as any) = 'android';
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       const nitroProduct: NitroProduct = {
         id: 'com.example.product',
@@ -226,23 +224,23 @@ describe('type-bridge utilities', () => {
         price: 9.99,
         platform: 'android',
         subscriptionOfferDetailsAndroid: 'invalid json {',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = convertNitroProductToProduct(nitroProduct)
+      const result = convertNitroProductToProduct(nitroProduct);
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         'Failed to parse subscription offer details:',
-        expect.any(Error)
-      )
-      expect((result as any).subscriptionOfferDetailsAndroid).toBe(null)
+        expect.any(Error),
+      );
+      expect((result as any).subscriptionOfferDetailsAndroid).toBe(null);
 
-      consoleWarnSpy.mockRestore()
-    })
-  })
+      consoleWarnSpy.mockRestore();
+    });
+  });
 
   describe('convertProductToSubscriptionProduct', () => {
     it('should convert Product to SubscriptionProduct for iOS', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const product: Product = {
         id: 'com.example.subscription',
@@ -254,39 +252,39 @@ describe('type-bridge utilities', () => {
         currency: 'USD',
         price: 9.99,
         platform: 'ios',
-      } as Product
+      } as Product;
 
-      const result = convertProductToSubscriptionProduct(product)
+      const result = convertProductToSubscriptionProduct(product);
 
-      expect(result.type).toBe('subs')
-      expect(result.id).toBe('com.example.subscription')
-    })
+      expect(result.type).toBe('subs');
+      expect(result.id).toBe('com.example.subscription');
+    });
 
     it('should warn for non-subscription products', () => {
       const product: Product = {
         id: 'com.example.product',
         type: 'inapp',
-      } as Product
+      } as Product;
 
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation()
-      const result = convertProductToSubscriptionProduct(product)
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = convertProductToSubscriptionProduct(product);
 
       expect(warnSpy).toHaveBeenCalledWith(
         'Converting non-subscription product to SubscriptionProduct:',
-        'com.example.product'
-      )
-      expect(result.type).toBe('subs')
-      warnSpy.mockRestore()
-    })
-  })
+        'com.example.product',
+      );
+      expect(result.type).toBe('subs');
+      warnSpy.mockRestore();
+    });
+  });
 
   describe('convertNitroPurchaseToPurchase', () => {
     beforeEach(() => {
-      jest.clearAllMocks()
-    })
+      jest.clearAllMocks();
+    });
 
     it('should convert NitroPurchase for iOS', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroPurchase: NitroPurchase = {
         id: 'purchase123',
@@ -299,21 +297,21 @@ describe('type-bridge utilities', () => {
         platform: 'ios',
         appAccountToken: 'app-token',
         verificationResultIOS: 'verified',
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = convertNitroPurchaseToPurchase(nitroPurchase)
+      const result = convertNitroPurchaseToPurchase(nitroPurchase);
 
-      expect(result.id).toBe('purchase123')
-      expect(result.productId).toBe('com.example.product')
-      expect(result.transactionDate).toBe(new Date('2024-01-01').getTime())
-      expect(result.transactionReceipt).toBe('') // Always set to empty string by converter
-      expect(result.platform).toBe('ios')
-      expect((result as any).appAccountToken).toBe('app-token')
+      expect(result.id).toBe('purchase123');
+      expect(result.productId).toBe('com.example.product');
+      expect(result.transactionDate).toBe(new Date('2024-01-01').getTime());
+      expect(result.transactionReceipt).toBe(''); // Always set to empty string by converter
+      expect(result.platform).toBe('ios');
+      expect((result as any).appAccountToken).toBe('app-token');
       // verificationResultIOS is not mapped by the converter
-    })
+    });
 
     it('should convert NitroPurchase for Android', () => {
-      ;(Platform.OS as any) = 'android'
+      (Platform.OS as any) = 'android';
 
       const nitroPurchase: NitroPurchase = {
         id: 'purchase123',
@@ -328,36 +326,36 @@ describe('type-bridge utilities', () => {
         purchaseStateAndroid: 1,
         isAcknowledgedAndroid: true,
         purchaseTokenAndroid: 'token123',
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = convertNitroPurchaseToPurchase(nitroPurchase)
+      const result = convertNitroPurchaseToPurchase(nitroPurchase);
 
-      expect(result.platform).toBe('android')
-      expect((result as any).packageNameAndroid).toBe('com.example.app')
-      expect(result.purchaseState).toBe('purchased')
-      expect((result as any).isAcknowledgedAndroid).toBe(true)
-      expect((result as any).purchaseTokenAndroid).toBe('token123')
-    })
+      expect(result.platform).toBe('android');
+      expect((result as any).packageNameAndroid).toBe('com.example.app');
+      expect(result.purchaseState).toBe('purchased');
+      expect((result as any).isAcknowledgedAndroid).toBe(true);
+      expect((result as any).purchaseTokenAndroid).toBe('token123');
+    });
 
     it('should handle purchase with minimal fields', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroPurchase: NitroPurchase = {
         id: 'purchase123',
         productId: 'com.example.product',
         transactionDate: new Date('2024-01-01').getTime(),
         platform: 'ios',
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = convertNitroPurchaseToPurchase(nitroPurchase)
+      const result = convertNitroPurchaseToPurchase(nitroPurchase);
 
-      expect(result.quantity).toBe(1) // default value
-      expect(result.isAutoRenewing).toBe(false) // default value
-      expect(result.purchaseState).toBe('unknown') // default from PurchaseState.unknown
-    })
+      expect(result.quantity).toBe(1); // default value
+      expect(result.isAutoRenewing).toBe(false); // default value
+      expect(result.purchaseState).toBe('unknown'); // default from PurchaseState.unknown
+    });
 
     it('should use quantityIOS when available on iOS', () => {
-      ;(Platform.OS as any) = 'ios'
+      (Platform.OS as any) = 'ios';
 
       const nitroPurchase: NitroPurchase = {
         id: 'purchase123',
@@ -366,15 +364,15 @@ describe('type-bridge utilities', () => {
         platform: 'ios',
         quantityIOS: 5,
         quantity: 1,
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = convertNitroPurchaseToPurchase(nitroPurchase)
+      const result = convertNitroPurchaseToPurchase(nitroPurchase);
 
-      expect(result.quantity).toBe(5) // Should use quantityIOS value
-    })
+      expect(result.quantity).toBe(5); // Should use quantityIOS value
+    });
 
     it('should map Android purchase state 0 to unknown', () => {
-      ;(Platform.OS as any) = 'android'
+      (Platform.OS as any) = 'android';
 
       const nitroPurchase: NitroPurchase = {
         id: 'purchase123',
@@ -382,15 +380,15 @@ describe('type-bridge utilities', () => {
         transactionDate: new Date('2024-01-01').getTime(),
         platform: 'android',
         purchaseStateAndroid: 0,
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = convertNitroPurchaseToPurchase(nitroPurchase)
+      const result = convertNitroPurchaseToPurchase(nitroPurchase);
 
-      expect(result.purchaseState).toBe('unknown')
-    })
+      expect(result.purchaseState).toBe('unknown');
+    });
 
     it('should map Android purchase state 2 to pending', () => {
-      ;(Platform.OS as any) = 'android'
+      (Platform.OS as any) = 'android';
 
       const nitroPurchase: NitroPurchase = {
         id: 'purchase123',
@@ -398,15 +396,15 @@ describe('type-bridge utilities', () => {
         transactionDate: new Date('2024-01-01').getTime(),
         platform: 'android',
         purchaseStateAndroid: 2,
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = convertNitroPurchaseToPurchase(nitroPurchase)
+      const result = convertNitroPurchaseToPurchase(nitroPurchase);
 
-      expect(result.purchaseState).toBe('pending')
-    })
+      expect(result.purchaseState).toBe('pending');
+    });
 
     it('should handle autoRenewingAndroid fallback to isAutoRenewing', () => {
-      ;(Platform.OS as any) = 'android'
+      (Platform.OS as any) = 'android';
 
       const nitroPurchase: NitroPurchase = {
         id: 'purchase123',
@@ -415,14 +413,14 @@ describe('type-bridge utilities', () => {
         platform: 'android',
         isAutoRenewing: true,
         autoRenewingAndroid: undefined,
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = convertNitroPurchaseToPurchase(nitroPurchase)
+      const result = convertNitroPurchaseToPurchase(nitroPurchase);
 
-      expect((result as any).autoRenewingAndroid).toBe(true)
-      expect(result.isAutoRenewing).toBe(true)
-    })
-  })
+      expect((result as any).autoRenewingAndroid).toBe(true);
+      expect(result.isAutoRenewing).toBe(true);
+    });
+  });
 
   describe('validateNitroProduct', () => {
     it('should return true for valid product', () => {
@@ -432,29 +430,33 @@ describe('type-bridge utilities', () => {
         description: 'Test Description',
         type: 'inapp',
         platform: 'ios',
-      } as NitroProduct
+      } as NitroProduct;
 
-      const result = validateNitroProduct(product)
-      expect(result).toBe(true)
-    })
+      const result = validateNitroProduct(product);
+      expect(result).toBe(true);
+    });
 
     it('should return false for null product', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const result = validateNitroProduct(null as any)
-      expect(result).toBe(false)
-      errorSpy.mockRestore()
-    })
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const result = validateNitroProduct(null as any);
+      expect(result).toBe(false);
+      errorSpy.mockRestore();
+    });
 
     it('should return false for product without id', () => {
       const product = {
         title: 'Test Product',
-      } as any
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const result = validateNitroProduct(product)
-      expect(result).toBe(false)
-      errorSpy.mockRestore()
-    })
-  })
+      } as any;
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const result = validateNitroProduct(product);
+      expect(result).toBe(false);
+      errorSpy.mockRestore();
+    });
+  });
 
   describe('validateNitroPurchase', () => {
     it('should return true for valid purchase', () => {
@@ -463,35 +465,39 @@ describe('type-bridge utilities', () => {
         productId: 'com.example.product',
         transactionDate: Date.now(),
         platform: 'ios',
-      } as NitroPurchase
+      } as NitroPurchase;
 
-      const result = validateNitroPurchase(purchase)
-      expect(result).toBe(true)
-    })
+      const result = validateNitroPurchase(purchase);
+      expect(result).toBe(true);
+    });
 
     it('should return false for null purchase', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const result = validateNitroPurchase(null as any)
-      expect(result).toBe(false)
-      errorSpy.mockRestore()
-    })
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const result = validateNitroPurchase(null as any);
+      expect(result).toBe(false);
+      errorSpy.mockRestore();
+    });
 
     it('should return false for purchase without productId', () => {
       const purchase = {
         id: 'purchase123',
-      } as any
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const result = validateNitroPurchase(purchase)
-      expect(result).toBe(false)
-      errorSpy.mockRestore()
-    })
-  })
+      } as any;
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const result = validateNitroPurchase(purchase);
+      expect(result).toBe(false);
+      errorSpy.mockRestore();
+    });
+  });
 
   describe('checkTypeSynchronization', () => {
     it('should return isSync true for valid type conversion', () => {
-      const result = checkTypeSynchronization()
-      expect(result.isSync).toBe(true)
-      expect(result.issues).toHaveLength(0)
-    })
-  })
-})
+      const result = checkTypeSynchronization();
+      expect(result.isSync).toBe(true);
+      expect(result.issues).toHaveLength(0);
+    });
+  });
+});
