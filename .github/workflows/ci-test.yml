@@ -37,6 +37,18 @@ on:
       - checks_requested
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Run linting
+        run: node .yarn/releases/yarn-3.6.1.cjs lint:ci
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -46,20 +58,19 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
-
       - name: Run library tests with coverage
         run: node .yarn/releases/yarn-3.6.1.cjs test:ci
-      
-      - name: Run example tests with coverage  
+
+      - name: Run example tests with coverage
         run: node .yarn/releases/yarn-3.6.1.cjs test:ci:example
-      
+
       - name: List coverage files
         run: |
           echo "Library coverage:"
           ls -la coverage/ || echo "No library coverage directory"
-          echo "Example coverage:"
-          ls -la example/coverage/ || echo "No example coverage directory"
-      
+          # echo "Example coverage:"
+          # ls -la example/coverage/ || echo "No example coverage directory"
+
       - name: Upload library coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
@@ -70,14 +81,14 @@ jobs:
           name: library-coverage
           fail_ci_if_error: false
           verbose: true
-      
-      - name: Upload example coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: hyochan/react-native-iap
-          files: ./example/coverage/lcov.info
-          flags: example
-          name: example-coverage
-          fail_ci_if_error: false
-          verbose: true
+
+      # - name: Upload example coverage to Codecov
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     slug: hyochan/react-native-iap
+      #     files: ./example/coverage/lcov.info
+      #     flags: example
+      #     name: example-coverage
+      #     fail_ci_if_error: false
+      #     verbose: true

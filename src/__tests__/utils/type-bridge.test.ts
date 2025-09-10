@@ -439,17 +439,20 @@ describe('type-bridge utilities', () => {
     })
 
     it('should return false for null product', () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const result = validateNitroProduct(null as any)
       expect(result).toBe(false)
+      errorSpy.mockRestore()
     })
 
     it('should return false for product without id', () => {
       const product = {
         title: 'Test Product',
       } as any
-
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const result = validateNitroProduct(product)
       expect(result).toBe(false)
+      errorSpy.mockRestore()
     })
   })
 
@@ -467,17 +470,20 @@ describe('type-bridge utilities', () => {
     })
 
     it('should return false for null purchase', () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const result = validateNitroPurchase(null as any)
       expect(result).toBe(false)
+      errorSpy.mockRestore()
     })
 
     it('should return false for purchase without productId', () => {
       const purchase = {
         id: 'purchase123',
       } as any
-
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const result = validateNitroPurchase(purchase)
       expect(result).toBe(false)
+      errorSpy.mockRestore()
     })
   })
 

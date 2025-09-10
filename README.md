@@ -7,6 +7,7 @@
 [![Next Version](https://img.shields.io/npm/v/react-native-iap/next)](https://npmjs.org/package/react-native-iap)
 [![Download](http://img.shields.io/npm/dm/react-native-iap.svg?style=flat-square)](https://npmjs.org/package/react-native-iap)
 [![Backers and Sponsors](https://img.shields.io/opencollective/all/react-native-iap.svg)](https://opencollective.com/react-native-iap)
+[![CI - Test](https://github.com/hyochan/react-native-iap/actions/workflows/ci-test.yml/badge.svg)](https://github.com/hyochan/react-native-iap/actions/workflows/ci-test.yml)
 [![codecov](https://codecov.io/gh/hyochan/react-native-iap/graph/badge.svg?token=KSYo4rC6cU)](https://codecov.io/gh/hyochan/react-native-iap)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fhyochan%2Freact-native-iap.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fhyochan%2Freact-native-iap?ref=badge_shield&issueType=license)
   

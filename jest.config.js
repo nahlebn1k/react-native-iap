@@ -24,7 +24,6 @@ module.exports = {
     'src/**/*.{js,jsx,ts,tsx}',
     'plugin/src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/**/index.{js,ts}',
     '!src/**/*.nitro.ts',
     '!src/specs/**',
     '!plugin/src/index.ts',
