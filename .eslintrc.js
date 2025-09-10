@@ -11,6 +11,30 @@ module.exports = {
         ignore: ['^react$', '^react-native$'],
       },
     ],
+    // Prevent ambiguous imports that Metro may mis-resolve
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: [
+          {
+            name: '.',
+            message: "Avoid `import from '.'`; use './index' or an explicit path.",
+          },
+        ],
+      },
+    ],
+    'no-restricted-modules': [
+      'error',
+      {
+        paths: [
+          {
+            name: '.',
+            message:
+              "Avoid `require('.')`; use './index' or an explicit path.",
+          },
+        ],
+      },
+    ],
   },
   settings: {
     'import/ignore': ['react-native'],
