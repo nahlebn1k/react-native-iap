@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.2.1]
+
+### Changed
+
+- iOS: Upgrade OpenIAP to `~> 1.1.9` (StoreKit 2 stability and error model improvements)
+- iOS: Purchase flow is event‑only; add de‑duplication for error events to avoid double popups
+- Examples: Guard `finishTransaction` until connected and add short delayed retry
+- Examples: Normalize cancel handling with a single cancel popup
+
+### Fixed
+
+- iOS: Ensure synchronous errors during `requestPurchase` still surface via purchase error event (with lightweight de‑dup)
+- iOS: Include original error message in receipt failures for better diagnostics
+
+## [14.2.0]
+
+### Changed
+
+- iOS: Make `initConnection()` idempotent and non‑blocking; propagate failures via `E_INIT_CONNECTION`
+- iOS: Bump OpenIAP to `~> 1.1.8`
+- Android: Ship consumer R8 keep rules for Nitro classes
+- CI: Use vendored Yarn to avoid Corepack issues
+- Examples: Stabilize purchase/subscription flows and tests
+
 ## [14.1.1]
 
 ### Fixed
