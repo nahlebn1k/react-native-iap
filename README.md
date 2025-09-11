@@ -24,6 +24,15 @@
 
 **Starting from version 14.0.0**, this library uses [Nitro Modules](https://github.com/mrousavy/nitro) for high-performance native bridge implementation. You must install `react-native-nitro-modules` alongside `react-native-iap`.
 
+### Compatibility (Nitro 14.x)
+
+- `react-native-iap@14.x` (Nitro) requires **React Native 0.79+**.
+- Stuck on **RN 0.75.x or lower**? Use the last pre‑Nitro version: `npm i react-native-iap@13.1.0`.
+- Seeing Swift 6 C++ interop errors in Nitro (e.g., `AnyMap.swift` with `cppPart.pointee.*`)? Temporarily pin Swift to **5.10** for the `NitroModules` pod (see Installation docs) or upgrade RN and Nitro deps.
+- Recommended: upgrade to RN 0.79+, update `react-native-nitro-modules`/`nitro-codegen`, then `pod install` and clean build.
+
+More details and the Podfile snippet are in the docs: https://hyochan.github.io/react-native-iap/docs/installation#ios
+
 ## ✨ Features
 
 - 🔄 **Cross-platform Support**: Works seamlessly on both iOS and Android
