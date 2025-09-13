@@ -31,12 +31,11 @@ const addLineToGradle = (
 };
 
 export const modifyProjectBuildGradle = (gradle: string): string => {
-  // Add supportLibVersion to project build.gradle if not present
+  // Keep backward-compatible behavior: add supportLibVersion inside ext { } if missing
   if (!gradle.includes('supportLibVersion')) {
     const lines = gradle.split('\n');
     const extIndex = lines.findIndex((line) => line.trim() === 'ext {');
     if (extIndex !== -1) {
-      // Insert supportLibVersion right after 'ext {' with proper indentation
       lines.splice(extIndex + 1, 0, 'supportLibVersion = "28.0.0"');
       return lines.join('\n');
     }
@@ -44,36 +43,45 @@ export const modifyProjectBuildGradle = (gradle: string): string => {
   return gradle;
 };
 
+const OPENIAP_COORD = 'io.github.hyochan.openiap:openiap-google';
+const OPENIAP_VERSION = '1.1.0';
+
 const modifyAppBuildGradle = (gradle: string): string => {
   let modified = gradle;
 
-  // Add billing library dependencies to app-level build.gradle
-  const billingDep = `    implementation "com.android.billingclient:billing-ktx:8.0.0"`;
-  const gmsDep = `    implementation "com.google.android.gms:play-services-base:18.1.0"`;
+  // Replace legacy Billing/GMS instructions with OpenIAP Google library
+  // Remove any old billingclient or play-services-base lines we may have added previously
+  modified = modified
+    .replace(
+      /^[ \t]*(implementation|api)[ \t]+["']com\.android\.billingclient:billing-ktx:[^"']+["'][ \t]*$/gim,
+      '',
+    )
+    .replace(
+      /^[ \t]*(implementation|api)[ \t]+["']com\.google\.android\.gms:play-services-base:[^"']+["'][ \t]*$/gim,
+      '',
+    )
+    .replace(/\n{3,}/g, '\n\n');
 
-  let hasAddedDependency = false;
+  const openiapDep = `    implementation "${OPENIAP_COORD}:${OPENIAP_VERSION}"`;
 
-  if (!modified.includes(billingDep)) {
-    modified = addLineToGradle(modified, /dependencies\s*{/, billingDep);
-    hasAddedDependency = true;
-  }
-  if (!modified.includes(gmsDep)) {
-    modified = addLineToGradle(modified, /dependencies\s*{/, gmsDep, 1);
-    hasAddedDependency = true;
-  }
-
-  // Log only once and only if we actually added dependencies
-  if (hasAddedDependency && !hasLoggedPluginExecution) {
-    console.log(
-      '🛠️ react-native-iap: Added billing dependencies to build.gradle',
-    );
+  if (!modified.includes(OPENIAP_COORD)) {
+    if (!/dependencies\s*{/.test(modified)) {
+      modified += `\n\ndependencies {\n${openiapDep}\n}\n`;
+    } else {
+      modified = addLineToGradle(modified, /dependencies\s*{/, openiapDep);
+    }
+    if (!hasLoggedPluginExecution) {
+      console.log(
+        `🛠️ react-native-iap: Added OpenIAP (${OPENIAP_VERSION}) to build.gradle`,
+      );
+    }
   }
 
   return modified;
 };
 
 const withIapAndroid: ConfigPlugin = (config) => {
-  // Add IAP dependencies to app build.gradle
+  // Add OpenIAP dependency to app build.gradle
   config = withAppBuildGradle(config, (config) => {
     config.modResults.contents = modifyAppBuildGradle(
       config.modResults.contents,
