@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.3.0]
+
+### Added
+
+- JS: `getStorefront()` and `deepLinkToSubscriptions()` helpers for unified storefront lookup and opening native subscription management.
+
+### Changed
+
+- Android: Bump to OpenIAP Google 1.1.0 and align init behavior/field mapping with the OpenIAP spec.
+
+### Fixed
+
+- Android: Address potential `init` race and improve error propagation for clearer failures.
+- iOS: Add temporary stubs to keep Nitro/iOS in sync with the JS spec (no runtime behavior change).
+
 ## [14.2.3]
 
 ### Fixed
