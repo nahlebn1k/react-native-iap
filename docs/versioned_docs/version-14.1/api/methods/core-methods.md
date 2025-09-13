@@ -30,7 +30,7 @@ This difference exists because:
 | --- | --- | --- | --- |
 | `requestPurchase()` | Uses `sku: string` | Uses `skus: string[]` | Platform-specific handling required |
 
-**💡 Best Practice:** Use the new platform-specific API (v14.0.0-rc+) to avoid platform checks:
+**💡 Best Practice:** Use the new platform-specific API (v14.0+) to avoid platform checks:
 
 ```tsx
 // New API - no Platform.OS checks needed!
@@ -64,7 +64,7 @@ const initialize = async () => {
 };
 ```
 
-**Returns:** `Promise<Purchase[]>` — Subscriptions whose auto-renewal status changed
+**Returns:** `Promise<boolean>` — True if connection was successful
 
 **Note:** When using the `useIAP` hook, connection is automatically managed.
 
@@ -85,7 +85,7 @@ const cleanup = async () => {
 };
 ```
 
-**Returns:** `Promise<Purchase[]>` — Array of subscriptions whose auto-renewal status changed
+**Returns:** `Promise<boolean>`
 
 **Note:** When using the `useIAP` hook, connection cleanup is automatic.
 
@@ -133,7 +133,7 @@ const loadSubscriptions = async () => {
 
 - `params` (object):
   - `skus` (string[]): Array of product or subscription IDs to fetch
-  - `type` ('inapp' | 'subs' | 'all'): Product type — 'inapp' (default), 'subs', or 'all' to fetch both
+  - `type` ('inapp' | 'subs'): Product type - 'inapp' for products (default), 'subs' for subscriptions
 
 **Returns:** `Promise<Product[]>`
 
@@ -145,12 +145,12 @@ Initiates a purchase request for products or subscriptions.
 
 > **⚠️ Important:** This is an event-based operation. Listen for events through `purchaseUpdatedListener` or `purchaseErrorListener`.
 
-**⚠️ Platform Differences:**
-
+> **⚠️ Platform Differences:**
+>
 > - **iOS**: Can only purchase one product at a time (uses `sku: string`)
 > - **Android**: Can purchase multiple products at once (uses `skus: string[]`)
 
-#### Platform-Specific API (v14.0.0-rc+) - Recommended
+#### Platform-Specific API (v14.0+) - Recommended
 
 ```tsx
 import {requestPurchase} from 'react-native-iap';
@@ -660,7 +660,7 @@ const getSubscriptionStatus = async (sku: string) => {
 
 **Platform:** iOS only
 
-**Returns:** `Promise<SubscriptionStatusIOS[]>`
+**Returns:** `Promise<any[]>`
 
 ### currentEntitlementIOS()
 
