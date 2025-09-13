@@ -2,7 +2,7 @@
 // This file is automatically copied during postinstall
 // Do not edit directly - modify the source file instead
 
-import {useEffect, useCallback, useState} from 'react';
+import {useEffect, useCallback, useState, useRef} from 'react';
 import {
   View,
   Text,
@@ -17,11 +17,10 @@ import {
 import Clipboard from '@react-native-clipboard/clipboard';
 import {
   useIAP,
-  requestPurchase,
   type SubscriptionProduct,
   type PurchaseError,
   type Purchase,
-  type PurchaseIOS,
+  isUserCancelledError,
 } from 'react-native-iap';
 
 /**
@@ -44,6 +43,8 @@ import {
 const SUBSCRIPTION_IDS = ['dev.hyo.martie.premium'];
 
 export default function SubscriptionFlow() {
+  // Track connection to coordinate delayed finish
+  const connectedRef = useRef(false);
   const {
     connected,
     subscriptions,
@@ -53,77 +54,88 @@ export default function SubscriptionFlow() {
     finishTransaction,
     getAvailablePurchases,
     getActiveSubscriptions,
+    requestPurchase,
   } = useIAP({
     onPurchaseSuccess: async (purchase) => {
-      console.log('Subscription successful (event):', purchase);
+      console.log('Purchase successful:', purchase);
       setIsProcessing(false);
 
-      // Determine restoration for iOS based on original vs. current transaction ID
-      let isRestoration = false;
-      if (Platform.OS === 'ios' && purchase.platform === 'ios') {
-        const iosPurchase = purchase as PurchaseIOS;
-        const currentId = purchase.transactionId || purchase.id;
-        isRestoration = Boolean(
-          iosPurchase.originalTransactionIdentifierIOS &&
-            iosPurchase.originalTransactionIdentifierIOS !== currentId,
+      // IMPORTANT: Server-side receipt validation should be performed here
+      // Send the receipt to your backend server for validation
+      // Example:
+      // const isValid = await validateReceiptOnServer(purchase.transactionReceipt);
+      // if (!isValid) {
+      //   Alert.alert('Error', 'Receipt validation failed');
+      //   return;
+      // }
+
+      // After successful server validation, finish the transaction
+      // Guard: Only attempt when connected to store
+      if (!connectedRef.current) {
+        console.log(
+          '[SubscriptionFlow] Skipping finishTransaction - not connected yet',
         );
+        // Retry until connected or timeout (~1s)
+        const started = Date.now();
+        const tryFinish = () => {
+          if (connectedRef.current) {
+            finishTransaction({
+              purchase,
+              isConsumable: false,
+            }).catch((err) => {
+              console.warn(
+                '[SubscriptionFlow] Delayed finishTransaction failed:',
+                err,
+              );
+            });
+            return;
+          }
+          if (Date.now() - started < 1000) {
+            setTimeout(tryFinish, 100);
+          }
+        };
+        setTimeout(tryFinish, 100);
+      } else {
+        // For subscriptions, set isConsumable to false
+        await finishTransaction({
+          purchase,
+          isConsumable: false, // Set to false for subscription products
+        });
       }
 
+      // Refresh subscription status and available purchases after success
       try {
-        // Always finish subscription transactions (no-op if auto-finished)
-        await finishTransaction({purchase, isConsumable: false});
+        await getActiveSubscriptions(SUBSCRIPTION_IDS);
       } catch (e) {
-        console.warn('finishTransaction (post-purchase) failed:', e);
+        console.warn('Failed to refresh active subscriptions:', e);
       }
-
-      if (isRestoration) {
-        // Treat as restoration/verification
-        setPurchaseResult(
-          `ℹ️ Subscription restored/verified (${purchase.platform})\n` +
-            `Product: ${purchase.productId}`,
-        );
-        // Refresh state
-        try {
-          await getActiveSubscriptions();
-          await getAvailablePurchases();
-        } catch {}
-        return;
-      }
-
-      // New subscription — verify activation before showing success
-      setPurchaseResult('⏳ Processing subscription...');
       try {
-        const subs = await getActiveSubscriptions([purchase.productId]);
-        const isNowActive = subs.some(
-          (s) => s.productId === purchase.productId,
-        );
-        if (isNowActive) {
-          setPurchaseResult(
-            `✅ Subscription activated (${purchase.platform})\n` +
-              `Product: ${purchase.productId}\n` +
-              `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
-              `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}`,
-          );
-          Alert.alert('Success', 'Subscription activated successfully!');
-        } else {
-          setPurchaseResult(
-            '⏳ Subscription is processing. Please refresh status shortly.',
-          );
-        }
-      } finally {
-        // Also refresh history/state shortly after
-        setTimeout(() => {
-          getAvailablePurchases().catch(() => {});
-          getActiveSubscriptions().catch(() => {});
-        }, 1000);
+        await getAvailablePurchases();
+      } catch (e) {
+        console.warn('Failed to refresh available purchases:', e);
       }
+
+      // Handle successful purchase
+      setPurchaseResult(
+        `✅ Subscription activated\n` +
+          `Product: ${purchase.productId}\n` +
+          `Transaction ID: ${purchase.transactionId || 'N/A'}\n` +
+          `Date: ${new Date(purchase.transactionDate).toLocaleDateString()}\n` +
+          `Receipt: ${purchase.transactionReceipt?.substring(0, 50)}...`,
+      );
+
+      Alert.alert('Success', 'Purchase completed successfully!');
     },
     onPurchaseError: (error: PurchaseError) => {
       console.error('Subscription failed:', error);
       setIsProcessing(false);
-
-      // Handle subscription error
+      const isCancel = isUserCancelledError(error as any);
+      // Always update UI error text
       setPurchaseResult(`❌ Subscription failed: ${error.message}`);
+      // Only alert for non-cancel errors
+      if (!isCancel) {
+        Alert.alert('Subscription Failed', error.message);
+      }
     },
     onSyncError: (error: Error) => {
       console.warn('Sync error:', error);
@@ -144,29 +156,44 @@ export default function SubscriptionFlow() {
     null,
   );
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
+  const fetchedProductsOnceRef = useRef(false);
+  const loadedPurchasesOnceRef = useRef(false);
+  const statusAutoCheckedRef = useRef(false);
 
   // Load subscription products when connected
   useEffect(() => {
     if (connected) {
-      console.log('Connected to store, loading subscription products...');
-      // fetchProducts is event-based, not promise-based
-      // Results will be available through the useIAP hook's subscriptions state
-      fetchProducts({skus: SUBSCRIPTION_IDS, type: 'subs'});
-      console.log('Product loading request sent - waiting for results...');
+      if (!fetchedProductsOnceRef.current) {
+        console.log('Connected to store, loading subscription products...');
+        fetchProducts({skus: SUBSCRIPTION_IDS, type: 'subs'});
+        console.log('Product loading request sent - waiting for results...');
+        fetchedProductsOnceRef.current = true;
+      }
 
-      // Load available purchases to check subscription history
-      console.log('Loading available purchases...');
-      getAvailablePurchases().catch((error) => {
-        console.warn('Failed to load available purchases:', error);
-      });
+      if (!loadedPurchasesOnceRef.current) {
+        console.log('Loading available purchases...');
+        getAvailablePurchases()
+          .catch((error) => {
+            console.warn('Failed to load available purchases:', error);
+          })
+          .finally(() => {
+            loadedPurchasesOnceRef.current = true;
+          });
+      }
     }
   }, [connected, fetchProducts, getAvailablePurchases]);
 
+  // Keep ref in sync for delayed finish
+  useEffect(() => {
+    connectedRef.current = connected;
+  }, [connected]);
+
   // Check subscription status separately to avoid infinite loop
   useEffect(() => {
-    if (connected) {
+    if (connected && !statusAutoCheckedRef.current) {
       // Use a timeout to avoid rapid consecutive calls
       const timer = setTimeout(() => {
+        statusAutoCheckedRef.current = true;
         checkSubscriptionStatus();
       }, 500);
 
@@ -178,23 +205,12 @@ export default function SubscriptionFlow() {
 
   // Track activeSubscriptions state changes
   useEffect(() => {
-    console.log(
-      '[STATE CHANGE] activeSubscriptions:',
-      activeSubscriptions.length,
-      activeSubscriptions,
-    );
+    // State change: activeSubscriptions
   }, [activeSubscriptions]);
 
   // Track subscriptions (products) state changes
   useEffect(() => {
-    console.log(
-      '[STATE CHANGE] subscriptions (products):',
-      subscriptions.length,
-      subscriptions.map((s: SubscriptionProduct) => ({
-        id: s.id,
-        title: s.title,
-      })),
-    );
+    // State change: subscriptions (products)
   }, [subscriptions]);
 
   // Removed - handled by onPurchaseSuccess and onPurchaseError callbacks
@@ -409,6 +425,19 @@ export default function SubscriptionFlow() {
             Platform: {Platform.OS === 'ios' ? '🍎 iOS' : '🤖 Android'}
           </Text>
         </View>
+        {!connected && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 8,
+            }}
+          >
+            <ActivityIndicator size="small" color="#007AFF" />
+            <Text style={styles.loadingText}>Connecting to store…</Text>
+          </View>
+        )}
       </View>
 
       {/* Subscription Status Section */}
@@ -788,6 +817,12 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     padding: 20,
+  },
+  loadingScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   statusSection: {
     backgroundColor: '#e8f4f8',
