@@ -27,8 +27,8 @@ const mockFinishTransaction = jest.fn();
     {
       productId: 'dev.hyo.martie.premium',
       transactionDate: Date.now(),
-      transactionReceipt: 'mock-receipt',
-      transactionId: 'trans-123',
+      purchaseToken: 'mock-receipt',
+      id: 'trans-123',
       platform: 'ios',
     },
   ],
