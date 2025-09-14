@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.3.1]
+
+### Added
+
+- Examples: Add “Manage Subscriptions” buttons in SubscriptionFlow and AvailablePurchases (opens native subscription management via cross‑platform deeplink)
+- Examples: Allow tapping purchased items to open a details modal
+
+### Changed
+
+- Docs: Clarify event‑driven request model and why `request*` APIs do not resolve with results; add FAQ about transient iOS success→error timing and suggested debounce
+- Docs: Prefer `purchase.id` terminology in examples and guides; continue to recommend `purchaseToken` for server validation
+- Examples: Redact sensitive fields in logs and modals (no `transactionReceipt`/full `purchaseToken` shown)
+
+### Fixed
+
+- iOS: Sanitize purchase error payload so `purchaseToken` does not carry product identifiers in error events; keep internal deduplication based on SKU
+- Examples/Tests: Align transaction row with `purchase.id`; update tests accordingly
+
+- Remove any references to `purchase.transactionReceipt`, `purchase.transactionReceiptIOS`, and `purchase.purchaseTokenAndroid`
+
 ## [14.3.0]
 
 ### Added
@@ -113,5 +133,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ---
 
 For older versions, please refer to the releases page on GitHub.
-
-- Remove any references to `purchase.transactionReceipt`, `purchase.transactionReceiptIOS`, and `purchase.purchaseTokenAndroid`
