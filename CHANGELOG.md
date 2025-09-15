@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.3.2]
+
+### Fixed
+
+- JS: Guard Nitro HybridObject creation with try/catch and remove `isRuntimeAlive` import to stabilize CI/Jest and avoid "not a function" errors.
+
+### Added
+
+- Plugin (Expo): Optional iOS Podfile workaround to disable Folly coroutines via `"with-folly-no-couroutines": true`.
+
+### Changed
+
+- Docs: Restore installation note for the Folly workaround and remove a local Docusaurus type shim to avoid duplicate type declarations.
+
 ## [14.3.1]
 
 ### Added
