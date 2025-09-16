@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.3.3]
+
+### Changed
+
+- JS: Streamline `requestPurchase` parameter handling, emit development warnings when the wrong request shape is supplied, and remove the legacy `request` fallback.
+- JS: Warn when the bridge encounters an unknown iOS product type to highlight schema mismatches sooner.
+- Build: Adopt [openiap-gql 1.0.0](https://github.com/hyodotdev/openiap-gql/releases/tag/1.0.0) for the transport layer to stay aligned with the GraphQL contract shipped across the ecosystem.
+
+### Fixed
+
+- JS: Normalize native error codes (including US/UK spelling) so cancellation flows and init‑connection guards behave like earlier releases.
+- Helpers: Align Active Subscription expiration fields with generated types (`null` instead of missing `Date`) to keep downstream consumers consistent.
+
 ## [14.3.2]
 
 ### Fixed
