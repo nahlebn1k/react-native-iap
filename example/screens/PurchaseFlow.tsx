@@ -110,18 +110,20 @@ const PurchaseFlow: React.FC = () => {
     try {
       // Attach listeners first to avoid race conditions
       const handlePurchaseError = (error: NitroPurchaseResult) => {
-        // Purchase failed
+        // Purchase failed or cancelled
         setLastPurchase(null);
-        setLastError(error);
-        const errorMessage = error.message || 'Purchase failed';
-        setPurchaseResult(`❌ Purchase failed: ${errorMessage}`);
         setPurchasing(false);
 
         if (isUserCancelledError(error as any)) {
-          Alert.alert('Purchase Cancelled', 'You cancelled the purchase');
-        } else {
-          Alert.alert('Purchase Failed', errorMessage);
+          setLastError(null);
+          setPurchaseResult('🚫 Purchase cancelled by user');
+          return;
         }
+
+        setLastError(error);
+        const errorMessage = error.message || 'Purchase failed';
+        setPurchaseResult(`❌ Purchase failed: ${errorMessage}`);
+        Alert.alert('Purchase Failed', errorMessage);
       };
 
       const setupPurchaseListeners = () => {
@@ -218,10 +220,19 @@ const PurchaseFlow: React.FC = () => {
       // Purchase request sent - waiting for result via event listener
     } catch (error: any) {
       // Purchase request failed
+      setPurchasing(false);
+      setLastPurchase(null);
+
+      if (isUserCancelledError(error as any)) {
+        setLastError(null);
+        setPurchaseResult('🚫 Purchase cancelled by user');
+        return;
+      }
+
+      setLastError((error as NitroPurchaseResult) ?? null);
       const errorMessage =
         error instanceof Error ? error.message : 'Purchase request failed';
       setPurchaseResult(`❌ Purchase request failed: ${errorMessage}`);
-      setPurchasing(false);
 
       Alert.alert('Request Failed', errorMessage);
     }
