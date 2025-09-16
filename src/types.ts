@@ -170,32 +170,32 @@ export interface Mutation {
   validateReceipt: Promise<ReceiptValidationResult>;
 }
 
-export interface MutationacknowledgePurchaseAndroidArgs {
+export interface MutationAcknowledgePurchaseAndroidArgs {
   purchaseToken: string;
 }
 
-export interface MutationbeginRefundRequestIOSArgs {
+export interface MutationBeginRefundRequestIosArgs {
   sku: string;
 }
 
-export interface MutationconsumePurchaseAndroidArgs {
+export interface MutationConsumePurchaseAndroidArgs {
   purchaseToken: string;
 }
 
-export interface MutationdeepLinkToSubscriptionsArgs {
+export interface MutationDeepLinkToSubscriptionsArgs {
   options?: DeepLinkOptions | null;
 }
 
-export interface MutationfinishTransactionArgs {
+export interface MutationFinishTransactionArgs {
   isConsumable?: boolean | null;
   purchase: PurchaseInput;
 }
 
-export interface MutationrequestPurchaseArgs {
+export interface MutationRequestPurchaseArgs {
   params: PurchaseParams;
 }
 
-export interface MutationvalidateReceiptArgs {
+export interface MutationValidateReceiptArgs {
   options: ReceiptValidationProps;
 }
 
@@ -508,43 +508,43 @@ export interface Query {
   subscriptionStatusIOS: Promise<SubscriptionStatusIOS[]>;
 }
 
-export interface QuerycurrentEntitlementIOSArgs {
+export interface QueryCurrentEntitlementIosArgs {
   skus?: string[] | null;
 }
 
-export interface QueryfetchProductsArgs {
+export interface QueryFetchProductsArgs {
   params: ProductRequest;
 }
 
-export interface QuerygetActiveSubscriptionsArgs {
+export interface QueryGetActiveSubscriptionsArgs {
   subscriptionIds?: string[] | null;
 }
 
-export interface QuerygetAvailablePurchasesArgs {
+export interface QueryGetAvailablePurchasesArgs {
   options?: PurchaseOptions | null;
 }
 
-export interface QuerygetTransactionJwsIOSArgs {
+export interface QueryGetTransactionJwsIosArgs {
   transactionId: string;
 }
 
-export interface QueryhasActiveSubscriptionsArgs {
+export interface QueryHasActiveSubscriptionsArgs {
   subscriptionIds?: string[] | null;
 }
 
-export interface QueryisEligibleForIntroOfferIOSArgs {
+export interface QueryIsEligibleForIntroOfferIosArgs {
   productIds: string[];
 }
 
-export interface QueryisTransactionVerifiedIOSArgs {
+export interface QueryIsTransactionVerifiedIosArgs {
   transactionId: string;
 }
 
-export interface QuerylatestTransactionIOSArgs {
+export interface QueryLatestTransactionIosArgs {
   sku: string;
 }
 
-export interface QuerysubscriptionStatusIOSArgs {
+export interface QuerySubscriptionStatusIosArgs {
   skus?: string[] | null;
 }
 
@@ -572,7 +572,7 @@ export interface ReceiptValidationResultAndroid {
   cancelDate?: number | null;
   cancelReason?: string | null;
   deferredDate?: number | null;
-  deferredSku?: number | null;
+  deferredSku?: string | null;
   freeTrialEndDate: number;
   gracePeriodEndDate: number;
   parentProductId: string;
@@ -681,7 +681,7 @@ export interface RequestSubscriptionPropsByPlatforms {
   /** Android-specific subscription parameters */
   android?: RequestSubscriptionAndroidProps | null;
   /** iOS-specific subscription parameters */
-  ios?: RequestPurchaseIosProps | null;
+  ios?: RequestSubscriptionIosProps | null;
 }
 
 export interface Subscription {

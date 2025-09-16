@@ -862,7 +862,7 @@ export const validateReceipt = async (
         cancelDate: androidResult.cancelDate,
         cancelReason: androidResult.cancelReason,
         deferredDate: androidResult.deferredDate,
-        deferredSku: androidResult.deferredSku,
+        deferredSku: androidResult.deferredSku?.toString() ?? null,
         freeTrialEndDate: androidResult.freeTrialEndDate,
         gracePeriodEndDate: androidResult.gracePeriodEndDate,
         parentProductId: androidResult.parentProductId,

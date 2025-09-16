@@ -57,6 +57,10 @@ example-expo/          # Independent Expo example app (NOT in workspace)
 └── package.json       # Uses bun, independent from yarn workspace
 ```
 
+### Auto-generated Files
+
+- `src/types.ts` is generated; never edit manually. Update the underlying schema/spec and rerun the generators instead.
+
 ## Development Commands
 
 ### Building and Code Generation
