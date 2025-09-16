@@ -12,17 +12,17 @@ import type {
 } from '../specs/RnIap.nitro';
 import {
   Platform as IapPlatform,
-  PaymentModeIos,
+  PaymentModeIOS,
   ProductType,
-  ProductTypeIos,
+  ProductTypeIOS,
   PurchaseState,
-  SubscriptionPeriodIos,
+  SubscriptionPeriodIOS,
 } from '../types';
 import type {
   Product,
   ProductSubscription,
   Purchase,
-  SubscriptionStatusIos,
+  SubscriptionStatusIOS,
 } from '../types';
 
 const PLATFORM_IOS = 'ios';
@@ -48,61 +48,61 @@ function normalizeProductType(value?: Nullable<string>): ProductType {
     : ProductType.InApp;
 }
 
-function normalizeProductTypeIos(value?: Nullable<string>): ProductTypeIos {
+function normalizeProductTypeIOS(value?: Nullable<string>): ProductTypeIOS {
   switch ((value ?? '').toLowerCase()) {
     case 'consumable':
-      return ProductTypeIos.Consumable;
+      return ProductTypeIOS.Consumable;
     case 'nonconsumable':
     case 'non_consumable':
     case 'non-consumable':
-      return ProductTypeIos.NonConsumable;
+      return ProductTypeIOS.NonConsumable;
     case 'autorenewablesubscription':
     case 'auto_renewable_subscription':
     case 'autorenewable':
-      return ProductTypeIos.AutoRenewableSubscription;
+      return ProductTypeIOS.AutoRenewableSubscription;
     case 'nonrenewingsubscription':
     case 'non_renewing_subscription':
-      return ProductTypeIos.NonRenewingSubscription;
+      return ProductTypeIOS.NonRenewingSubscription;
     default:
       if (value) {
         console.warn(
           `[react-native-iap] Unknown iOS product type "${value}", defaulting to NonConsumable.`,
         );
       }
-      return ProductTypeIos.NonConsumable;
+      return ProductTypeIOS.NonConsumable;
   }
 }
 
-function normalizePaymentMode(value?: Nullable<string>): PaymentModeIos | null {
+function normalizePaymentMode(value?: Nullable<string>): PaymentModeIOS | null {
   switch ((value ?? '').toUpperCase()) {
     case 'FREE_TRIAL':
     case 'FREETRIAL':
-      return PaymentModeIos.FreeTrial;
+      return PaymentModeIOS.FreeTrial;
     case 'PAY_AS_YOU_GO':
     case 'PAYASYOUGO':
-      return PaymentModeIos.PayAsYouGo;
+      return PaymentModeIOS.PayAsYouGo;
     case 'PAY_UP_FRONT':
     case 'PAYUPFRONT':
-      return PaymentModeIos.PayUpFront;
+      return PaymentModeIOS.PayUpFront;
     default:
-      return PaymentModeIos.Empty;
+      return PaymentModeIOS.Empty;
   }
 }
 
 function normalizeSubscriptionPeriod(
   value?: Nullable<string>,
-): SubscriptionPeriodIos | null {
+): SubscriptionPeriodIOS | null {
   switch ((value ?? '').toUpperCase()) {
     case 'DAY':
-      return SubscriptionPeriodIos.Day;
+      return SubscriptionPeriodIOS.Day;
     case 'WEEK':
-      return SubscriptionPeriodIos.Week;
+      return SubscriptionPeriodIOS.Week;
     case 'MONTH':
-      return SubscriptionPeriodIos.Month;
+      return SubscriptionPeriodIOS.Month;
     case 'YEAR':
-      return SubscriptionPeriodIos.Year;
+      return SubscriptionPeriodIOS.Year;
     default:
-      return SubscriptionPeriodIos.Empty;
+      return SubscriptionPeriodIOS.Empty;
   }
 }
 
@@ -201,7 +201,7 @@ export function convertNitroProductToProduct(
       ),
       jsonRepresentationIOS:
         (nitroProduct as any).jsonRepresentationIOS ?? DEFAULT_JSON_REPR,
-      typeIOS: normalizeProductTypeIos((nitroProduct as any).typeIOS),
+      typeIOS: normalizeProductTypeIOS((nitroProduct as any).typeIOS),
       subscriptionInfoIOS: undefined,
     };
 
@@ -348,7 +348,7 @@ export function convertNitroPurchaseToPurchase(
  */
 export function convertNitroSubscriptionStatusToSubscriptionStatusIOS(
   nitro: NitroSubscriptionStatus,
-): SubscriptionStatusIos {
+): SubscriptionStatusIOS {
   return {
     state: String(nitro.state ?? ''),
     renewalInfo: nitro.renewalInfo

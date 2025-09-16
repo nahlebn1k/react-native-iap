@@ -10,9 +10,9 @@ import type {NitroProduct, NitroPurchase} from '../../specs/RnIap.nitro';
 import {
   Platform as IapPlatform,
   ProductType,
-  ProductTypeIos,
+  ProductTypeIOS,
   PurchaseState,
-  SubscriptionPeriodIos,
+  SubscriptionPeriodIOS,
 } from '../../types';
 
 describe('type-bridge utilities', () => {
@@ -39,7 +39,7 @@ describe('type-bridge utilities', () => {
       expect(result.platform).toBe(IapPlatform.Ios);
       expect((result as any).displayNameIOS).toBe('Display Name');
       expect((result as any).isFamilyShareableIOS).toBe(true);
-      expect((result as any).typeIOS).toBe(ProductTypeIos.Consumable);
+      expect((result as any).typeIOS).toBe(ProductTypeIOS.Consumable);
     });
 
     it('converts iOS subscription fields with enums', () => {
@@ -61,11 +61,11 @@ describe('type-bridge utilities', () => {
       const result = convertNitroProductToProduct(nitroProduct) as any;
 
       expect(result.type).toBe(ProductType.Subs);
-      expect(result.typeIOS).toBe(ProductTypeIos.AutoRenewableSubscription);
+      expect(result.typeIOS).toBe(ProductTypeIOS.AutoRenewableSubscription);
       expect(result.introductoryPriceSubscriptionPeriodIOS).toBe(
-        SubscriptionPeriodIos.Month,
+        SubscriptionPeriodIOS.Month,
       );
-      expect(result.subscriptionPeriodUnitIOS).toBe(SubscriptionPeriodIos.Year);
+      expect(result.subscriptionPeriodUnitIOS).toBe(SubscriptionPeriodIOS.Year);
     });
 
     it('converts Android subscription and parses offer details', () => {

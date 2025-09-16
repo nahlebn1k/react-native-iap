@@ -1,5 +1,5 @@
 import {getAvailablePurchases} from '../';
-import type {ActiveSubscription, PurchaseIos, PurchaseAndroid} from '../types';
+import type {ActiveSubscription, PurchaseIOS, PurchaseAndroid} from '../types';
 
 /**
  * Get active subscriptions
@@ -23,7 +23,7 @@ export const getActiveSubscriptions = async (
         return true;
       })
       .map((purchase): ActiveSubscription => {
-        const iosPurchase = purchase as PurchaseIos;
+        const iosPurchase = purchase as PurchaseIOS;
         const androidPurchase = purchase as PurchaseAndroid;
         return {
           productId: purchase.productId,

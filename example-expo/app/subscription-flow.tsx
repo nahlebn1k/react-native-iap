@@ -17,7 +17,7 @@ import {
 import Clipboard from '@react-native-clipboard/clipboard';
 import {
   ProductQueryType,
-  PaymentModeIos,
+  PaymentModeIOS,
   useIAP,
   type ProductSubscription,
   type PurchaseError,
@@ -377,11 +377,11 @@ export default function SubscriptionFlow() {
           ? subscriptionPeriod.toLowerCase()
           : 'period';
 
-        if (paymentMode === PaymentModeIos.FreeTrial) {
+        if (paymentMode === PaymentModeIOS.FreeTrial) {
           return `${numberOfPeriods} ${periodLabel} free trial`;
-        } else if (paymentMode === PaymentModeIos.PayAsYouGo) {
+        } else if (paymentMode === PaymentModeIOS.PayAsYouGo) {
           return `${subscription.introductoryPriceIOS} for ${numberOfPeriods} ${periodLabel}`;
-        } else if (paymentMode === PaymentModeIos.PayUpFront) {
+        } else if (paymentMode === PaymentModeIOS.PayUpFront) {
           return `${subscription.introductoryPriceIOS} for first ${numberOfPeriods} ${periodLabel}`;
         }
       }

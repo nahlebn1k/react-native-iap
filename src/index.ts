@@ -22,13 +22,13 @@ import type {
   PurchaseParams,
   PurchaseError,
   ReceiptValidationResultAndroid,
-  ReceiptValidationResultIos,
+  ReceiptValidationResultIOS,
   RequestPurchaseAndroidProps,
   RequestPurchaseIosProps,
   RequestPurchasePropsByPlatforms,
   RequestSubscriptionAndroidProps,
   RequestSubscriptionPropsByPlatforms,
-  SubscriptionStatusIos,
+  SubscriptionStatusIOS,
 } from './types';
 import {
   convertNitroProductToProduct,
@@ -822,7 +822,7 @@ export const promotedProductListenerIOS = (
  * Validate receipt on both iOS and Android platforms
  * @param sku - Product SKU
  * @param androidOptions - Android-specific validation options (required for Android)
- * @returns Promise<ReceiptValidationResultIos | ReceiptValidationResultAndroid> - Platform-specific receipt validation result
+ * @returns Promise<ReceiptValidationResultIOS | ReceiptValidationResultAndroid> - Platform-specific receipt validation result
  */
 export const validateReceipt = async (
   sku: string,
@@ -844,7 +844,7 @@ export const validateReceipt = async (
     // Convert Nitro result to public API result
     if (Platform.OS === 'ios') {
       const iosResult = nitroResult as NitroReceiptValidationResultIOS;
-      const result: ReceiptValidationResultIos = {
+      const result: ReceiptValidationResultIOS = {
         isValid: iosResult.isValid,
         receiptData: iosResult.receiptData,
         jwsRepresentation: iosResult.jwsRepresentation,
@@ -1009,13 +1009,13 @@ export const beginRefundRequestIOS = async (
 /**
  * Get subscription status for a product (iOS only)
  * @param sku - The product SKU
- * @returns Promise<SubscriptionStatusIos[]> - Array of subscription status objects
+ * @returns Promise<SubscriptionStatusIOS[]> - Array of subscription status objects
  * @throws Error when called on non-iOS platforms or when IAP is not initialized
  * @platform iOS
  */
 export const subscriptionStatusIOS = async (
   sku: string,
-): Promise<SubscriptionStatusIos[]> => {
+): Promise<SubscriptionStatusIOS[]> => {
   if (Platform.OS !== 'ios') {
     throw new Error('subscriptionStatusIOS is only available on iOS');
   }
