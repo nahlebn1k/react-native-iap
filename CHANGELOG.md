@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [14.3.5]
+
+### Changed
+
+- Android: Upgrade the fallback/config plugin to [openiap-google 1.1.10](https://github.com/hyodotdev/openiap-google/releases/tag/1.1.10) to stay current with the latest Billing integration guidance.
+- iOS: Bump the pod to [openiap 1.1.12](https://github.com/hyodotdev/openiap-apple/releases/tag/1.1.12) and adopt PascalCase error constants in the native layer for consistent casing across platforms.
+
+### Fixed
+
+- Android: Restore the explicit `Failed to initialize connection` error message when the billing client rejects `initConnection()` so logs stay actionable.
+- Android: Preserve receipt validation context for unexpected failures and avoid leaking purchase tokens in acknowledge/consume error payloads.
+
 ## [14.3.3]
 
 ### Changed

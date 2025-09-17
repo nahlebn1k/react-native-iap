@@ -283,7 +283,7 @@ class HybridRnIap : HybridRnIapSpec() {
                         debugMessage = e.message,
                         code = OpenIAPError.toCode(err),
                         message = e.message?.takeIf { it.isNotBlank() } ?: err.message,
-                        purchaseToken = purchaseToken
+                        purchaseToken = null
                     )
                 )
             }
