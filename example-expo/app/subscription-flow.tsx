@@ -16,8 +16,6 @@ import {
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import {
-  ProductQueryType,
-  PaymentModeIOS,
   useIAP,
   type ProductSubscription,
   type PurchaseError,
@@ -187,7 +185,7 @@ export default function SubscriptionFlow() {
         console.log('Connected to store, loading subscription products...');
         fetchProducts({
           skus: SUBSCRIPTION_IDS,
-          type: ProductQueryType.Subs,
+          type: 'subs',
         });
         console.log('Product loading request sent - waiting for results...');
         fetchedProductsOnceRef.current = true;
@@ -266,7 +264,7 @@ export default function SubscriptionFlow() {
       // New platform-specific API (v2.7.0+) - no Platform.OS branching needed
       // requestPurchase is event-based - results come through onPurchaseSuccess/onPurchaseError
       await requestPurchase({
-        requestSubscription: {
+        request: {
           ios: {
             sku: itemId,
             appAccountToken: 'user-123',
@@ -286,7 +284,7 @@ export default function SubscriptionFlow() {
                 : [],
           },
         },
-        type: ProductQueryType.Subs,
+        type: 'subs',
       });
     } catch (error) {
       setIsProcessing(false);
@@ -305,7 +303,7 @@ export default function SubscriptionFlow() {
   const retryLoadSubscriptions = () => {
     fetchProducts({
       skus: SUBSCRIPTION_IDS,
-      type: ProductQueryType.Subs,
+      type: 'subs',
     });
   };
 
@@ -346,15 +344,14 @@ export default function SubscriptionFlow() {
       const periodNumber = subscription.subscriptionPeriodNumberIOS;
       if (periodUnit && periodNumber) {
         const units: Record<string, string> = {
-          DAY: 'day',
-          WEEK: 'week',
-          MONTH: 'month',
-          YEAR: 'year',
+          day: 'day',
+          week: 'week',
+          month: 'month',
+          year: 'year',
         };
         const periodNum = parseInt(periodNumber, 10);
-        return `${periodNumber} ${units[periodUnit] || periodUnit}${
-          periodNum > 1 ? 's' : ''
-        }`;
+        const normalizedUnit = units[periodUnit] || periodUnit;
+        return `${periodNumber} ${normalizedUnit}${periodNum > 1 ? 's' : ''}`;
       }
     }
     // Default or Android
@@ -377,11 +374,11 @@ export default function SubscriptionFlow() {
           ? subscriptionPeriod.toLowerCase()
           : 'period';
 
-        if (paymentMode === PaymentModeIOS.FreeTrial) {
+        if (paymentMode === 'free-trial') {
           return `${numberOfPeriods} ${periodLabel} free trial`;
-        } else if (paymentMode === PaymentModeIOS.PayAsYouGo) {
+        } else if (paymentMode === 'pay-as-you-go') {
           return `${subscription.introductoryPriceIOS} for ${numberOfPeriods} ${periodLabel}`;
-        } else if (paymentMode === PaymentModeIOS.PayUpFront) {
+        } else if (paymentMode === 'pay-up-front') {
           return `${subscription.introductoryPriceIOS} for first ${numberOfPeriods} ${periodLabel}`;
         }
       }

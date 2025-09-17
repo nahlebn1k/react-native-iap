@@ -180,7 +180,7 @@ export default function PurchaseScreen() {
     const initializeIAP = async () => {
       try {
         // Get both products and subscriptions
-        await fetchProducts({skus: bulbPackSkus, type: 'inapp'});
+        await fetchProducts({skus: bulbPackSkus, type: 'in-app'});
         await fetchProducts({skus: subscriptionSkus, type: 'subs'});
         setIsReady(true);
       } catch (error) {
@@ -813,8 +813,8 @@ const response = await fetch('https://your-server.com/validate-ios-receipt', {
   method: 'POST',
   headers: {'Content-Type': 'application/json'},
   body: JSON.stringify({
-    transactionId: purchase.transactionId,
-    productId: purchase.id,
+    transactionId: purchase.id,
+    productId: purchase.productId,
     // Your server will fetch the receipt from Apple
   }),
 });

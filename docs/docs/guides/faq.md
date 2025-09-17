@@ -101,7 +101,7 @@ const {connected, fetchProducts} = useIAP();
 
 useEffect(() => {
   if (connected) {
-    fetchProducts({skus: ['com.yourapp.product1'], type: 'inapp'});
+    fetchProducts({skus: ['com.yourapp.product1'], type: 'in-app'});
   }
 }, [connected]);
 ```
@@ -330,7 +330,7 @@ When using the `useIAP` hook:
 // No manual caching needed - just fetch when connected
 useEffect(() => {
   if (connected) {
-    fetchProducts({skus: productIds, type: 'inapp'});
+    fetchProducts({skus: productIds, type: 'in-app'});
   }
 }, [connected]);
 
@@ -470,7 +470,7 @@ Because of this timing model, all request\* APIs (e.g., `requestPurchase`) are e
 
 - First call: Immediate after successful purchase
 - Second call: After `finishTransaction()` is called (or on app restart for products)
-- Both calls have the same `transactionId`
+- Both calls have the same `id`
 
 **Example:**
 

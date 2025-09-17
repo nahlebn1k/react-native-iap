@@ -48,13 +48,13 @@ function App() {
 
   React.useEffect(() => {
     if (connected) {
-      fetchProducts({skus: productIds, type: 'inapp'});
+      fetchProducts({skus: productIds, type: 'in-app'});
     }
   }, [connected]);
 
   const validatePurchase = async (purchase) => {
     try {
-      const result = await validateReceipt(purchase.transactionId);
+      const result = await validateReceipt(purchase.id);
       if (result.isValid) {
         // Grant user the purchased content
         console.log('Receipt is valid');

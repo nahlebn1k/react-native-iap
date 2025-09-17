@@ -3,7 +3,9 @@
 // No dynamic imports; mock before importing the module under test.
 
 import {Platform} from 'react-native';
-import {Platform as IapPlatform, ErrorCode, ProductQueryType} from '../types';
+import {ErrorCode} from '../types';
+
+const PLATFORM_IOS = 'ios';
 
 // Minimal Nitro IAP mock to exercise wrappers
 const mockIap: any = {
@@ -106,7 +108,7 @@ describe('Public API (src/index.ts)', () => {
       expect(listener).toHaveBeenCalledWith(
         expect.objectContaining({
           productId: 'p1',
-          platform: IapPlatform.Ios,
+          platform: PLATFORM_IOS,
         }),
       );
 
@@ -159,7 +161,7 @@ describe('Public API (src/index.ts)', () => {
       const wrapped = mockIap.addPromotedProductListenerIOS.mock.calls[0][0];
       wrapped(nitroProduct);
       expect(listener).toHaveBeenCalledWith(
-        expect.objectContaining({id: 'sku1', platform: IapPlatform.Ios}),
+        expect.objectContaining({id: 'sku1', platform: PLATFORM_IOS}),
       );
       sub.remove();
       expect(mockIap.removePromotedProductListenerIOS).toHaveBeenCalled();
@@ -208,7 +210,7 @@ describe('Public API (src/index.ts)', () => {
       const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const products = await IAP.fetchProducts({
         skus: ['a', 'b'],
-        type: 'inapp',
+        type: 'in-app',
       });
       expect(products.map((p: any) => p.id)).toEqual(['a']);
       expect(warn).toHaveBeenCalled();
@@ -242,7 +244,7 @@ describe('Public API (src/index.ts)', () => {
         ]);
       const result = await IAP.fetchProducts({
         skus: ['x', 'y'],
-        type: ProductQueryType.All,
+        type: 'all',
       });
       expect(result.map((p: any) => p.id).sort()).toEqual(['x', 'y']);
       expect(mockIap.fetchProducts).toHaveBeenNthCalledWith(
@@ -263,8 +265,8 @@ describe('Public API (src/index.ts)', () => {
       (Platform as any).OS = 'ios';
       await expect(
         IAP.requestPurchase({
-          requestPurchase: {ios: {}} as any,
-          type: 'inapp',
+          request: {ios: {}} as any,
+          type: 'in-app',
         }),
       ).rejects.toThrow(/sku/);
     });
@@ -273,8 +275,8 @@ describe('Public API (src/index.ts)', () => {
       (Platform as any).OS = 'android';
       await expect(
         IAP.requestPurchase({
-          requestPurchase: {android: {}} as any,
-          type: 'inapp',
+          request: {android: {}} as any,
+          type: 'in-app',
         }),
       ).rejects.toThrow(/skus/);
     });
@@ -282,8 +284,8 @@ describe('Public API (src/index.ts)', () => {
     it('passes unified request to native', async () => {
       (Platform as any).OS = 'android';
       await IAP.requestPurchase({
-        requestPurchase: {android: {skus: ['p1']}},
-        type: 'inapp',
+        request: {android: {skus: ['p1']}},
+        type: 'in-app',
       });
       expect(mockIap.requestPurchase).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -295,7 +297,7 @@ describe('Public API (src/index.ts)', () => {
     it('iOS subs auto-sets andDangerouslyFinishTransactionAutomatically when not provided', async () => {
       (Platform as any).OS = 'ios';
       await IAP.requestPurchase({
-        requestSubscription: {ios: {sku: 'sub1'}},
+        request: {ios: {sku: 'sub1'}},
         type: 'subs',
       });
       const passed = mockIap.requestPurchase.mock.calls.pop()?.[0];
@@ -307,10 +309,10 @@ describe('Public API (src/index.ts)', () => {
     it('iOS passes withOffer through to native', async () => {
       (Platform as any).OS = 'ios';
       await IAP.requestPurchase({
-        requestPurchase: {
+        request: {
           ios: {sku: 'p1', withOffer: {id: 'offer'} as any},
         },
-        type: 'inapp',
+        type: 'in-app',
       });
       const passed = mockIap.requestPurchase.mock.calls.pop()?.[0];
       expect(passed.ios.withOffer).toEqual({id: 'offer'});
@@ -319,7 +321,7 @@ describe('Public API (src/index.ts)', () => {
     it('Android subs fills empty subscriptionOffers array when missing', async () => {
       (Platform as any).OS = 'android';
       await IAP.requestPurchase({
-        requestSubscription: {android: {skus: ['sub1']}},
+        request: {android: {skus: ['sub1']}},
         type: 'subs',
       });
       const passed = mockIap.requestPurchase.mock.calls.pop()?.[0];

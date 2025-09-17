@@ -1,19 +1,19 @@
 // ============================================================================
 // AUTO-GENERATED TYPES — DO NOT EDIT DIRECTLY
-// Run `npm run generate` after updating any *.graphql schema file.
+// Run `bun run generate:types` after updating any *.graphql schema file.
 // ============================================================================
 
 export interface ActiveSubscription {
-  autoRenewingAndroid?: boolean | null;
-  daysUntilExpirationIOS?: number | null;
-  environmentIOS?: string | null;
-  expirationDateIOS?: number | null;
+  autoRenewingAndroid?: (boolean | null);
+  daysUntilExpirationIOS?: (number | null);
+  environmentIOS?: (string | null);
+  expirationDateIOS?: (number | null);
   isActive: boolean;
   productId: string;
-  purchaseToken?: string | null;
+  purchaseToken?: (string | null);
   transactionDate: number;
   transactionId: string;
-  willExpireSoon?: boolean | null;
+  willExpireSoon?: (boolean | null);
 }
 
 export interface AndroidSubscriptionOfferInput {
@@ -25,7 +25,7 @@ export interface AndroidSubscriptionOfferInput {
 
 export interface AppTransaction {
   appId: number;
-  appTransactionId?: string | null;
+  appTransactionId?: (string | null);
   appVersion: string;
   appVersionId: number;
   bundleId: string;
@@ -33,22 +33,22 @@ export interface AppTransaction {
   deviceVerificationNonce: string;
   environment: string;
   originalAppVersion: string;
-  originalPlatform?: string | null;
+  originalPlatform?: (string | null);
   originalPurchaseDate: number;
-  preorderDate?: number | null;
+  preorderDate?: (number | null);
   signedDate: number;
 }
 
 export interface DeepLinkOptions {
   /** Android package name to target (required on Android) */
-  packageNameAndroid?: string | null;
+  packageNameAndroid?: (string | null);
   /** Android SKU to open (required on Android) */
-  skuAndroid?: string | null;
+  skuAndroid?: (string | null);
 }
 
 export interface DiscountIOS {
   identifier: string;
-  localizedPrice?: string | null;
+  localizedPrice?: (string | null);
   numberOfPeriods: number;
   paymentMode: PaymentModeIOS;
   price: string;
@@ -123,19 +123,17 @@ export enum ErrorCode {
   TransactionValidationFailed = 'TRANSACTION_VALIDATION_FAILED',
   Unknown = 'UNKNOWN',
   UserCancelled = 'USER_CANCELLED',
-  UserError = 'USER_ERROR',
+  UserError = 'USER_ERROR'
 }
 
 export interface FetchProductsResult {
-  products?: Product[] | null;
-  subscriptions?: ProductSubscription[] | null;
+  products?: (Product[] | null);
+  subscriptions?: (ProductSubscription[] | null);
 }
 
-export enum IapEvent {
-  PromotedProductIos = 'PROMOTED_PRODUCT_IOS',
-  PurchaseError = 'PURCHASE_ERROR',
-  PurchaseUpdated = 'PURCHASE_UPDATED',
-}
+export type IapEvent = 'promoted-product-ios' | 'purchase-error' | 'purchase-updated';
+
+export type IapPlatform = 'android' | 'ios';
 
 export interface Mutation {
   /** Acknowledge a non-consumable purchase or subscription */
@@ -157,7 +155,7 @@ export interface Mutation {
   /** Present the App Store code redemption sheet */
   presentCodeRedemptionSheetIOS: Promise<VoidResult>;
   /** Initiate a purchase flow; rely on events for final state */
-  requestPurchase?: Promise<RequestPurchaseResult | null>;
+  requestPurchase?: Promise<(RequestPurchaseResult | null)>;
   /** Purchase the promoted product surfaced by the App Store */
   requestPurchaseOnPromotedProductIOS: Promise<PurchaseIOS>;
   /** Restore completed purchases across platforms */
@@ -170,46 +168,43 @@ export interface Mutation {
   validateReceipt: Promise<ReceiptValidationResult>;
 }
 
+
 export interface MutationAcknowledgePurchaseAndroidArgs {
   purchaseToken: string;
 }
+
 
 export interface MutationBeginRefundRequestIosArgs {
   sku: string;
 }
 
+
 export interface MutationConsumePurchaseAndroidArgs {
   purchaseToken: string;
 }
 
+
 export interface MutationDeepLinkToSubscriptionsArgs {
-  options?: DeepLinkOptions | null;
+  options?: (DeepLinkOptions | null);
 }
 
+
 export interface MutationFinishTransactionArgs {
-  isConsumable?: boolean | null;
+  isConsumable?: (boolean | null);
   purchase: PurchaseInput;
 }
 
+
 export interface MutationRequestPurchaseArgs {
-  params: PurchaseParams;
+  params: RequestPurchaseProps;
 }
+
 
 export interface MutationValidateReceiptArgs {
   options: ReceiptValidationProps;
 }
 
-export enum PaymentModeIOS {
-  Empty = 'EMPTY',
-  FreeTrial = 'FREE_TRIAL',
-  PayAsYouGo = 'PAY_AS_YOU_GO',
-  PayUpFront = 'PAY_UP_FRONT',
-}
-
-export enum Platform {
-  Android = 'ANDROID',
-  Ios = 'IOS',
-}
+export type PaymentModeIOS = 'empty' | 'free-trial' | 'pay-as-you-go' | 'pay-up-front';
 
 export interface PricingPhaseAndroid {
   billingCycleCount: number;
@@ -228,18 +223,16 @@ export type Product = ProductAndroid | ProductIOS;
 
 export interface ProductAndroid extends ProductCommon {
   currency: string;
-  debugDescription?: string | null;
+  debugDescription?: (string | null);
   description: string;
-  displayName?: string | null;
+  displayName?: (string | null);
   displayPrice: string;
   id: string;
   nameAndroid: string;
-  oneTimePurchaseOfferDetailsAndroid?: ProductAndroidOneTimePurchaseOfferDetail | null;
-  platform: Platform;
-  price?: number | null;
-  subscriptionOfferDetailsAndroid?:
-    | ProductSubscriptionAndroidOfferDetails[]
-    | null;
+  oneTimePurchaseOfferDetailsAndroid?: (ProductAndroidOneTimePurchaseOfferDetail | null);
+  platform: IapPlatform;
+  price?: (number | null);
+  subscriptionOfferDetailsAndroid?: (ProductSubscriptionAndroidOfferDetails[] | null);
   title: string;
   type: ProductType;
 }
@@ -252,61 +245,55 @@ export interface ProductAndroidOneTimePurchaseOfferDetail {
 
 export interface ProductCommon {
   currency: string;
-  debugDescription?: string | null;
+  debugDescription?: (string | null);
   description: string;
-  displayName?: string | null;
+  displayName?: (string | null);
   displayPrice: string;
   id: string;
-  platform: Platform;
-  price?: number | null;
+  platform: IapPlatform;
+  price?: (number | null);
   title: string;
   type: ProductType;
 }
 
 export interface ProductIOS extends ProductCommon {
   currency: string;
-  debugDescription?: string | null;
+  debugDescription?: (string | null);
   description: string;
-  displayName?: string | null;
+  displayName?: (string | null);
   displayNameIOS: string;
   displayPrice: string;
   id: string;
   isFamilyShareableIOS: boolean;
   jsonRepresentationIOS: string;
-  platform: Platform;
-  price?: number | null;
-  subscriptionInfoIOS?: SubscriptionInfoIOS | null;
+  platform: IapPlatform;
+  price?: (number | null);
+  subscriptionInfoIOS?: (SubscriptionInfoIOS | null);
   title: string;
   type: ProductType;
   typeIOS: ProductTypeIOS;
 }
 
-export enum ProductQueryType {
-  All = 'ALL',
-  InApp = 'IN_APP',
-  Subs = 'SUBS',
-}
+export type ProductQueryType = 'all' | 'in-app' | 'subs';
 
 export interface ProductRequest {
   skus: string[];
-  type?: ProductQueryType | null;
+  type?: (ProductQueryType | null);
 }
 
-export type ProductSubscription =
-  | ProductSubscriptionAndroid
-  | ProductSubscriptionIOS;
+export type ProductSubscription = ProductSubscriptionAndroid | ProductSubscriptionIOS;
 
 export interface ProductSubscriptionAndroid extends ProductCommon {
   currency: string;
-  debugDescription?: string | null;
+  debugDescription?: (string | null);
   description: string;
-  displayName?: string | null;
+  displayName?: (string | null);
   displayPrice: string;
   id: string;
   nameAndroid: string;
-  oneTimePurchaseOfferDetailsAndroid?: ProductAndroidOneTimePurchaseOfferDetail | null;
-  platform: Platform;
-  price?: number | null;
+  oneTimePurchaseOfferDetailsAndroid?: (ProductAndroidOneTimePurchaseOfferDetail | null);
+  platform: IapPlatform;
+  price?: (number | null);
   subscriptionOfferDetailsAndroid: ProductSubscriptionAndroidOfferDetails[];
   title: string;
   type: ProductType;
@@ -314,7 +301,7 @@ export interface ProductSubscriptionAndroid extends ProductCommon {
 
 export interface ProductSubscriptionAndroidOfferDetails {
   basePlanId: string;
-  offerId?: string | null;
+  offerId?: (string | null);
   offerTags: string[];
   offerToken: string;
   pricingPhases: PricingPhasesAndroid;
@@ -322,73 +309,65 @@ export interface ProductSubscriptionAndroidOfferDetails {
 
 export interface ProductSubscriptionIOS extends ProductCommon {
   currency: string;
-  debugDescription?: string | null;
+  debugDescription?: (string | null);
   description: string;
-  discountsIOS?: DiscountIOS[] | null;
-  displayName?: string | null;
+  discountsIOS?: (DiscountIOS[] | null);
+  displayName?: (string | null);
   displayNameIOS: string;
   displayPrice: string;
   id: string;
-  introductoryPriceAsAmountIOS?: string | null;
-  introductoryPriceIOS?: string | null;
-  introductoryPriceNumberOfPeriodsIOS?: string | null;
-  introductoryPricePaymentModeIOS?: PaymentModeIOS | null;
-  introductoryPriceSubscriptionPeriodIOS?: SubscriptionPeriodIOS | null;
+  introductoryPriceAsAmountIOS?: (string | null);
+  introductoryPriceIOS?: (string | null);
+  introductoryPriceNumberOfPeriodsIOS?: (string | null);
+  introductoryPricePaymentModeIOS?: (PaymentModeIOS | null);
+  introductoryPriceSubscriptionPeriodIOS?: (SubscriptionPeriodIOS | null);
   isFamilyShareableIOS: boolean;
   jsonRepresentationIOS: string;
-  platform: Platform;
-  price?: number | null;
-  subscriptionInfoIOS?: SubscriptionInfoIOS | null;
-  subscriptionPeriodNumberIOS?: string | null;
-  subscriptionPeriodUnitIOS?: SubscriptionPeriodIOS | null;
+  platform: IapPlatform;
+  price?: (number | null);
+  subscriptionInfoIOS?: (SubscriptionInfoIOS | null);
+  subscriptionPeriodNumberIOS?: (string | null);
+  subscriptionPeriodUnitIOS?: (SubscriptionPeriodIOS | null);
   title: string;
   type: ProductType;
   typeIOS: ProductTypeIOS;
 }
 
-export enum ProductType {
-  InApp = 'IN_APP',
-  Subs = 'SUBS',
-}
+export type ProductType = 'in-app' | 'subs';
 
-export enum ProductTypeIOS {
-  AutoRenewableSubscription = 'AUTO_RENEWABLE_SUBSCRIPTION',
-  Consumable = 'CONSUMABLE',
-  NonConsumable = 'NON_CONSUMABLE',
-  NonRenewingSubscription = 'NON_RENEWING_SUBSCRIPTION',
-}
+export type ProductTypeIOS = 'auto-renewable-subscription' | 'consumable' | 'non-consumable' | 'non-renewing-subscription';
 
 export type Purchase = PurchaseAndroid | PurchaseIOS;
 
 export interface PurchaseAndroid extends PurchaseCommon {
-  autoRenewingAndroid?: boolean | null;
-  dataAndroid?: string | null;
-  developerPayloadAndroid?: string | null;
+  autoRenewingAndroid?: (boolean | null);
+  dataAndroid?: (string | null);
+  developerPayloadAndroid?: (string | null);
   id: string;
-  ids?: string[] | null;
-  isAcknowledgedAndroid?: boolean | null;
+  ids?: (string[] | null);
+  isAcknowledgedAndroid?: (boolean | null);
   isAutoRenewing: boolean;
-  obfuscatedAccountIdAndroid?: string | null;
-  obfuscatedProfileIdAndroid?: string | null;
-  packageNameAndroid?: string | null;
-  platform: Platform;
+  obfuscatedAccountIdAndroid?: (string | null);
+  obfuscatedProfileIdAndroid?: (string | null);
+  packageNameAndroid?: (string | null);
+  platform: IapPlatform;
   productId: string;
   purchaseState: PurchaseState;
-  purchaseToken?: string | null;
+  purchaseToken?: (string | null);
   quantity: number;
-  signatureAndroid?: string | null;
+  signatureAndroid?: (string | null);
   transactionDate: number;
 }
 
 export interface PurchaseCommon {
   id: string;
-  ids?: string[] | null;
+  ids?: (string[] | null);
   isAutoRenewing: boolean;
-  platform: Platform;
+  platform: IapPlatform;
   productId: string;
   purchaseState: PurchaseState;
   /** Unified purchase token (iOS JWS, Android purchaseToken) */
-  purchaseToken?: string | null;
+  purchaseToken?: (string | null);
   quantity: number;
   transactionDate: number;
 }
@@ -396,50 +375,50 @@ export interface PurchaseCommon {
 export interface PurchaseError {
   code: ErrorCode;
   message: string;
-  productId?: string | null;
+  productId?: (string | null);
 }
 
 export interface PurchaseIOS extends PurchaseCommon {
-  appAccountToken?: string | null;
-  appBundleIdIOS?: string | null;
-  countryCodeIOS?: string | null;
-  currencyCodeIOS?: string | null;
-  currencySymbolIOS?: string | null;
-  environmentIOS?: string | null;
-  expirationDateIOS?: number | null;
+  appAccountToken?: (string | null);
+  appBundleIdIOS?: (string | null);
+  countryCodeIOS?: (string | null);
+  currencyCodeIOS?: (string | null);
+  currencySymbolIOS?: (string | null);
+  environmentIOS?: (string | null);
+  expirationDateIOS?: (number | null);
   id: string;
-  ids?: string[] | null;
+  ids?: (string[] | null);
   isAutoRenewing: boolean;
-  isUpgradedIOS?: boolean | null;
-  offerIOS?: PurchaseOfferIOS | null;
-  originalTransactionDateIOS?: number | null;
-  originalTransactionIdentifierIOS?: string | null;
-  ownershipTypeIOS?: string | null;
-  platform: Platform;
+  isUpgradedIOS?: (boolean | null);
+  offerIOS?: (PurchaseOfferIOS | null);
+  originalTransactionDateIOS?: (number | null);
+  originalTransactionIdentifierIOS?: (string | null);
+  ownershipTypeIOS?: (string | null);
+  platform: IapPlatform;
   productId: string;
   purchaseState: PurchaseState;
-  purchaseToken?: string | null;
+  purchaseToken?: (string | null);
   quantity: number;
-  quantityIOS?: number | null;
-  reasonIOS?: string | null;
-  reasonStringRepresentationIOS?: string | null;
-  revocationDateIOS?: number | null;
-  revocationReasonIOS?: string | null;
-  storefrontCountryCodeIOS?: string | null;
-  subscriptionGroupIdIOS?: string | null;
+  quantityIOS?: (number | null);
+  reasonIOS?: (string | null);
+  reasonStringRepresentationIOS?: (string | null);
+  revocationDateIOS?: (number | null);
+  revocationReasonIOS?: (string | null);
+  storefrontCountryCodeIOS?: (string | null);
+  subscriptionGroupIdIOS?: (string | null);
   transactionDate: number;
-  transactionReasonIOS?: string | null;
-  webOrderLineItemIdIOS?: string | null;
+  transactionReasonIOS?: (string | null);
+  webOrderLineItemIdIOS?: (string | null);
 }
 
 export interface PurchaseInput {
   id: string;
-  ids?: string[] | null;
+  ids?: (string[] | null);
   isAutoRenewing: boolean;
-  platform: Platform;
+  platform: IapPlatform;
   productId: string;
   purchaseState: PurchaseState;
-  purchaseToken?: string | null;
+  purchaseToken?: (string | null);
   quantity: number;
   transactionDate: number;
 }
@@ -452,28 +431,12 @@ export interface PurchaseOfferIOS {
 
 export interface PurchaseOptions {
   /** Also emit results through the iOS event listeners */
-  alsoPublishToEventListenerIOS?: boolean | null;
+  alsoPublishToEventListenerIOS?: (boolean | null);
   /** Limit to currently active items on iOS */
-  onlyIncludeActiveItemsIOS?: boolean | null;
+  onlyIncludeActiveItemsIOS?: (boolean | null);
 }
 
-export interface PurchaseParams {
-  /** Per-platform purchase request props */
-  requestPurchase?: RequestPurchasePropsByPlatforms | null;
-  /** Per-platform subscription request props */
-  requestSubscription?: RequestSubscriptionPropsByPlatforms | null;
-  /** Explicit purchase type hint (defaults to in-app) */
-  type?: ProductQueryType | null;
-}
-
-export enum PurchaseState {
-  Deferred = 'DEFERRED',
-  Failed = 'FAILED',
-  Pending = 'PENDING',
-  Purchased = 'PURCHASED',
-  Restored = 'RESTORED',
-  Unknown = 'UNKNOWN',
-}
+export type PurchaseState = 'deferred' | 'failed' | 'pending' | 'purchased' | 'restored' | 'unknown';
 
 export interface Query {
   /** Get current StoreKit 2 entitlements (iOS 15+) */
@@ -483,13 +446,13 @@ export interface Query {
   /** Get active subscriptions (filters by subscriptionIds when provided) */
   getActiveSubscriptions: Promise<ActiveSubscription[]>;
   /** Fetch the current app transaction (iOS 16+) */
-  getAppTransactionIOS?: Promise<AppTransaction | null>;
+  getAppTransactionIOS?: Promise<(AppTransaction | null)>;
   /** Get all available purchases for the current user */
   getAvailablePurchases: Promise<Purchase[]>;
   /** Retrieve all pending transactions in the StoreKit queue */
   getPendingTransactionsIOS: Promise<PurchaseIOS[]>;
   /** Get the currently promoted product (iOS 11+) */
-  getPromotedProductIOS?: Promise<ProductIOS | null>;
+  getPromotedProductIOS?: Promise<(ProductIOS | null)>;
   /** Get base64-encoded receipt data for validation */
   getReceiptDataIOS: Promise<string>;
   /** Get the current App Store storefront country code */
@@ -503,76 +466,84 @@ export interface Query {
   /** Verify a StoreKit 2 transaction signature */
   isTransactionVerifiedIOS: Promise<boolean>;
   /** Get the latest transaction for a product using StoreKit 2 */
-  latestTransactionIOS?: Promise<PurchaseIOS | null>;
+  latestTransactionIOS?: Promise<(PurchaseIOS | null)>;
   /** Get StoreKit 2 subscription status details (iOS 15+) */
   subscriptionStatusIOS: Promise<SubscriptionStatusIOS[]>;
 }
 
+
 export interface QueryCurrentEntitlementIosArgs {
-  skus?: string[] | null;
+  skus?: (string[] | null);
 }
+
 
 export interface QueryFetchProductsArgs {
   params: ProductRequest;
 }
 
+
 export interface QueryGetActiveSubscriptionsArgs {
-  subscriptionIds?: string[] | null;
+  subscriptionIds?: (string[] | null);
 }
 
+
 export interface QueryGetAvailablePurchasesArgs {
-  options?: PurchaseOptions | null;
+  options?: (PurchaseOptions | null);
 }
+
 
 export interface QueryGetTransactionJwsIosArgs {
   transactionId: string;
 }
 
+
 export interface QueryHasActiveSubscriptionsArgs {
-  subscriptionIds?: string[] | null;
+  subscriptionIds?: (string[] | null);
 }
+
 
 export interface QueryIsEligibleForIntroOfferIosArgs {
   productIds: string[];
 }
 
+
 export interface QueryIsTransactionVerifiedIosArgs {
   transactionId: string;
 }
+
 
 export interface QueryLatestTransactionIosArgs {
   sku: string;
 }
 
+
 export interface QuerySubscriptionStatusIosArgs {
-  skus?: string[] | null;
+  skus?: (string[] | null);
 }
 
 export interface ReceiptValidationAndroidOptions {
   accessToken: string;
-  isSub?: boolean | null;
+  isSub?: (boolean | null);
   packageName: string;
   productToken: string;
 }
 
 export interface ReceiptValidationProps {
   /** Android-specific validation options */
-  androidOptions?: ReceiptValidationAndroidOptions | null;
+  androidOptions?: (ReceiptValidationAndroidOptions | null);
   /** Product SKU to validate */
   sku: string;
 }
 
-export type ReceiptValidationResult =
-  | ReceiptValidationResultAndroid
-  | ReceiptValidationResultIOS;
+export type ReceiptValidationResult = ReceiptValidationResultAndroid | ReceiptValidationResultIOS;
 
 export interface ReceiptValidationResultAndroid {
   autoRenewing: boolean;
   betaProduct: boolean;
-  cancelDate?: number | null;
-  cancelReason?: string | null;
-  deferredDate?: number | null;
-  deferredSku?: string | null;
+  cancelDate?: (number | null);
+  cancelReason?: (string | null);
+  deferredDate?: (number | null);
+  deferredSku?: (string | null);
   freeTrialEndDate: number;
   gracePeriodEndDate: number;
   parentProductId: string;
@@ -593,95 +564,100 @@ export interface ReceiptValidationResultIOS {
   /** JWS representation */
   jwsRepresentation: string;
   /** Latest transaction if available */
-  latestTransaction?: Purchase | null;
+  latestTransaction?: (Purchase | null);
   /** Receipt data string */
   receiptData: string;
 }
 
 export interface RefundResultIOS {
-  message?: string | null;
+  message?: (string | null);
   status: string;
 }
 
 export interface RenewalInfoIOS {
-  autoRenewPreference?: string | null;
-  jsonRepresentation?: string | null;
+  autoRenewPreference?: (string | null);
+  jsonRepresentation?: (string | null);
   willAutoRenew: boolean;
 }
 
 export interface RequestPurchaseAndroidProps {
   /** Personalized offer flag */
-  isOfferPersonalized?: boolean | null;
+  isOfferPersonalized?: (boolean | null);
   /** Obfuscated account ID */
-  obfuscatedAccountIdAndroid?: string | null;
+  obfuscatedAccountIdAndroid?: (string | null);
   /** Obfuscated profile ID */
-  obfuscatedProfileIdAndroid?: string | null;
+  obfuscatedProfileIdAndroid?: (string | null);
   /** List of product SKUs */
   skus: string[];
 }
 
 export interface RequestPurchaseIosProps {
   /** Auto-finish transaction (dangerous) */
-  andDangerouslyFinishTransactionAutomatically?: boolean | null;
+  andDangerouslyFinishTransactionAutomatically?: (boolean | null);
   /** App account token for user tracking */
-  appAccountToken?: string | null;
+  appAccountToken?: (string | null);
   /** Purchase quantity */
-  quantity?: number | null;
+  quantity?: (number | null);
   /** Product SKU */
   sku: string;
   /** Discount offer to apply */
-  withOffer?: DiscountOfferInputIOS | null;
+  withOffer?: (DiscountOfferInputIOS | null);
 }
 
-export interface RequestPurchaseProps {
-  /** Android-specific purchase parameters */
-  android?: RequestPurchaseAndroidProps | null;
-  /** iOS-specific purchase parameters */
-  ios?: RequestPurchaseIosProps | null;
-}
+export type RequestPurchaseProps =
+  | {
+      /** Per-platform purchase request props */
+      request: RequestPurchasePropsByPlatforms;
+      type: 'in-app';
+    }
+  | {
+      /** Per-platform subscription request props */
+      request: RequestSubscriptionPropsByPlatforms;
+      type: 'subs';
+    };
 
 export interface RequestPurchasePropsByPlatforms {
   /** Android-specific purchase parameters */
-  android?: RequestPurchaseAndroidProps | null;
+  android?: (RequestPurchaseAndroidProps | null);
   /** iOS-specific purchase parameters */
-  ios?: RequestPurchaseIosProps | null;
+  ios?: (RequestPurchaseIosProps | null);
 }
 
 export interface RequestPurchaseResult {
-  purchase?: Purchase | null;
-  purchases?: Purchase[] | null;
+  purchase?: (Purchase | null);
+  purchases?: (Purchase[] | null);
 }
 
 export interface RequestSubscriptionAndroidProps {
   /** Personalized offer flag */
-  isOfferPersonalized?: boolean | null;
+  isOfferPersonalized?: (boolean | null);
   /** Obfuscated account ID */
-  obfuscatedAccountIdAndroid?: string | null;
+  obfuscatedAccountIdAndroid?: (string | null);
   /** Obfuscated profile ID */
-  obfuscatedProfileIdAndroid?: string | null;
+  obfuscatedProfileIdAndroid?: (string | null);
   /** Purchase token for upgrades/downgrades */
-  purchaseTokenAndroid?: string | null;
+  purchaseTokenAndroid?: (string | null);
   /** Replacement mode for subscription changes */
-  replacementModeAndroid?: number | null;
+  replacementModeAndroid?: (number | null);
   /** List of subscription SKUs */
   skus: string[];
   /** Subscription offers */
-  subscriptionOffers?: AndroidSubscriptionOfferInput[] | null;
+  subscriptionOffers?: (AndroidSubscriptionOfferInput[] | null);
 }
 
 export interface RequestSubscriptionIosProps {
-  andDangerouslyFinishTransactionAutomatically?: boolean | null;
-  appAccountToken?: string | null;
-  quantity?: number | null;
+  andDangerouslyFinishTransactionAutomatically?: (boolean | null);
+  appAccountToken?: (string | null);
+  quantity?: (number | null);
   sku: string;
-  withOffer?: DiscountOfferInputIOS | null;
+  withOffer?: (DiscountOfferInputIOS | null);
 }
 
 export interface RequestSubscriptionPropsByPlatforms {
   /** Android-specific subscription parameters */
-  android?: RequestSubscriptionAndroidProps | null;
+  android?: (RequestSubscriptionAndroidProps | null);
   /** iOS-specific subscription parameters */
-  ios?: RequestSubscriptionIosProps | null;
+  ios?: (RequestSubscriptionIosProps | null);
 }
 
 export interface Subscription {
@@ -694,8 +670,8 @@ export interface Subscription {
 }
 
 export interface SubscriptionInfoIOS {
-  introductoryOffer?: SubscriptionOfferIOS | null;
-  promotionalOffers?: SubscriptionOfferIOS[] | null;
+  introductoryOffer?: (SubscriptionOfferIOS | null);
+  promotionalOffers?: (SubscriptionOfferIOS[] | null);
   subscriptionGroupId: string;
   subscriptionPeriod: SubscriptionPeriodValueIOS;
 }
@@ -710,18 +686,9 @@ export interface SubscriptionOfferIOS {
   type: SubscriptionOfferTypeIOS;
 }
 
-export enum SubscriptionOfferTypeIOS {
-  Introductory = 'INTRODUCTORY',
-  Promotional = 'PROMOTIONAL',
-}
+export type SubscriptionOfferTypeIOS = 'introductory' | 'promotional';
 
-export enum SubscriptionPeriodIOS {
-  Day = 'DAY',
-  Empty = 'EMPTY',
-  Month = 'MONTH',
-  Week = 'WEEK',
-  Year = 'YEAR',
-}
+export type SubscriptionPeriodIOS = 'day' | 'empty' | 'month' | 'week' | 'year';
 
 export interface SubscriptionPeriodValueIOS {
   unit: SubscriptionPeriodIOS;
@@ -729,7 +696,7 @@ export interface SubscriptionPeriodValueIOS {
 }
 
 export interface SubscriptionStatusIOS {
-  renewalInfo?: RenewalInfoIOS | null;
+  renewalInfo?: (RenewalInfoIOS | null);
   state: string;
 }
 

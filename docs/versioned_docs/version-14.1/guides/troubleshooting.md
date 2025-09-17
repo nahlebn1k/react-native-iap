@@ -44,7 +44,7 @@ const {connected, fetchProducts} = useIAP();
 useEffect(() => {
   if (connected) {
     // ✅ Only call fetchProducts when connected
-    fetchProducts({skus: productIds, type: 'inapp'});
+    fetchProducts({skus: productIds, type: 'in-app'});
   } else {
     console.log('Not connected to store yet');
   }
@@ -200,8 +200,8 @@ const {finishTransaction} = useIAP({
 
         // Option 2 (RECOMMENDED - Secure):
         const isValid = await validateReceiptOnServer({
-          transactionId: purchase.transactionId,
-          productId: purchase.id,
+          transactionId: purchase.id,
+          productId: purchase.productId,
         });
         if (!isValid) {
           console.error('Invalid receipt');
@@ -217,7 +217,7 @@ const {finishTransaction} = useIAP({
         const isValid = await validateAndroidPurchaseOnServer({
           purchaseToken,
           packageName,
-          productId: purchase.id,
+          productId: purchase.productId,
         });
 
         if (!isValid) {

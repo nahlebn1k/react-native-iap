@@ -12,14 +12,17 @@ import type {
   NitroReceiptValidationResultIOS,
   NitroReceiptValidationResultAndroid,
 } from './specs/RnIap.nitro';
-import {ProductQueryType} from './types';
+import type {
+  ProductQueryType,
+  RequestPurchaseProps,
+  RequestPurchaseResult,
+} from './types';
 import type {
   Product,
   ProductRequest,
   Purchase,
   PurchaseAndroid,
   PurchaseOptions,
-  PurchaseParams,
   PurchaseError,
   ReceiptValidationResultAndroid,
   ReceiptValidationResultIOS,
@@ -27,6 +30,7 @@ import type {
   RequestPurchaseIosProps,
   RequestPurchasePropsByPlatforms,
   RequestSubscriptionAndroidProps,
+  RequestSubscriptionIosProps,
   RequestSubscriptionPropsByPlatforms,
   SubscriptionStatusIOS,
 } from './types';
@@ -50,35 +54,56 @@ export type {
 export * from './types';
 export * from './utils/error';
 
-// Internal constants/helpers for bridging legacy Nitro expectations
-const NITRO_PRODUCT_TYPE_INAPP = 'inapp';
-const NITRO_PRODUCT_TYPE_SUBS = 'subs';
+export type ProductTypeInput = 'inapp' | 'in-app' | 'subs';
+
+const LEGACY_INAPP_WARNING =
+  "[react-native-iap] `type: 'inapp'` is deprecated and will be removed in v14.4.0. Use 'in-app' instead.";
 
 function toNitroProductType(
-  type?: ProductQueryType | null,
-): typeof NITRO_PRODUCT_TYPE_INAPP | typeof NITRO_PRODUCT_TYPE_SUBS {
-  return type === ProductQueryType.Subs
-    ? NITRO_PRODUCT_TYPE_SUBS
-    : NITRO_PRODUCT_TYPE_INAPP;
+  type?: ProductTypeInput | ProductQueryType | null,
+): 'inapp' | 'subs' {
+  if (type === 'subs') {
+    return 'subs';
+  }
+  if (type === 'inapp') {
+    console.warn(LEGACY_INAPP_WARNING);
+    return 'inapp';
+  }
+  if (type === 'all') {
+    return 'inapp';
+  }
+  return 'inapp';
 }
 
 function isSubscriptionQuery(type?: ProductQueryType | null): boolean {
-  return type === ProductQueryType.Subs;
+  return type === 'subs';
 }
 
 function normalizeProductQueryType(
   type?: ProductQueryType | string | null,
 ): ProductQueryType {
-  if (type === ProductQueryType.All || type === 'all') {
-    return ProductQueryType.All;
+  if (type === 'all' || type === 'subs' || type === 'in-app') {
+    return type;
   }
-  if (type === ProductQueryType.Subs || type === 'subs') {
-    return ProductQueryType.Subs;
+
+  if (typeof type === 'string') {
+    const normalized = type.trim().toLowerCase().replace(/_/g, '-');
+
+    if (normalized === 'all') {
+      return 'all';
+    }
+    if (normalized === 'subs') {
+      return 'subs';
+    }
+    if (normalized === 'inapp') {
+      console.warn(LEGACY_INAPP_WARNING);
+      return 'in-app';
+    }
+    if (normalized === 'in-app') {
+      return 'in-app';
+    }
   }
-  if (type === ProductQueryType.InApp || type === 'inapp') {
-    return ProductQueryType.InApp;
-  }
-  return ProductQueryType.InApp;
+  return 'in-app';
 }
 
 export interface EventSubscription {
@@ -174,7 +199,7 @@ export const endConnection = async (): Promise<boolean> => {
  * Fetch products from the store
  * @param params - Product request configuration
  * @param params.skus - Array of product SKUs to fetch
- * @param params.type - Optional filter: 'inapp' (default) for products, 'subs' for subscriptions, or 'all' for both.
+ * @param params.type - Optional filter: 'in-app' (default) for products, 'subs' for subscriptions, or 'all' for both.
  * @returns Promise<Product[]> - Array of products from the store
  *
  * @example
@@ -188,7 +213,7 @@ export const endConnection = async (): Promise<boolean> => {
  */
 export const fetchProducts = async ({
   skus,
-  type = ProductQueryType.InApp,
+  type = 'in-app',
 }: ProductRequest): Promise<Product[]> => {
   try {
     if (!skus || skus.length === 0) {
@@ -197,10 +222,10 @@ export const fetchProducts = async ({
 
     const normalizedType = normalizeProductQueryType(type);
 
-    if (normalizedType === ProductQueryType.All) {
+    if (normalizedType === 'all') {
       const [inappNitro, subsNitro] = await Promise.all([
-        IAP.instance.fetchProducts(skus, NITRO_PRODUCT_TYPE_INAPP),
-        IAP.instance.fetchProducts(skus, NITRO_PRODUCT_TYPE_SUBS),
+        IAP.instance.fetchProducts(skus, 'inapp'),
+        IAP.instance.fetchProducts(skus, 'subs'),
       ]);
       const allNitro = [...inappNitro, ...subsNitro];
       const validAll = allNitro.filter(validateNitroProduct);
@@ -237,7 +262,7 @@ export const fetchProducts = async ({
  * Request a purchase for products or subscriptions
  * @param params - Purchase request configuration
  * @param params.request - Platform-specific purchase parameters
- * @param params.type - Type of purchase: 'inapp' for products (default) or 'subs' for subscriptions
+ * @param params.type - Type of purchase: 'in-app' for products (default) or 'subs' for subscriptions
  *
  * @example
  * ```typescript
@@ -247,7 +272,7 @@ export const fetchProducts = async ({
  *     ios: { sku: productId },
  *     android: { skus: [productId] }
  *   },
- *   type: 'inapp'
+ *   type: 'in-app'
  * });
  *
  * // Subscription purchase
@@ -268,48 +293,19 @@ export const fetchProducts = async ({
  * ⚠️ Important: This is an event-based operation, not promise-based.
  * Listen for events through purchaseUpdatedListener or purchaseErrorListener.
  * @param params - Purchase request configuration
- * @param params.requestPurchase - Platform-specific purchase parameters (in-app)
- * @param params.requestSubscription - Platform-specific subscription parameters (subs)
+ * @param params.request - Platform-specific request parameters
  * @param params.type - Type of purchase (defaults to in-app)
  */
 export const requestPurchase = async (
-  params: PurchaseParams,
-): Promise<void> => {
+  params: RequestPurchaseProps,
+): Promise<RequestPurchaseResult> => {
   try {
-    const {requestPurchase: purchaseRequest, requestSubscription} = params;
-    const normalizedPurchaseRequest = purchaseRequest ?? undefined;
-    const normalizedSubscriptionRequest = requestSubscription ?? undefined;
-
-    const effectiveType = normalizeProductQueryType(params.type);
-    const isSubs = isSubscriptionQuery(effectiveType);
-    let request:
+    const normalizedType = normalizeProductQueryType(params.type);
+    const isSubs = isSubscriptionQuery(normalizedType);
+    const request = params.request as
       | RequestPurchasePropsByPlatforms
       | RequestSubscriptionPropsByPlatforms
       | undefined;
-
-    if (isSubs) {
-      if (
-        __DEV__ &&
-        normalizedPurchaseRequest &&
-        !normalizedSubscriptionRequest
-      ) {
-        console.warn(
-          '[react-native-iap] `requestPurchase` was provided for a subscription request. Did you mean to use `requestSubscription`?',
-        );
-      }
-      request = normalizedSubscriptionRequest ?? normalizedPurchaseRequest;
-    } else {
-      if (
-        __DEV__ &&
-        normalizedSubscriptionRequest &&
-        !normalizedPurchaseRequest
-      ) {
-        console.warn(
-          '[react-native-iap] `requestSubscription` was provided for an in-app purchase request. Did you mean to use `requestPurchase`?',
-        );
-      }
-      request = normalizedPurchaseRequest ?? normalizedSubscriptionRequest;
-    }
 
     if (!request) {
       throw new Error('Missing purchase request configuration');
@@ -338,16 +334,19 @@ export const requestPurchase = async (
     const unifiedRequest: any = {};
 
     if (Platform.OS === 'ios' && request.ios) {
-      const iosReq = request.ios as RequestPurchaseIosProps;
-      const autoFinishSubs =
-        isSubs && iosReq.andDangerouslyFinishTransactionAutomatically == null;
-      unifiedRequest.ios = {
-        ...iosReq,
-        // Align with native SwiftUI flow: auto-finish subscriptions by default
-        ...(autoFinishSubs
-          ? {andDangerouslyFinishTransactionAutomatically: true}
-          : {}),
-      } as RequestPurchaseIosProps;
+      if (isSubs) {
+        const iosReq = request.ios as RequestSubscriptionIosProps;
+        const autoFinishSubs =
+          iosReq.andDangerouslyFinishTransactionAutomatically == null;
+        unifiedRequest.ios = {
+          ...iosReq,
+          ...(autoFinishSubs
+            ? {andDangerouslyFinishTransactionAutomatically: true}
+            : {}),
+        } as RequestSubscriptionIosProps;
+      } else {
+        unifiedRequest.ios = request.ios as RequestPurchaseIosProps;
+      }
     }
 
     if (Platform.OS === 'android' && request.android) {
@@ -356,14 +355,14 @@ export const requestPurchase = async (
         unifiedRequest.android = {
           ...subsRequest,
           subscriptionOffers: subsRequest.subscriptionOffers || [],
-        } as RequestPurchaseAndroidProps;
+        } as RequestSubscriptionAndroidProps;
       } else {
-        unifiedRequest.android = request.android;
+        unifiedRequest.android = request.android as RequestPurchaseAndroidProps;
       }
     }
 
     // Call unified method - returns void, listen for events instead
-    await IAP.instance.requestPurchase(unifiedRequest);
+    return await IAP.instance.requestPurchase(unifiedRequest);
   } catch (error) {
     console.error('Failed to request purchase:', error);
     throw error;

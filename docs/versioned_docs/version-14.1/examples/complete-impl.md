@@ -124,7 +124,7 @@ const handlePurchase = async (productId: string) => {
           skus: [productId],
         },
       },
-      type: 'inapp',
+      type: 'in-app',
     });
 
     // Purchase result will be handled by purchaseUpdatedListener
@@ -156,7 +156,7 @@ const validateReceiptOnServer = async (purchase: Purchase) => {
       platform: Platform.OS,
       productId: purchase.productId,
       receipt: receipt,
-      transactionId: purchase.transactionId,
+      transactionId: purchase.id,
     }),
   });
 

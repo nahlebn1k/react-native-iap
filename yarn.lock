@@ -11198,18 +11198,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nitrogen@npm:^0.29.4":
-  version: 0.29.4
-  resolution: "nitrogen@npm:0.29.4"
+"nitrogen@npm:^0.29.6":
+  version: 0.29.6
+  resolution: "nitrogen@npm:0.29.6"
   dependencies:
     chalk: ^5.3.0
-    react-native-nitro-modules: ^0.29.4
+    react-native-nitro-modules: ^0.29.6
     ts-morph: ^25.0.0
     yargs: ^17.7.2
     zod: ^4.0.5
   bin:
     nitrogen: lib/index.js
-  checksum: ce5aa88d055cf8c54228891aa766122eda3a57d92e18586734953cd86c94f92b096e5875788d6cfac9ac1d59e7a6919a70cf50ee2e573154899b1599700d0f02
+  checksum: ea6a5f1228388d65e334da9ff071b7bfda94a81af1917f0ce95fceb99bfe02104d8ff0a1c82e4a0f433ca3355e20fc16cb367fb6926a1f49e470b771cb6f7431
   languageName: node
   linkType: hard
 
@@ -12253,18 +12253,18 @@ __metadata:
     husky: ^8.0.3
     jest: ^30.1.1
     lint-staged: ^15.2.0
-    nitrogen: ^0.29.4
+    nitrogen: ^0.29.6
     prettier: ^3.3.3
     react: 19.1.0
     react-native: 0.81.1
     react-native-builder-bob: ^0.38.4
-    react-native-nitro-modules: ^0.29.4
+    react-native-nitro-modules: ^0.29.6
     react-test-renderer: ^19.1.1
     typescript: ^5.9.2
   peerDependencies:
     react: "*"
     react-native: "*"
-    react-native-nitro-modules: "*"
+    react-native-nitro-modules: ^0.29.6
   languageName: unknown
   linkType: soft
 
@@ -12288,13 +12288,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-nitro-modules@npm:^0.29.4":
-  version: 0.29.4
-  resolution: "react-native-nitro-modules@npm:0.29.4"
+"react-native-nitro-modules@npm:^0.29.6":
+  version: 0.29.6
+  resolution: "react-native-nitro-modules@npm:0.29.6"
   peerDependencies:
     react: "*"
     react-native: "*"
-  checksum: c57d9ea6472f7d7ff4dfec0cde10a587aa268f699dfe2862772da377153b33296c02e9764623ea4431a2d402a5c14613ba114d186e99616e7203bc08b023a54b
+  checksum: 3a11d79aca124fb03462b90a6b75056d423fcbcc51312e62196143e71c259c7cb56692bca35b5d22c8a7d7dbb769843698c3b1e0727f58a1daf90114351368b1
   languageName: node
   linkType: hard
 
@@ -12785,7 +12785,7 @@ __metadata:
     react: 19.1.0
     react-native: 0.81.1
     react-native-monorepo-config: ^0.1.9
-    react-native-nitro-modules: ^0.29.4
+    react-native-nitro-modules: ^0.29.6
     react-native-safe-area-context: ^5.6.1
     react-native-screens: ^4.15.4
     react-test-renderer: 19.1.0
