@@ -7,10 +7,11 @@ import {NitroModules} from 'react-native-nitro-modules';
 // Internal modules
 import type {
   NitroPurchaseResult,
-  RnIap,
   NitroReceiptValidationParams,
   NitroReceiptValidationResultIOS,
   NitroReceiptValidationResultAndroid,
+  NitroSubscriptionStatus,
+  RnIap,
 } from './specs/RnIap.nitro';
 import type {
   ProductQueryType,
@@ -18,6 +19,8 @@ import type {
   RequestPurchaseResult,
 } from './types';
 import type {
+  AndroidSubscriptionOfferInput,
+  DiscountOfferInputIOS,
   Product,
   ProductRequest,
   Purchase,
@@ -58,6 +61,52 @@ export type ProductTypeInput = 'inapp' | 'in-app' | 'subs';
 
 const LEGACY_INAPP_WARNING =
   "[react-native-iap] `type: 'inapp'` is deprecated and will be removed in v14.4.0. Use 'in-app' instead.";
+
+type NitroPurchaseRequest = Parameters<RnIap['requestPurchase']>[0];
+type NitroAvailablePurchasesOptions = NonNullable<
+  Parameters<RnIap['getAvailablePurchases']>[0]
+>;
+type NitroFinishTransactionParamsInternal = Parameters<
+  RnIap['finishTransaction']
+>[0];
+type NitroPurchaseListener = Parameters<RnIap['addPurchaseUpdatedListener']>[0];
+type NitroPurchaseErrorListener = Parameters<
+  RnIap['addPurchaseErrorListener']
+>[0];
+type NitroPromotedProductListener = Parameters<
+  RnIap['addPromotedProductListenerIOS']
+>[0];
+
+const toErrorMessage = (error: unknown): string => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    (error as {message?: unknown}).message != null
+  ) {
+    return String((error as {message?: unknown}).message);
+  }
+  return String(error ?? '');
+};
+
+type NitroDiscountOfferRecord = NonNullable<
+  NonNullable<NitroPurchaseRequest['ios']>['withOffer']
+>;
+
+const toDiscountOfferRecordIOS = (
+  offer: DiscountOfferInputIOS | null | undefined,
+): NitroDiscountOfferRecord | undefined => {
+  if (!offer) {
+    return undefined;
+  }
+  return {
+    identifier: offer.identifier,
+    keyIdentifier: offer.keyIdentifier,
+    nonce: offer.nonce,
+    signature: offer.signature,
+    timestamp: String(offer.timestamp),
+  };
+};
 
 function toNitroProductType(
   type?: ProductTypeInput | ProductQueryType | null,
@@ -152,7 +201,7 @@ const IAP = {
     try {
       iapRef = NitroModules.createHybridObject<RnIap>('RnIap');
     } catch (e) {
-      const msg = String((e as any)?.message ?? e ?? '');
+      const msg = toErrorMessage(e);
       if (
         msg.includes('Nitro') ||
         msg.includes('JSI') ||
@@ -330,38 +379,88 @@ export const requestPurchase = async (
       throw new Error('Unsupported platform');
     }
 
-    // Transform the request for the unified interface
-    const unifiedRequest: any = {};
+    const unifiedRequest: NitroPurchaseRequest = {};
 
     if (Platform.OS === 'ios' && request.ios) {
-      if (isSubs) {
-        const iosReq = request.ios as RequestSubscriptionIosProps;
-        const autoFinishSubs =
-          iosReq.andDangerouslyFinishTransactionAutomatically == null;
-        unifiedRequest.ios = {
-          ...iosReq,
-          ...(autoFinishSubs
-            ? {andDangerouslyFinishTransactionAutomatically: true}
-            : {}),
-        } as RequestSubscriptionIosProps;
-      } else {
-        unifiedRequest.ios = request.ios as RequestPurchaseIosProps;
+      const iosRequest = isSubs
+        ? (request.ios as RequestSubscriptionIosProps)
+        : (request.ios as RequestPurchaseIosProps);
+
+      const iosPayload: NonNullable<NitroPurchaseRequest['ios']> = {
+        sku: iosRequest.sku,
+      };
+
+      const explicitAutoFinish =
+        iosRequest.andDangerouslyFinishTransactionAutomatically ?? undefined;
+      const autoFinish =
+        explicitAutoFinish !== undefined
+          ? explicitAutoFinish
+          : isSubs
+            ? true
+            : undefined;
+      if (autoFinish !== undefined) {
+        iosPayload.andDangerouslyFinishTransactionAutomatically = autoFinish;
       }
+      if (iosRequest.appAccountToken) {
+        iosPayload.appAccountToken = iosRequest.appAccountToken;
+      }
+      if (typeof iosRequest.quantity === 'number') {
+        iosPayload.quantity = iosRequest.quantity;
+      }
+      const offerRecord = toDiscountOfferRecordIOS(iosRequest.withOffer);
+      if (offerRecord) {
+        iosPayload.withOffer = offerRecord;
+      }
+
+      unifiedRequest.ios = iosPayload;
     }
 
     if (Platform.OS === 'android' && request.android) {
-      if (isSubs) {
-        const subsRequest = request.android as RequestSubscriptionAndroidProps;
-        unifiedRequest.android = {
-          ...subsRequest,
-          subscriptionOffers: subsRequest.subscriptionOffers || [],
-        } as RequestSubscriptionAndroidProps;
-      } else {
-        unifiedRequest.android = request.android as RequestPurchaseAndroidProps;
+      const androidRequest = isSubs
+        ? (request.android as RequestSubscriptionAndroidProps)
+        : (request.android as RequestPurchaseAndroidProps);
+
+      const androidPayload: NonNullable<NitroPurchaseRequest['android']> = {
+        skus: androidRequest.skus,
+      };
+
+      if (androidRequest.obfuscatedAccountIdAndroid) {
+        androidPayload.obfuscatedAccountIdAndroid =
+          androidRequest.obfuscatedAccountIdAndroid;
       }
+      if (androidRequest.obfuscatedProfileIdAndroid) {
+        androidPayload.obfuscatedProfileIdAndroid =
+          androidRequest.obfuscatedProfileIdAndroid;
+      }
+      if (androidRequest.isOfferPersonalized != null) {
+        androidPayload.isOfferPersonalized = androidRequest.isOfferPersonalized;
+      }
+
+      if (isSubs) {
+        const subsRequest = androidRequest as RequestSubscriptionAndroidProps;
+        if (subsRequest.purchaseTokenAndroid) {
+          androidPayload.purchaseTokenAndroid =
+            subsRequest.purchaseTokenAndroid;
+        }
+        if (subsRequest.replacementModeAndroid != null) {
+          androidPayload.replacementModeAndroid =
+            subsRequest.replacementModeAndroid;
+        }
+        androidPayload.subscriptionOffers = (
+          subsRequest.subscriptionOffers ?? []
+        )
+          .filter(
+            (offer): offer is AndroidSubscriptionOfferInput => offer != null,
+          )
+          .map((offer) => ({
+            sku: offer.sku,
+            offerToken: offer.offerToken,
+          }));
+      }
+
+      unifiedRequest.android = androidPayload;
     }
 
-    // Call unified method - returns void, listen for events instead
     return await IAP.instance.requestPurchase(unifiedRequest);
   } catch (error) {
     console.error('Failed to request purchase:', error);
@@ -387,17 +486,27 @@ export const getAvailablePurchases = async ({
   onlyIncludeActiveItemsIOS = true,
 }: PurchaseOptions = {}): Promise<Purchase[]> => {
   try {
-    // Create unified options
-    const options: any = {};
-
     if (Platform.OS === 'ios') {
-      // Provide both new and deprecated keys for compatibility
-      options.ios = {
-        alsoPublishToEventListenerIOS,
-        onlyIncludeActiveItemsIOS,
-        alsoPublishToEventListener: alsoPublishToEventListenerIOS,
-        onlyIncludeActiveItems: onlyIncludeActiveItemsIOS,
+      const iosAlsoPublish = Boolean(alsoPublishToEventListenerIOS);
+      const iosOnlyActive = Boolean(onlyIncludeActiveItemsIOS);
+      const options: NitroAvailablePurchasesOptions = {
+        ios: {
+          alsoPublishToEventListenerIOS: iosAlsoPublish,
+          onlyIncludeActiveItemsIOS: iosOnlyActive,
+          alsoPublishToEventListener: iosAlsoPublish,
+          onlyIncludeActiveItems: iosOnlyActive,
+        },
       };
+      const nitroPurchases = await IAP.instance.getAvailablePurchases(options);
+
+      const validPurchases = nitroPurchases.filter(validateNitroPurchase);
+      if (validPurchases.length !== nitroPurchases.length) {
+        console.warn(
+          `[getAvailablePurchases] Some purchases failed validation: ${nitroPurchases.length - validPurchases.length} invalid`,
+        );
+      }
+
+      return validPurchases.map(convertNitroPurchaseToPurchase);
     } else if (Platform.OS === 'android') {
       // For Android, we need to call twice for inapp and subs
       const inappNitroPurchases = await IAP.instance.getAvailablePurchases({
@@ -420,18 +529,6 @@ export const getAvailablePurchases = async ({
     } else {
       throw new Error('Unsupported platform');
     }
-
-    const nitroPurchases = await IAP.instance.getAvailablePurchases(options);
-
-    // Validate and convert NitroPurchases to TypeScript Purchases
-    const validPurchases = nitroPurchases.filter(validateNitroPurchase);
-    if (validPurchases.length !== nitroPurchases.length) {
-      console.warn(
-        `[getAvailablePurchases] Some purchases failed validation: ${nitroPurchases.length - validPurchases.length} invalid`,
-      );
-    }
-
-    return validPurchases.map(convertNitroPurchaseToPurchase);
   } catch (error) {
     console.error('Failed to get available purchases:', error);
     throw error;
@@ -457,15 +554,15 @@ export const finishTransaction = async ({
   isConsumable = false,
 }: FinishTransactionParams): Promise<NitroPurchaseResult | boolean> => {
   try {
-    // Create unified params
-    const params: any = {};
-
+    let params: NitroFinishTransactionParamsInternal;
     if (Platform.OS === 'ios') {
       if (!purchase.id) {
         throw new Error('purchase.id required to finish iOS transaction');
       }
-      params.ios = {
-        transactionId: purchase.id,
+      params = {
+        ios: {
+          transactionId: purchase.id,
+        },
       };
     } else if (Platform.OS === 'android') {
       const androidPurchase = purchase as PurchaseAndroid;
@@ -475,9 +572,11 @@ export const finishTransaction = async ({
         throw new Error('purchaseToken required to finish Android transaction');
       }
 
-      params.android = {
-        purchaseToken: token,
-        isConsumable,
+      params = {
+        android: {
+          purchaseToken: token,
+          isConsumable,
+        },
       };
     } else {
       throw new Error('Unsupported platform');
@@ -599,7 +698,18 @@ export const consumePurchaseAndroid = async (
 // ============================================================================
 
 // Store wrapped listeners for proper removal
-const listenerMap = new WeakMap<Function, Function>();
+const purchaseUpdatedListenerMap = new WeakMap<
+  (purchase: Purchase) => void,
+  NitroPurchaseListener
+>();
+const purchaseErrorListenerMap = new WeakMap<
+  (error: PurchaseError) => void,
+  NitroPurchaseErrorListener
+>();
+const promotedProductListenerMap = new WeakMap<
+  (product: Product) => void,
+  NitroPromotedProductListener
+>();
 
 /**
  * Purchase updated event listener
@@ -625,7 +735,7 @@ export const purchaseUpdatedListener = (
   listener: (purchase: Purchase) => void,
 ): EventSubscription => {
   // Wrap the listener to convert NitroPurchase to Purchase
-  const wrappedListener = (nitroPurchase: any) => {
+  const wrappedListener: NitroPurchaseListener = (nitroPurchase) => {
     if (validateNitroPurchase(nitroPurchase)) {
       const convertedPurchase = convertNitroPurchaseToPurchase(nitroPurchase);
       listener(convertedPurchase);
@@ -638,13 +748,13 @@ export const purchaseUpdatedListener = (
   };
 
   // Store the wrapped listener for removal
-  listenerMap.set(listener, wrappedListener);
+  purchaseUpdatedListenerMap.set(listener, wrappedListener);
   let attached = false;
   try {
     IAP.instance.addPurchaseUpdatedListener(wrappedListener);
     attached = true;
   } catch (e) {
-    const msg = String(e ?? '');
+    const msg = toErrorMessage(e);
     if (msg.includes('Nitro runtime not installed')) {
       console.warn(
         '[purchaseUpdatedListener] Nitro not ready yet; listener inert until initConnection()',
@@ -656,14 +766,14 @@ export const purchaseUpdatedListener = (
 
   return {
     remove: () => {
-      const wrapped = listenerMap.get(listener);
+      const wrapped = purchaseUpdatedListenerMap.get(listener);
       if (wrapped) {
         if (attached) {
           try {
-            IAP.instance.removePurchaseUpdatedListener(wrapped as any);
+            IAP.instance.removePurchaseUpdatedListener(wrapped);
           } catch {}
         }
-        listenerMap.delete(listener);
+        purchaseUpdatedListenerMap.delete(listener);
       }
     },
   };
@@ -699,7 +809,7 @@ export const purchaseUpdatedListener = (
 export const purchaseErrorListener = (
   listener: (error: PurchaseError) => void,
 ): EventSubscription => {
-  const wrapped = (error: NitroPurchaseResult) => {
+  const wrapped: NitroPurchaseErrorListener = (error) => {
     listener({
       code: normalizeErrorCodeFromNative(error.code),
       message: error.message,
@@ -707,13 +817,13 @@ export const purchaseErrorListener = (
     });
   };
 
-  listenerMap.set(listener, wrapped);
+  purchaseErrorListenerMap.set(listener, wrapped);
   let attached = false;
   try {
-    IAP.instance.addPurchaseErrorListener(wrapped as any);
+    IAP.instance.addPurchaseErrorListener(wrapped);
     attached = true;
   } catch (e) {
-    const msg = String(e ?? '');
+    const msg = toErrorMessage(e);
     if (msg.includes('Nitro runtime not installed')) {
       console.warn(
         '[purchaseErrorListener] Nitro not ready yet; listener inert until initConnection()',
@@ -725,14 +835,14 @@ export const purchaseErrorListener = (
 
   return {
     remove: () => {
-      const stored = listenerMap.get(listener);
+      const stored = purchaseErrorListenerMap.get(listener);
       if (stored) {
         if (attached) {
           try {
-            IAP.instance.removePurchaseErrorListener(stored as any);
+            IAP.instance.removePurchaseErrorListener(stored);
           } catch {}
         }
-        listenerMap.delete(listener);
+        purchaseErrorListenerMap.delete(listener);
       }
     },
   };
@@ -769,7 +879,7 @@ export const promotedProductListenerIOS = (
   }
 
   // Wrap the listener to convert NitroProduct to Product
-  const wrappedListener = (nitroProduct: any) => {
+  const wrappedListener: NitroPromotedProductListener = (nitroProduct) => {
     if (validateNitroProduct(nitroProduct)) {
       const convertedProduct = convertNitroProductToProduct(nitroProduct);
       listener(convertedProduct);
@@ -782,13 +892,13 @@ export const promotedProductListenerIOS = (
   };
 
   // Store the wrapped listener for removal
-  listenerMap.set(listener, wrappedListener);
+  promotedProductListenerMap.set(listener, wrappedListener);
   let attached = false;
   try {
     IAP.instance.addPromotedProductListenerIOS(wrappedListener);
     attached = true;
   } catch (e) {
-    const msg = String(e ?? '');
+    const msg = toErrorMessage(e);
     if (msg.includes('Nitro runtime not installed')) {
       console.warn(
         '[promotedProductListenerIOS] Nitro not ready yet; listener inert until initConnection()',
@@ -800,14 +910,14 @@ export const promotedProductListenerIOS = (
 
   return {
     remove: () => {
-      const wrapped = listenerMap.get(listener);
+      const wrapped = promotedProductListenerMap.get(listener);
       if (wrapped) {
         if (attached) {
           try {
-            IAP.instance.removePromotedProductListenerIOS(wrapped as any);
+            IAP.instance.removePromotedProductListenerIOS(wrapped);
           } catch {}
         }
-        listenerMap.delete(listener);
+        promotedProductListenerMap.delete(listener);
       }
     },
   };
@@ -1021,10 +1131,10 @@ export const subscriptionStatusIOS = async (
 
   try {
     const statuses = await IAP.instance.subscriptionStatusIOS(sku);
-    if (!statuses || !Array.isArray(statuses)) return [];
-    return statuses.map((s) =>
-      convertNitroSubscriptionStatusToSubscriptionStatusIOS(s as any),
-    );
+    if (!Array.isArray(statuses)) return [];
+    return statuses
+      .filter((status): status is NitroSubscriptionStatus => status != null)
+      .map(convertNitroSubscriptionStatusToSubscriptionStatusIOS);
   } catch (error) {
     console.error('[subscriptionStatusIOS] Failed:', error);
     const errorJson = parseErrorStringToJsonObj(error);

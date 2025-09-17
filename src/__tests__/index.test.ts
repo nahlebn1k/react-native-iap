@@ -4,6 +4,7 @@
 
 import {Platform} from 'react-native';
 import {ErrorCode} from '../types';
+import type {DiscountOfferInputIOS} from '../types';
 
 const PLATFORM_IOS = 'ios';
 
@@ -308,14 +309,27 @@ describe('Public API (src/index.ts)', () => {
 
     it('iOS passes withOffer through to native', async () => {
       (Platform as any).OS = 'ios';
+      const offer = {
+        identifier: 'offer-id',
+        keyIdentifier: 'key-id',
+        nonce: 'nonce-value',
+        signature: 'signature-value',
+        timestamp: 1720000000,
+      } satisfies DiscountOfferInputIOS;
       await IAP.requestPurchase({
         request: {
-          ios: {sku: 'p1', withOffer: {id: 'offer'} as any},
+          ios: {sku: 'p1', withOffer: offer},
         },
         type: 'in-app',
       });
       const passed = mockIap.requestPurchase.mock.calls.pop()?.[0];
-      expect(passed.ios.withOffer).toEqual({id: 'offer'});
+      expect(passed.ios.withOffer).toEqual({
+        identifier: 'offer-id',
+        keyIdentifier: 'key-id',
+        nonce: 'nonce-value',
+        signature: 'signature-value',
+        timestamp: String(1720000000),
+      });
     });
 
     it('Android subs fills empty subscriptionOffers array when missing', async () => {
