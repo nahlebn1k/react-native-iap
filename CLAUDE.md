@@ -170,7 +170,7 @@ Access these from the Run and Debug panel (⌘⇧D) in VSCode.
 
 This repository follows the **Angular Conventional Commits** format:
 
-```
+```txt
 <type>(<scope>): <subject>
 ```
 
