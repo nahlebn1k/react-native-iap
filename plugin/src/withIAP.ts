@@ -126,8 +126,9 @@ const withIapAndroid: ConfigPlugin = (config) => {
 
 type IapPluginProps = {
   ios?: {
-    // Intentionally following user-provided key spelling
     // Enable to inject Folly coroutine-disabling macros into Podfile during prebuild
+    'with-folly-no-coroutines'?: boolean;
+    // @deprecated Use 'with-folly-no-coroutines'. Kept for backward compatibility.
     'with-folly-no-couroutines'?: boolean;
   };
 };
@@ -136,7 +137,16 @@ const withIapIosFollyWorkaround: ConfigPlugin<IapPluginProps | undefined> = (
   config,
   props,
 ) => {
-  const enabled = !!props?.ios?.['with-folly-no-couroutines'];
+  const newKey = props?.ios?.['with-folly-no-coroutines'];
+  const oldKey = props?.ios?.['with-folly-no-couroutines'];
+  if (oldKey && !hasLoggedPluginExecution) {
+    // Temporary deprecation notice; remove when old key is dropped
+    WarningAggregator.addWarningIOS(
+      'react-native-iap',
+      "react-native-iap: 'ios.with-folly-no-couroutines' is deprecated; use 'ios.with-folly-no-coroutines'."
+    );
+  }
+  const enabled = !!(newKey ?? oldKey);
   if (!enabled) return config;
 
   return withPodfile(config, (config) => {
