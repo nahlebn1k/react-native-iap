@@ -8,7 +8,7 @@ import dev.hyo.openiap.OpenIapError as OpenIAPError
 import dev.hyo.openiap.OpenIapModule
 import dev.hyo.openiap.listener.OpenIapPurchaseErrorListener
 import dev.hyo.openiap.listener.OpenIapPurchaseUpdateListener
-import dev.hyo.openiap.models.DeepLinkOptions
+import dev.hyo.openiap.models.DeepLinkOptions as OpenIapDeepLinkOptions
 import dev.hyo.openiap.models.OpenIapProduct
 import dev.hyo.openiap.models.OpenIapPurchase
 import dev.hyo.openiap.models.ProductRequest
@@ -140,8 +140,37 @@ class HybridRnIap : HybridRnIapSpec() {
             }
 
             initConnection().await()
-            val reqType = ProductRequest.ProductRequestType.fromString(type)
-            val products = openIap.fetchProducts(ProductRequest(skus.toList(), reqType))
+
+            val normalizedType = type.lowercase()
+            val skusList = skus.toList()
+
+            val products: List<OpenIapProduct> = when (normalizedType) {
+                "all" -> {
+                    val collected = mutableMapOf<String, OpenIapProduct>()
+                    listOf("in-app", "subs").forEach { kind ->
+                        val requestType = ProductRequest.ProductRequestType.fromString(kind)
+                        val fetched = openIap.fetchProducts(ProductRequest(skusList, requestType))
+                        fetched.forEach { collected[it.id] = it }
+                    }
+                    collected.values.toList()
+                }
+                "inapp", "in-app" -> {
+                    if (normalizedType == "inapp") {
+                        Log.w(TAG, "fetchProducts received legacy type 'inapp'; forwarding as 'in-app'")
+                    }
+                    val requestType = ProductRequest.ProductRequestType.fromString("in-app")
+                    openIap.fetchProducts(ProductRequest(skusList, requestType))
+                }
+                "subs" -> {
+                    val requestType = ProductRequest.ProductRequestType.fromString("subs")
+                    openIap.fetchProducts(ProductRequest(skusList, requestType))
+                }
+                else -> {
+                    Log.w(TAG, "fetchProducts received unknown type '$type'; defaulting to ProductRequest.fromString")
+                    val requestType = ProductRequest.ProductRequestType.fromString(type)
+                    openIap.fetchProducts(ProductRequest(skusList, requestType))
+                }
+            }
 
             // populate type cache
             products.forEach { p -> productTypeBySku[p.id] = p.type.value }
@@ -152,9 +181,9 @@ class HybridRnIap : HybridRnIapSpec() {
     
     // Purchase methods
     // Purchase methods (Unified)
-    override fun requestPurchase(request: NitroPurchaseRequest): Promise<RequestPurchaseResult> {
+    override fun requestPurchase(request: NitroPurchaseRequest): Promise<RequestPurchaseResult?> {
         return Promise.async {
-            val defaultResult = RequestPurchaseResult(null, null)
+            val defaultResult = RequestPurchaseResult.create(emptyArray())
 
             val androidRequest = request.android ?: run {
                 // Programming error: no Android params provided
@@ -214,8 +243,18 @@ class HybridRnIap : HybridRnIapSpec() {
             val androidOptions = options?.android
             initConnection().await()
 
-            val result: List<OpenIapPurchase> = if (androidOptions?.type != null) {
-                val typeEnum = ProductRequest.ProductRequestType.fromString(androidOptions.type ?: "inapp")
+            val typeName = androidOptions?.type?.name?.lowercase()
+            val normalizedType = when (typeName) {
+                "inapp" -> {
+                    Log.w(TAG, "getAvailablePurchases received legacy type 'inapp'; forwarding as 'in-app'")
+                    "in-app"
+                }
+                "in-app", "subs" -> typeName
+                else -> null
+            }
+
+            val result: List<OpenIapPurchase> = if (normalizedType != null) {
+                val typeEnum = ProductRequest.ProductRequestType.fromString(normalizedType)
                 openIap.getAvailableItems(typeEnum)
             } else {
                 openIap.getAvailablePurchases()
@@ -421,7 +460,7 @@ class HybridRnIap : HybridRnIapSpec() {
             displayPrice = product.displayPrice,
             currency = product.currency,
             price = product.price,
-            platform = "android",
+            platform = IapPlatform.ANDROID,
             // iOS fields (null on Android)
             typeIOS = null,
             isFamilyShareableIOS = null,
@@ -459,10 +498,10 @@ class HybridRnIap : HybridRnIapSpec() {
             productId = purchase.productId,
             transactionDate = purchase.transactionDate.toDouble(),
             purchaseToken = purchase.purchaseToken,
-            platform = "android",
+            platform = IapPlatform.ANDROID,
             // Common fields
             quantity = purchase.quantity.toDouble(),
-            purchaseState = purchase.purchaseState.value,
+            purchaseState = mapPurchaseState(purchase.purchaseState),
             isAutoRenewing = purchase.isAutoRenewing,
             // iOS fields
             quantityIOS = null,
@@ -480,6 +519,17 @@ class HybridRnIap : HybridRnIapSpec() {
             obfuscatedAccountIdAndroid = purchase.obfuscatedAccountIdAndroid,
             obfuscatedProfileIdAndroid = purchase.obfuscatedProfileIdAndroid
         )
+    }
+
+    private fun mapPurchaseState(state: OpenIapPurchase.PurchaseState): PurchaseState {
+        return when (state.name.uppercase()) {
+            "PURCHASED" -> PurchaseState.PURCHASED
+            "PENDING" -> PurchaseState.PENDING
+            "DEFERRED" -> PurchaseState.DEFERRED
+            "RESTORED" -> PurchaseState.RESTORED
+            "FAILED", "FAILURE", "CANCELED", "CANCELLED" -> PurchaseState.FAILED
+            else -> PurchaseState.UNKNOWN
+        }
     }
     
     // Billing error messages handled by OpenIAP
@@ -516,7 +566,7 @@ class HybridRnIap : HybridRnIapSpec() {
         return Promise.async {
             try {
                 initConnection().await()
-                DeepLinkOptions(
+                OpenIapDeepLinkOptions(
                     skuAndroid = options.skuAndroid,
                     packageNameAndroid = options.packageNameAndroid
                 ).let { openIap.deepLinkToSubscriptions(it) }
