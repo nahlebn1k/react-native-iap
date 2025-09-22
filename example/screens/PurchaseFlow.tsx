@@ -505,7 +505,7 @@ function PurchaseFlowContainer() {
     getAvailablePurchases,
   } = useIAP({
     onPurchaseSuccess: async (purchase: Purchase) => {
-      const {purchaseToken: tokenToMask, ...rest} = purchase as any;
+      const {purchaseToken: tokenToMask, ...rest} = purchase;
       const masked = {
         ...rest,
         ...(tokenToMask ? {purchaseToken: 'hidden'} : {}),

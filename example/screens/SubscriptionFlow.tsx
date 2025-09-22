@@ -19,6 +19,7 @@ import {
   type ProductSubscription,
   type Purchase,
   type PurchaseError,
+  ErrorCode,
 } from 'react-native-iap';
 import Loading from '../src/components/Loading';
 import {SUBSCRIPTION_PRODUCT_IDS} from '../src/utils/constants';
@@ -563,8 +564,7 @@ function SubscriptionFlowContainer() {
     getActiveSubscriptions,
   } = useIAP({
     onPurchaseSuccess: async (purchase: Purchase) => {
-      const {purchaseToken, transactionReceipt, ...safePurchase} =
-        (purchase as any) || {};
+      const {purchaseToken, ...safePurchase} = purchase || {};
       console.log('Purchase successful (redacted):', safePurchase);
       lastSuccessAtRef.current = Date.now();
       setLastPurchase(purchase);
@@ -626,7 +626,7 @@ function SubscriptionFlowContainer() {
       console.error('Subscription failed:', error);
       setIsProcessing(false);
       const dt = Date.now() - lastSuccessAtRef.current;
-      if ((error as any)?.code === 'E_SERVICE_ERROR' && dt >= 0 && dt < 1500) {
+      if (error?.code === ErrorCode.ServiceError && dt >= 0 && dt < 1500) {
         return;
       }
 

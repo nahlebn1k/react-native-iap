@@ -435,8 +435,7 @@ export default function AvailablePurchases() {
               >
                 {(() => {
                   if (!selectedPurchase) return '';
-                  const {purchaseToken, transactionReceipt, ...safe} =
-                    (selectedPurchase || {}) as any;
+                  const {purchaseToken, ...safe} = selectedPurchase || {};
                   return JSON.stringify(safe, null, 2);
                 })()}
               </Text>
@@ -454,8 +453,7 @@ export default function AvailablePurchases() {
                 style={[styles.button, {flex: 1}]}
                 onPress={() => {
                   if (!selectedPurchase) return;
-                  const {purchaseToken, transactionReceipt, ...safe} =
-                    (selectedPurchase || {}) as any;
+                  const {purchaseToken, ...safe} = selectedPurchase || {};
                   Clipboard.setString(JSON.stringify(safe, null, 2));
                   Alert.alert('Copied', 'Purchase JSON copied to clipboard');
                 }}

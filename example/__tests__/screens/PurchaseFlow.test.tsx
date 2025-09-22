@@ -99,7 +99,7 @@ describe('PurchaseFlow Screen', () => {
     const {getAllByText} = render(<PurchaseFlow />);
 
     const purchaseButtons = getAllByText('Purchase');
-    fireEvent.press(purchaseButtons[0]);
+    fireEvent.press(purchaseButtons[0]!);
 
     expect(requestPurchaseMock).toHaveBeenCalledWith({
       request: {
@@ -123,7 +123,7 @@ describe('PurchaseFlow Screen', () => {
     const {getByText} = render(<PurchaseFlow />);
 
     const refreshButton = getByText('Refresh available purchases');
-    fireEvent.press(refreshButton);
+    fireEvent.press(refreshButton!);
 
     await waitFor(() => {
       expect(getAvailablePurchases).toHaveBeenCalledTimes(2);
