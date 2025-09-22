@@ -62,3 +62,48 @@ migration:
   label: Migration
   permalink: /migration
   description: Migration guides and updates
+
+types:
+  label: Types
+  permalink: /types
+  description: TypeScript type definitions and improvements
+
+patch:
+  label: Patch
+  permalink: /patch
+  description: Patch version updates
+
+nitro:
+  label: Nitro
+  permalink: /nitro
+  description: Nitro Modules architecture updates
+
+docs:
+  label: Documentation
+  permalink: /docs
+  description: Documentation updates and improvements
+
+examples:
+  label: Examples
+  permalink: /examples
+  description: Code examples and samples
+
+plugin:
+  label: Plugin
+  permalink: /plugin
+  description: Plugin updates and features
+
+hook:
+  label: Hook
+  permalink: /hook
+  description: React hooks updates
+
+breaking:
+  label: Breaking
+  permalink: /breaking
+  description: Breaking changes
+
+bugfix:
+  label: Bugfix
+  permalink: /bugfix
+  description: Bug fixes and patches

@@ -37,6 +37,19 @@ function HomepageHeader() {
                 Installation Guide
               </Link>
             </div>
+            <p className={styles.heroSponsor}>
+              <strong>Our Sponsors</strong>
+              <br />
+              react-native-iap is part of the{' '}
+              <Link to="https://www.openiap.dev/">OpenIAP ecosystem</Link>{' '}
+              standardizing in-app purchases across platforms, OS, and
+              frameworks. If these libraries power your products, please
+              consider sponsoring ongoing development via{' '}
+              <Link to="https://www.openiap.dev/sponsors">
+                openiap.dev/sponsors
+              </Link>
+              .
+            </p>
           </div>
           <div className={styles.heroImage}>
             <img

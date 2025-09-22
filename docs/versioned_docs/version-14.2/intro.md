@@ -18,8 +18,6 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 - [**FAQ**](./guides/faq): Frequently asked questions and solutions
 - [**Support**](./guides/support): Getting help and community resources
 
-### 🛠️ Advanced Topicsnd modern TypeScript support.
-
 ## ✨ Features
 
 - 🔄 **Cross-platform Support**: Works seamlessly on both iOS and Android
