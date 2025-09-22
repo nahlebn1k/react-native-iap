@@ -31,12 +31,10 @@ import type {HybridObject} from 'react-native-nitro-modules';
 - `Purchase` - TypeScript-friendly purchase interface
 - `NitroPurchaseResult` - Purchase operation result
 
-> **Note (3.0.0)**:
+> **Note (v14.0.0)**:
 >
-> - `purchaseToken` is the unified field for both iOS and Android
-> - On iOS: Contains the JWS representation (StoreKit 2)
-> - On Android: Contains the purchase token
-> - **Deprecated fields**: `jwsRepresentationIOS` and `purchaseTokenAndroid` are deprecated and will be removed in a future version
+> - `purchaseToken` is the unified field for both iOS (JWS representation) and Android (purchase token).
+> - The legacy fields `jwsRepresentationIOS` and `purchaseTokenAndroid` have been removed.
 
 ### Request Types
 
@@ -67,12 +65,10 @@ import {
 Error handling types follow the OpenIAP specification:
 
 ```typescript
-interface NitroPurchaseResult {
-  responseCode: number;
-  debugMessage?: string;
-  code: string;
+interface PurchaseError {
+  code: ErrorCode;
   message: string;
-  purchaseToken?: string;
+  productId?: string | null;
 }
 ```
 

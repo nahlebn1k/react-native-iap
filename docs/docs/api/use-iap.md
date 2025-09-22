@@ -25,7 +25,7 @@ The `useIAP` hook follows React Hooks conventions and differs from calling funct
 - **Automatic connection**: Calls `initConnection` on mount and `endConnection` on unmount.
 - **Void-returning methods**: Hook methods like `fetchProducts`, `requestPurchase`, `getAvailablePurchases`, etc. return `Promise<void>` in the hook. They do not resolve to data. Instead they update hook state (`products`, `subscriptions`, `availablePurchases`, etc.).
 - **Don’t await for data**: When using the hook, do not write `const x = await fetchProducts(...)`. Call the method, then read the updated state from the hook.
-- **Prefer callbacks over `currentPurchase`**: `currentPurchase` is primarily useful for debugging/migration. In production flows, rely on `onPurchaseSuccess` and `onPurchaseError` passed to `useIAP`.
+- **Rely on callbacks**: In production flows, rely on `onPurchaseSuccess` and `onPurchaseError` passed to `useIAP`.
 - **Product caching**: Handled by the native layer for you.
 
 ## Basic Usage
@@ -175,7 +175,8 @@ interface UseIAPOptions {
   onPurchaseSuccess?: (purchase: Purchase) => void;
   onPurchaseError?: (error: PurchaseError) => void;
   onSyncError?: (error: Error) => void;
-  autoFinishTransactions?: boolean; // Default: true
+  shouldAutoSyncPurchases?: boolean;
+  onPromotedProductIOS?: (product: Product) => void;
 }
 ```
 
@@ -220,11 +221,24 @@ interface UseIAPOptions {
   };
   ```
 
-#### autoFinishTransactions
+#### onPromotedProductIOS
+
+- **Type**: `(product: Product) => void`
+- **Description**: Called when a promoted product is received from the App Store (iOS only).
+- **Example**:
+
+  ```tsx
+  onPromotedProductIOS: (product) => {
+    // Handle promoted product, e.g., show a custom UI
+    console.log('Received promoted product:', product.productId);
+  };
+  ```
+
+#### shouldAutoSyncPurchases
 
 - **Type**: `boolean`
 - **Default**: `true`
-- **Description**: Whether to automatically finish transactions after successful purchases
+- **Description**: If `true`, automatically syncs purchases with the store. Set to `false` if you want to manage syncing manually.
 
 ## Return Values
 
@@ -265,55 +279,31 @@ interface UseIAPOptions {
   ));
   ```
 
-#### currentPurchase
+#### `currentPurchase` and `currentPurchaseError` (Removed)
 
-- **Type**: `Purchase | null`
-- **Description**: Last purchase event captured by the hook. Primarily useful for debugging and migration. Prefer handling results via `onPurchaseSuccess` and errors via `onPurchaseError`.
-- **Example (debug logging)**:
+These properties were removed in `v14.x` because they were unreliable for production use. Please use the `onPurchaseSuccess` and `onPurchaseError` callbacks to handle purchase results.
 
-  ```tsx
-  useEffect(() => {
-    if (currentPurchase) {
-      console.log('Debug purchase event:', currentPurchase.id);
-    }
-  }, [currentPurchase]);
-  ```
+#### activeSubscriptions
 
-#### currentPurchaseError
-
-- **Type**: `PurchaseError | null`
-- **Description**: Current purchase error (if any)
+- **Type**: `ActiveSubscription[]`
+- **Description**: Array of currently active subscriptions.
 - **Example**:
 
   ```tsx
-  useEffect(() => {
-    if (currentPurchaseError) {
-      handlePurchaseError(currentPurchaseError);
-    }
-  }, [currentPurchaseError]);
-  ```
-
-#### purchaseHistories
-
-- **Type**: `ProductPurchase[]`
-- **Description**: Array of purchase history items
-- **Example**:
-
-  ```tsx
-  purchaseHistories.map((purchase) => (
-    <PurchaseHistoryItem key={purchase.id} purchase={purchase} />
+  activeSubscriptions.map((sub) => (
+    <ActiveSubscriptionItem key={sub.productId} sub={sub} />
   ));
   ```
 
 #### availablePurchases
 
-- **Type**: `ProductPurchase[]`
+- **Type**: `Purchase[]`
 - **Description**: Array of available purchases (restorable items)
 - **Example**:
 
   ```tsx
   availablePurchases.map((purchase) => (
-    <RestorableItem key={purchase.id} purchase={purchase} />
+    <RestorableItem key={purchase.transactionId} purchase={purchase} />
   ));
   ```
 
@@ -399,19 +389,19 @@ interface UseIAPOptions {
   };
   ```
 
-#### getAvailablePurchases
+#### restorePurchases
 
 - **Type**: `() => Promise<void>`
-- **Description**: Fetch available purchases (restorable items) from the store
+- **Description**: Restores purchases and updates `availablePurchases` state.
 - **Example**:
 
   ```tsx
-  const restorePurchases = async () => {
+  const handleRestore = async () => {
     try {
-      await getAvailablePurchases(); // updates `availablePurchases` state
-      console.log('Available purchases count:', availablePurchases.length);
+      await restorePurchases();
+      Alert.alert('Restore Successful', 'Your purchases have been restored.');
     } catch (error) {
-      console.error('Failed to fetch available purchases:', error);
+      Alert.alert('Restore Failed', error.message);
     }
   };
   ```
@@ -477,15 +467,15 @@ interface UseIAPOptions {
   };
   ```
 
-#### requestPromotedProductIOS
+#### getPromotedProductIOS
 
-- **Type**: `() => Promise<any | null>`
-- **Description**: Get the promoted product details (iOS only)
+- **Type**: `() => Promise<Product | null>`
+- **Description**: Get the promoted product details (iOS only).
 - **Example**:
 
   ```tsx
   const handlePromotedProduct = async () => {
-    const promotedProduct = await requestPromotedProductIOS();
+    const promotedProduct = await getPromotedProductIOS();
     if (promotedProduct) {
       console.log('Promoted product:', promotedProduct);
       // Show custom purchase UI
@@ -493,11 +483,20 @@ interface UseIAPOptions {
   };
   ```
 
-#### buyPromotedProductIOS
+#### requestPurchaseOnPromotedProductIOS
 
-- **Type**: `() => Promise<void>`
-- **Description**: Complete the purchase of a promoted product (iOS only)
+- **Type**: `() => Promise<boolean>`
+- **Description**: Complete the purchase of a promoted product (iOS only).
 - **Example**:
+
+  ```tsx
+  const buyPromoted = async () => {
+    const success = await requestPurchaseOnPromotedProductIOS();
+    if (success) {
+      console.log('Promoted purchase successful');
+    }
+  };
+  ```
 
   ```tsx
   const completePurchase = async () => {

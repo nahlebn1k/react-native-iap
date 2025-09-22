@@ -85,7 +85,7 @@ const cleanup = async () => {
 };
 ```
 
-**Returns:** `Promise<Purchase[]>` — Array of subscriptions whose auto-renewal status changed
+**Returns:** `Promise<void>`
 
 **Note:** When using the `useIAP` hook, connection cleanup is automatic.
 
@@ -135,7 +135,7 @@ const loadSubscriptions = async () => {
   - `skus` (string[]): Array of product or subscription IDs to fetch
   - `type` ('in-app' | 'subs' | 'all'): Product type — 'in-app' (default), 'subs', or 'all' to fetch both
 
-**Returns:** `Promise<Product[]>`
+**Returns:** `Promise<(Product | ProductSubscription)[]>`
 
 ## Purchase Methods
 
@@ -210,7 +210,7 @@ const buySubscription = async (subscriptionId: string, subscription?: any) => {
     - Additional platform-specific options available
   - `type?` ('in-app' | 'subs'): Purchase type, defaults to 'in-app'
 
-**Returns:** `Promise<void>` - Purchase result is delivered through listeners
+**Returns:** `Promise<void>` - Purchase result is delivered through listeners. The promise resolves when the purchase flow is initiated.
 
 ### getAvailablePurchases()
 
@@ -284,7 +284,7 @@ const completePurchase = async (purchase) => {
   - `purchase` (Purchase): The purchase object to finish
   - `isConsumable?` (boolean): Whether the product is consumable (Android only)
 
-**Returns:** `Promise<PurchaseResult | boolean>`
+**Returns:** `Promise<void>`. The finished purchase details are returned through the `purchaseUpdatedListener`.
 
 ## Event Listeners
 
@@ -462,7 +462,7 @@ const acknowledgePurchase = async (purchaseToken: string) => {
 
 **Platform:** Android only
 
-**Returns:** `Promise<PurchaseResult>`
+**Returns:** `Promise<void>`. The acknowledged purchase details are returned through the `purchaseUpdatedListener`.
 
 **See Also:** [`finishTransaction()`](#finishtransaction) - Recommended way to complete purchases
 
@@ -487,7 +487,7 @@ const consumePurchase = async (purchaseToken: string) => {
 
 **Platform:** Android only
 
-**Returns:** `Promise<PurchaseResult>`
+**Returns:** `Promise<void>`. The consumed purchase details are returned through the `purchaseUpdatedListener`.
 
 **See Also:** [`finishTransaction()`](#finishtransaction) - Recommended way to complete purchases
 
