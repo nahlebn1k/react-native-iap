@@ -1079,4 +1079,4 @@ Other helpful resources:
 
 - [Error Handling Guide](./troubleshooting) for debugging purchase issues
 - [API Reference](../api/) for detailed method documentation
-- [Complete Store Example](../examples/complete-impl) for production-ready implementation
+- [Complete Purchase Flow](../examples/purchase-flow) for production-ready implementation

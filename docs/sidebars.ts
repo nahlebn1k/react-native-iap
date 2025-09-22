@@ -60,9 +60,10 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Examples',
       items: [
-        'examples/basic-store',
-        'examples/subscription-manager',
-        'examples/complete-impl',
+        'examples/purchase-flow',
+        'examples/subscription-flow',
+        'examples/available-purchases',
+        'examples/offer-code',
       ],
     },
     {

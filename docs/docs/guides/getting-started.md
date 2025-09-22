@@ -247,7 +247,7 @@ useEffect(() => {
 
 ## Next Steps
 
-- Review our [Complete Store Implementation](../examples/complete-impl) for a full, production-ready example
+- Review our [Complete Purchase Flow](../examples/purchase-flow) for a full, production-ready example
 - Learn about the [purchase lifecycle](./lifecycle) and proper state management
 - Check out [common troubleshooting tips](./troubleshooting) and solutions
 - Explore the [API reference](../api/) for detailed method documentation
