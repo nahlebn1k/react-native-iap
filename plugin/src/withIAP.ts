@@ -7,6 +7,8 @@ import {
 } from 'expo/config-plugins';
 import type {ConfigPlugin} from 'expo/config-plugins';
 import type {ExpoConfig} from '@expo/config-types';
+import {readFileSync} from 'node:fs';
+import {resolve as resolvePath} from 'node:path';
 
 const pkg = require('../../package.json');
 
@@ -46,10 +48,49 @@ export const modifyProjectBuildGradle = (gradle: string): string => {
 };
 
 const OPENIAP_COORD = 'io.github.hyochan.openiap:openiap-google';
-const OPENIAP_VERSION = '1.1.12';
+
+function loadOpenIapConfig(): {google: string} {
+  const versionsPath = resolvePath(__dirname, '../../openiap-versions.json');
+  try {
+    const raw = readFileSync(versionsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    const googleVersion =
+      typeof parsed?.google === 'string' ? parsed.google.trim() : '';
+    if (!googleVersion) {
+      throw new Error(
+        'react-native-iap: "google" version missing or invalid in openiap-versions.json',
+      );
+    }
+    return {google: googleVersion};
+  } catch (error) {
+    throw new Error(
+      `react-native-iap: Unable to load openiap-versions.json (${error instanceof Error ? error.message : error})`,
+    );
+  }
+}
+
+let cachedOpenIapVersion: string | null = null;
+const getOpenIapVersion = (): string => {
+  if (cachedOpenIapVersion) {
+    return cachedOpenIapVersion;
+  }
+  cachedOpenIapVersion = loadOpenIapConfig().google;
+  return cachedOpenIapVersion;
+};
 
 const modifyAppBuildGradle = (gradle: string): string => {
   let modified = gradle;
+
+  let openiapVersion: string;
+  try {
+    openiapVersion = getOpenIapVersion();
+  } catch (error) {
+    WarningAggregator.addWarningAndroid(
+      'react-native-iap',
+      `react-native-iap: Failed to resolve OpenIAP version (${error instanceof Error ? error.message : error})`,
+    );
+    return gradle;
+  }
 
   // Replace legacy Billing/GMS instructions with OpenIAP Google library
   // Remove any old billingclient or play-services-base lines we may have added previously
@@ -64,7 +105,7 @@ const modifyAppBuildGradle = (gradle: string): string => {
     )
     .replace(/\n{3,}/g, '\n\n');
 
-  const openiapDep = `    implementation "${OPENIAP_COORD}:${OPENIAP_VERSION}"`;
+  const openiapDep = `    implementation "${OPENIAP_COORD}:${openiapVersion}"`;
 
   if (!modified.includes(OPENIAP_COORD)) {
     if (!/dependencies\s*{/.test(modified)) {
@@ -74,7 +115,7 @@ const modifyAppBuildGradle = (gradle: string): string => {
     }
     if (!hasLoggedPluginExecution) {
       console.log(
-        `🛠️ react-native-iap: Added OpenIAP (${OPENIAP_VERSION}) to build.gradle`,
+        `🛠️ react-native-iap: Added OpenIAP (${openiapVersion}) to build.gradle`,
       );
     }
   }
@@ -143,7 +184,7 @@ const withIapIosFollyWorkaround: ConfigPlugin<IapPluginProps | undefined> = (
     // Temporary deprecation notice; remove when old key is dropped
     WarningAggregator.addWarningIOS(
       'react-native-iap',
-      "react-native-iap: 'ios.with-folly-no-couroutines' is deprecated; use 'ios.with-folly-no-coroutines'."
+      "react-native-iap: 'ios.with-folly-no-couroutines' is deprecated; use 'ios.with-folly-no-coroutines'.",
     );
   }
   const enabled = !!(newKey ?? oldKey);
