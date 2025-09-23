@@ -150,10 +150,15 @@ No, you should always call `fetchProducts()` first. This ensures:
 
 ### How do users cancel subscriptions?
 
-Users cannot cancel subscriptions within your app. They need to manage their subscriptions through:
+Users cannot cancel subscriptions within your app. You need to direct them to the platform-specific subscription management:
 
-- **iOS**: App Store Settings > Subscriptions
-- **Android**: Google Play Store > Menu > Subscriptions
+```tsx
+import {deepLinkToSubscriptions} from 'react-native-iap';
+
+const openSubscriptionManagement = () => {
+  deepLinkToSubscriptions({skuAndroid: 'your_subscription_sku'});
+};
+```
 
 ### How do I restore purchases?
 
@@ -248,6 +253,37 @@ const handlePurchaseError = (error) => {
   }
 };
 ```
+
+### I sometimes see both a success and an error for one subscription purchase
+
+This can briefly happen due to StoreKit 2 event ordering and native background work. If you've already received a success and processed it, you can safely ignore a transient error that arrives shortly afterwards.
+
+Tip (dedupe in app logic):
+
+```tsx
+const lastSuccessAtRef = useRef(0);
+
+const {finishTransaction} = useIAP({
+  onPurchaseSuccess: async (purchase) => {
+    lastSuccessAtRef.current = Date.now();
+    await finishTransaction({purchase, isConsumable: false});
+  },
+  onPurchaseError: (error) => {
+    if (error.code === 'E_USER_CANCELLED') return;
+    if (error.code === 'E_SERVICE_ERROR') {
+      const dt = Date.now() - lastSuccessAtRef.current;
+      if (dt >= 0 && dt < 1500) return; // Ignore spurious error
+    }
+    Alert.alert('Purchase Failed', error.message);
+  },
+});
+```
+
+Because of this timing model, all request\* APIs (e.g., `requestPurchase`) are event-driven, not promise-based:
+
+- `requestPurchase()` does not resolve with a result. It triggers the native flow and you must handle outcomes via `onPurchaseSuccess`/`onPurchaseError` (when using `useIAP`) or `purchaseUpdatedListener`/`purchaseErrorListener`.
+- Avoid relying on `await requestPurchase(...)` for the final outcome; multiple events and inter-session completions are possible.
+- This design ensures your app remains robust when the store delivers updates after app restarts or in edge timing cases.
 
 ### How do I handle network errors during purchases?
 
@@ -431,37 +467,6 @@ These issues ([#114](https://github.com/hyochan/react-native-iap/issues/114), [r
 
 ### iOS Issues
 
-#### I sometimes see both a success and an error for one subscription purchase
-
-This can happen briefly due to StoreKit 2 event ordering and native background work. If you already received a success and processed it, you can safely ignore a transient error that arrives shortly afterwards.
-
-Tip (dedup in app logic):
-
-```tsx
-const lastSuccessAtRef = useRef(0);
-
-const {finishTransaction} = useIAP({
-  onPurchaseSuccess: async (purchase) => {
-    lastSuccessAtRef.current = Date.now();
-    await finishTransaction({purchase, isConsumable: false});
-  },
-  onPurchaseError: (error) => {
-    if (error.code === 'E_USER_CANCELLED') return;
-    if (error.code === 'E_SERVICE_ERROR') {
-      const dt = Date.now() - lastSuccessAtRef.current;
-      if (dt >= 0 && dt < 1500) return; // Ignore spurious error
-    }
-    Alert.alert('Purchase Failed', error.message);
-  },
-});
-```
-
-Because of this timing model, all request\* APIs (e.g., `requestPurchase`) are event‑driven, not promise‑based:
-
-- `requestPurchase()` does not resolve with a result. It triggers the native flow and you must handle outcomes via `onPurchaseSuccess`/`onPurchaseError` (when using `useIAP`) or `purchaseUpdatedListener`/`purchaseErrorListener`.
-- Avoid relying on `await requestPurchase(...)` for the final outcome; multiple events and inter‑session completions are possible.
-- This design ensures your app remains robust when the store delivers updates after app restarts or in edge timing windows.
-
 #### purchaseUpdatedListener is called twice after finishTransaction
 
 **Issue:** On iOS, `purchaseUpdatedListener` may be called twice for the same transaction when using `andDangerouslyFinishTransactionAutomatically: false` and manually calling `finishTransaction()`.
@@ -470,13 +475,14 @@ Because of this timing model, all request\* APIs (e.g., `requestPurchase`) are e
 
 - First call: Immediate after successful purchase
 - Second call: After `finishTransaction()` is called (or on app restart for products)
-- Both calls have the same `id`
+- Both calls have the same `transactionId`
 
 **Example:**
 
 ```tsx
+// This pattern may cause duplicate calls
 const purchaseListener = purchaseUpdatedListener(async (purchase) => {
-  console.log('Purchase received:', purchase.id);
+  console.log('Purchase received:', purchase.transactionId);
   await validateOnServer(purchase);
   await finishTransaction({purchase, isConsumable: false});
   // ⚠️ Listener may be called again after finishTransaction
@@ -491,10 +497,10 @@ await requestPurchase({
 **Workaround:** Track processed transactions to avoid duplicate processing:
 
 ```tsx
-const processedTransactions = new Set<string>();
+const processedTransactions = new Set();
 
 const purchaseListener = purchaseUpdatedListener(async (purchase) => {
-  const transactionId = purchase.id;
+  const transactionId = purchase.transactionId;
 
   // Skip if already processed
   if (processedTransactions.has(transactionId)) {

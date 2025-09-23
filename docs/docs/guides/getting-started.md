@@ -178,8 +178,6 @@ This platform difference exists because iOS can only purchase one product at a t
 
 ### 4. Handle purchase updates
 
-> Note (3.0.0): Use `purchaseToken` (iOS JWS / Android purchase token) when validating purchases on your server.
-
 The `useIAP` hook automatically handles purchase updates. When a purchase is successful, you should validate the receipt on your server and then finish the transaction.
 
 **Important**: Receipt validation also has platform-specific requirements:
@@ -190,32 +188,18 @@ The `useIAP` hook automatically handles purchase updates. When a purchase is suc
 ```tsx
 useEffect(() => {
   if (currentPurchase) {
-    // Platform-specific validation
+    // Unified validation (iOS/Android)
     const validateAndFinish = async () => {
       try {
-        if (Platform.OS === 'ios') {
-          // iOS: Prefer the unified purchaseToken (JWS)
-          await validateReceiptOnServer({
-            receiptData: currentPurchase.purchaseToken,
-            productId: currentPurchase.productId,
-          });
-        } else if (Platform.OS === 'android') {
-          // Android: Check required parameters first
-          const purchaseToken = currentPurchase.purchaseToken;
-          const packageName = currentPurchase.packageNameAndroid;
+        const purchaseToken = currentPurchase.purchaseToken;
+        const productId = currentPurchase.productId;
+        const packageName = currentPurchase.packageNameAndroid; // iOS: undefined
 
-          if (!purchaseToken || !packageName) {
-            throw new Error(
-              'Android validation requires packageName and purchaseToken',
-            );
-          }
-
-          await validateReceiptOnServer({
-            packageName,
-            purchaseToken,
-            productId: currentPurchase.productId,
-          });
-        }
+        await validateReceiptOnServer({
+          productId,
+          purchaseToken,
+          ...(packageName ? {packageName} : {}),
+        });
 
         // If validation successful, finish the transaction
         await finishTransaction({purchase: currentPurchase});
@@ -245,9 +229,11 @@ useEffect(() => {
 
 7. **Product caching is automatic**: The native modules (StoreKit for iOS and Google Play Billing for Android) automatically cache product information. You don't need to implement manual caching - just fetch products when needed.
 
+8. **Check server-side validation libraries**: Consider using open-source libraries like [node-app-store-receipt-verify](https://github.com/ladeiko/node-app-store-receipt-verify) for iOS or [google-play-billing-validator](https://github.com/macklinu/google-play-billing-validator) for Android to simplify server-side validation.
+
 ## Next Steps
 
-- Review our [Complete Purchase Flow](../examples/purchase-flow) for a full, production-ready example
+- Review the [Available Purchases Example](../examples/available-purchases) to see restoration flow
 - Learn about the [purchase lifecycle](./lifecycle) and proper state management
 - Check out [common troubleshooting tips](./troubleshooting) and solutions
 - Explore the [API reference](../api/) for detailed method documentation

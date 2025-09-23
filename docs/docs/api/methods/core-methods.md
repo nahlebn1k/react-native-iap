@@ -12,42 +12,25 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 This section covers the core methods available in react-native-iap for managing in-app purchases.
 
-## 🚨 Important Platform Differences
+Note: react-native-iap aligns with the OpenIAP API surface. For canonical cross-SDK API docs, see:
 
-> **Critical for Cross-Platform Development:** iOS and Android have fundamental differences in their purchase APIs.
+- [OpenIAP APIs](https://www.openiap.dev/docs/apis)
 
-### Key Differences
+## Unified APIs
 
-- **iOS**: Can only purchase **one product at a time** (single SKU)
-- **Android**: Can purchase **multiple products at once** (array of SKUs)
+These cross‑platform methods work on both iOS and Android. For StoreKit/Play‑specific helpers, see the Platform‑specific APIs section below.
 
-This difference exists because:
+- `initConnection()` — Initialize the store connection
+- `endConnection()` — End the store connection and cleanup
+- `fetchProducts()` — Fetch product and subscription metadata
+- `requestPurchase()` — Start a purchase for products or subscriptions
+- `finishTransaction()` — Complete a transaction after validation
+- `getAvailablePurchases()` — Restore non‑consumables and subscriptions
+- `deepLinkToSubscriptions()` — Open native subscription management UI
+- `getStorefront()` — Get current storefront country code
+- `hasActiveSubscriptions()` — Check if user has active subscriptions
 
-- iOS App Store processes purchases individually
-- Google Play Store supports batch purchases
-
-| Method | iOS | Android | Cross-Platform Solution |
-| --- | --- | --- | --- |
-| `requestPurchase()` | Uses `sku: string` | Uses `skus: string[]` | Platform-specific handling required |
-
-**💡 Best Practice:** Use the new platform-specific API (v14.0+) to avoid platform checks:
-
-```tsx
-// New API - no Platform.OS checks needed!
-await requestPurchase({
-  request: {
-    ios: {sku: productId},
-    android: {skus: [productId]},
-  },
-  type: 'in-app',
-});
-```
-
-**🎯 Recommended Approach:** For the best developer experience, use the [`useIAP` hook](/docs/api/use-iap) which handles platform differences automatically and provides a cleaner callback-based API.
-
-## Core Connection Methods
-
-### initConnection()
+## initConnection()
 
 Initializes the connection to the store. This method must be called before any other store operations.
 
@@ -56,19 +39,19 @@ import {initConnection} from 'react-native-iap';
 
 const initialize = async () => {
   try {
-    const result = await initConnection();
-    console.log('Store connection initialized:', result);
+    await initConnection();
+    console.log('Store connection initialized');
   } catch (error) {
     console.error('Failed to initialize connection:', error);
   }
 };
 ```
 
-**Returns:** `Promise<boolean>` — True if connection was successful
+**Returns:** `Promise<boolean>`
 
 **Note:** When using the `useIAP` hook, connection is automatically managed.
 
-### endConnection()
+## endConnection()
 
 Ends the connection to the store and cleans up resources.
 
@@ -77,8 +60,8 @@ import {endConnection} from 'react-native-iap';
 
 const cleanup = async () => {
   try {
-    const result = await endConnection();
-    console.log('Store connection ended:', result);
+    await endConnection();
+    console.log('Store connection ended');
   } catch (error) {
     console.error('Failed to end connection:', error);
   }
@@ -89,9 +72,7 @@ const cleanup = async () => {
 
 **Note:** When using the `useIAP` hook, connection cleanup is automatic.
 
-## Product Management
-
-### fetchProducts()
+## fetchProducts()
 
 Fetches product or subscription information from the store.
 
@@ -133,24 +114,24 @@ const loadSubscriptions = async () => {
 
 - `params` (object):
   - `skus` (string[]): Array of product or subscription IDs to fetch
-  - `type` ('in-app' | 'subs' | 'all'): Product type — 'in-app' (default), 'subs', or 'all' to fetch both
+  - `type` ('in-app' | 'subs'): Product type - 'in-app' for products, 'subs' for subscriptions
 
-**Returns:** `Promise<(Product | ProductSubscription)[]>`
+**Returns:** `Promise<Product[]>`
 
-## Purchase Methods
+[**Product Type Overview**](../types.md#product-types)
 
-### requestPurchase()
+## requestPurchase()
 
 Initiates a purchase request for products or subscriptions.
 
-> **⚠️ Important:** This is an event-based operation. Listen for events through `purchaseUpdatedListener` or `purchaseErrorListener`.
-
-**⚠️ Platform Differences:**
-
+> **⚠️ Platform Differences:**
+>
 > - **iOS**: Can only purchase one product at a time (uses `sku: string`)
 > - **Android**: Can purchase multiple products at once (uses `skus: string[]`)
+>
+> This exists because the iOS App Store processes purchases individually, while Google Play supports batch purchases.
 
-#### Platform-Specific API (v14.0+) - Recommended
+### Recommended usage (no Platform checks)
 
 ```tsx
 import {requestPurchase} from 'react-native-iap';
@@ -201,54 +182,60 @@ const buySubscription = async (subscriptionId: string, subscription?: any) => {
 };
 ```
 
+### Detailed Platform Examples
+
+#### iOS Only
+
+```tsx
+await requestPurchase({
+  request: {
+    sku: productId,
+    quantity: 1,
+    appAccountToken: 'user-account-token',
+  },
+  type: 'in-app',
+});
+```
+
+#### Android Only
+
+```tsx
+await requestPurchase({
+  request: {
+    skus: [productId],
+    obfuscatedAccountIdAndroid: 'user-account-id',
+    obfuscatedProfileIdAndroid: 'user-profile-id',
+  },
+  type: 'in-app',
+});
+```
+
 **Parameters:**
 
 - `params` (object):
   - `request` (object): Purchase request configuration
     - **iOS**: `sku` (string) - Product ID to purchase
     - **Android**: `skus` (string[]) - Array of product IDs to purchase
-    - Additional platform-specific options available
+    - **Cross-platform**: Include both `sku` and `skus` for compatibility
+    - `quantity?` (number, iOS only): Purchase quantity
+    - `appAccountToken?` (string, iOS only): User identifier for receipt validation
+    - `obfuscatedAccountIdAndroid?` (string, Android only): Obfuscated account ID
+    - `obfuscatedProfileIdAndroid?` (string, Android only): Obfuscated profile ID
+    - `isOfferPersonalized?` (boolean, Android only): Whether offer is personalized
   - `type?` ('in-app' | 'subs'): Purchase type, defaults to 'in-app'
 
-**Returns:** `Promise<void>` - Purchase result is delivered through listeners. The promise resolves when the purchase flow is initiated.
+**Returns:** `Promise<Purchase | Purchase[] | void>`
 
-### getAvailablePurchases()
+**Note:** The actual purchase result is delivered through purchase listeners or the `useIAP` hook callbacks, not as a return value.
 
-Retrieves available purchases for restoration (non-consumable products and subscriptions).
+#### Important Subscription Properties
 
-```tsx
-import {getAvailablePurchases} from 'react-native-iap';
+For subscription status checks after a purchase or when listing entitlements:
 
-const restorePurchases = async () => {
-  try {
-    const purchases = await getAvailablePurchases({
-      onlyIncludeActiveItemsIOS: true,
-    });
+- iOS: Check `expirationDateIOS` to determine if the subscription is still active
+- Android: Check `autoRenewingAndroid` to see if auto‑renewal has been canceled
 
-    for (const purchase of purchases) {
-      // Validate and restore each purchase
-      const isValid = await validateReceiptOnServer(purchase);
-      if (isValid) {
-        await grantPurchaseToUser(purchase);
-      }
-    }
-
-    console.log('Purchases restored');
-  } catch (error) {
-    console.error('Failed to restore purchases:', error);
-  }
-};
-```
-
-**Parameters:**
-
-- `options?` (object):
-  - `alsoPublishToEventListenerIOS?` (boolean): Whether to also publish to event listener (iOS only)
-  - `onlyIncludeActiveItemsIOS?` (boolean): Whether to only include active items (iOS only)
-
-**Returns:** `Promise<Purchase[]>`
-
-### finishTransaction()
+## finishTransaction()
 
 Completes a purchase transaction. Must be called after successful receipt validation.
 
@@ -282,106 +269,77 @@ const completePurchase = async (purchase) => {
 
 - `params` (object):
   - `purchase` (Purchase): The purchase object to finish
-  - `isConsumable?` (boolean): Whether the product is consumable (Android only)
+  - `isConsumable?` (boolean): Whether the product is consumable (Android)
 
-**Returns:** `Promise<void>`. The finished purchase details are returned through the `purchaseUpdatedListener`.
+**Returns:** `Promise<VoidResult | boolean>`
 
-## Event Listeners
+## getAvailablePurchases()
 
-### purchaseUpdatedListener()
-
-Fired when a purchase is successful or when a pending purchase is completed.
+Retrieves available purchases for restoration (non-consumable products and subscriptions).
 
 ```tsx
-import {purchaseUpdatedListener} from 'react-native-iap';
+import {getAvailablePurchases} from 'react-native-iap';
 
-const subscription = purchaseUpdatedListener((purchase) => {
-  console.log('Purchase successful:', purchase);
-  // 1. Validate receipt with backend
-  // 2. Deliver content to user
-  // 3. Call finishTransaction to acknowledge
-});
-
-// Later, clean up
-subscription.remove();
-```
-
-**Returns:** `EventSubscription` object with `remove()` method
-
-### purchaseErrorListener()
-
-Fired when a purchase fails or is cancelled by the user.
-
-```tsx
-import {purchaseErrorListener} from 'react-native-iap';
-
-const subscription = purchaseErrorListener((error) => {
-  switch (error.code) {
-    case 'E_USER_CANCELLED':
-      // User cancelled - no action needed
-      break;
-    case 'E_ITEM_UNAVAILABLE':
-      // Product not available
-      break;
-    case 'E_NETWORK_ERROR':
-      // Retry with backoff
-      break;
-  }
-});
-
-// Later, clean up
-subscription.remove();
-```
-
-**Returns:** `EventSubscription` object with `remove()` method
-
-## Receipt Validation
-
-### validateReceipt()
-
-Validates receipt on both iOS and Android platforms.
-
-```tsx
-import {validateReceipt, Platform} from 'react-native-iap';
-
-const validatePurchase = async (productId: string, purchase: any) => {
+const restorePurchases = async () => {
   try {
-    if (Platform.OS === 'ios') {
-      // iOS: Simple validation with just product ID
-      const result = await validateReceipt(productId);
-      return result;
-    } else if (Platform.OS === 'android') {
-      // Android: Requires additional parameters
-      const result = await validateReceipt(productId, {
-        packageName: purchase.packageNameAndroid,
-        productToken: purchase.purchaseToken,
-        isSub: false, // Set to true for subscriptions
-      });
-      return result;
+    const purchases = await getAvailablePurchases();
+
+    for (const purchase of purchases) {
+      // Validate and restore each purchase
+      const isValid = await validateReceiptOnServer(purchase);
+      if (isValid) {
+        await grantPurchaseToUser(purchase);
+      }
     }
+
+    console.log('Purchases restored');
   } catch (error) {
-    console.error('Validation failed:', error);
-    throw error;
+    console.error('Failed to restore purchases:', error);
   }
 };
 ```
 
 **Parameters:**
 
-- `sku` (string): Product SKU
-- `androidOptions?` (object): Android-specific validation options (required for Android)
-  - `packageName` (string): Package name of your app
-  - `productToken` (string): Purchase token from the purchase
-  - `accessToken` (string): Optional access token for server validation
-  - `isSub?` (boolean): Whether this is a subscription
+- `options?` (iOS only):
+  - `alsoPublishToEventListenerIOS?`: boolean
+  - `onlyIncludeActiveItemsIOS?`: boolean
 
-**Returns:** `Promise<ReceiptValidationResultIOS | ReceiptValidationResultAndroid>`
+**Returns:** `Promise<Purchase[]>`
 
-## Subscription Helpers
+## deepLinkToSubscriptions()
 
-### getActiveSubscriptions()
+Opens the platform-specific subscription management UI.
 
-Retrieves all active subscriptions with detailed status information.
+```tsx
+import {deepLinkToSubscriptions} from 'react-native-iap';
+
+const openSubscriptionSettings = () => {
+  try {
+    deepLinkToSubscriptions({skuAndroid: 'your_subscription_sku'});
+  } catch (error) {
+    console.error('Failed to open subscription settings:', error);
+  }
+};
+```
+
+**Returns:** `Promise<void>`
+
+## getStorefront()
+
+Return the storefront in ISO 3166-1 alpha-2 or ISO 3166-1 alpha-3 format
+
+```tsx
+import {getStorefront} from 'react-native-iap';
+
+const storeFront = await getStorefront();
+```
+
+**Returns:** `Promise<string>`
+
+## getActiveSubscriptions()
+
+Retrieves all active subscriptions with detailed status information. This method follows the OpenIAP specification for cross-platform subscription management.
 
 ```tsx
 import {getActiveSubscriptions} from 'react-native-iap';
@@ -400,6 +358,18 @@ const checkSubscriptions = async () => {
     for (const subscription of allActiveSubscriptions) {
       console.log('Product ID:', subscription.productId);
       console.log('Is Active:', subscription.isActive);
+
+      if (Platform.OS === 'ios') {
+        console.log('Expiration Date:', subscription.expirationDateIOS);
+        console.log(
+          'Days until expiration:',
+          subscription.daysUntilExpirationIOS,
+        );
+        console.log('Environment:', subscription.environmentIOS);
+      } else if (Platform.OS === 'android') {
+        console.log('Auto Renewing:', subscription.autoRenewingAndroid);
+      }
+
       console.log('Will expire soon:', subscription.willExpireSoon);
     }
   } catch (error) {
@@ -408,11 +378,34 @@ const checkSubscriptions = async () => {
 };
 ```
 
+**Parameters:**
+
+- `subscriptionIds?` (string[]): Optional array of subscription product IDs to filter. If not provided, returns all active subscriptions.
+
 **Returns:** `Promise<ActiveSubscription[]>`
 
-### hasActiveSubscriptions()
+**ActiveSubscription Interface:**
 
-Checks if the user has any active subscriptions.
+```typescript
+interface ActiveSubscription {
+  productId: string;
+  isActive: boolean;
+  expirationDateIOS?: Date;
+  autoRenewingAndroid?: boolean;
+  environmentIOS?: string;
+  willExpireSoon?: boolean;
+  daysUntilExpirationIOS?: number;
+}
+```
+
+**Platform Behavior:**
+
+- **iOS**: Uses `expirationDateIos` to determine subscription status. Includes expiration date and days until expiration.
+- **Android**: Uses purchase list presence and `autoRenewingAndroid` flag to determine status.
+
+## hasActiveSubscriptions()
+
+Checks if the user has any active subscriptions. This is a convenience method that returns a boolean result.
 
 ```tsx
 import {hasActiveSubscriptions} from 'react-native-iap';
@@ -428,6 +421,10 @@ const checkIfUserHasSubscription = async () => {
       'premium_yearly',
     ]);
 
+    if (hasAny) {
+      console.log('User has active subscriptions');
+    }
+
     if (hasPremium) {
       console.log('User has premium subscription');
     }
@@ -437,440 +434,272 @@ const checkIfUserHasSubscription = async () => {
 };
 ```
 
-**Returns:** `Promise<boolean>`
+**Parameters:**
 
-## Android-Specific Methods
+- `subscriptionIds?` (string[]): Optional array of subscription product IDs to check. If not provided, checks all subscriptions.
 
-### acknowledgePurchaseAndroid()
+**Returns:** `Promise<boolean>` - Returns true if user has at least one active subscription
 
-Acknowledges a purchase on Android (required for non-consumable products).
-
-> **Note:** This is called automatically by [`finishTransaction()`](#finishtransaction) when `isConsumable` is `false`. You typically don't need to call this directly.
+## Purchase Interface
 
 ```tsx
-import {acknowledgePurchaseAndroid} from 'react-native-iap';
+interface Purchase {
+  id: string; // Transaction identifier
+  productId: string;
+  transactionDate: number;
+  purchaseToken?: string; // Unified token (iOS JWS or Android token)
 
-const acknowledgePurchase = async (purchaseToken: string) => {
-  try {
-    const result = await acknowledgePurchaseAndroid(purchaseToken);
-    console.log('Purchase acknowledged:', result);
-  } catch (error) {
-    console.error('Failed to acknowledge purchase:', error);
-  }
-};
+  // iOS-specific properties
+  originalTransactionDateIOS?: number;
+  originalTransactionIdentifierIOS?: string;
+  expirationDateIOS?: number;
+  environmentIOS?: 'Production' | 'Sandbox';
+
+  // Android-specific properties
+  dataAndroid?: string;
+  signatureAndroid?: string;
+  purchaseStateAndroid?: number;
+  isAcknowledgedAndroid?: boolean;
+  packageNameAndroid?: string;
+  developerPayloadAndroid?: string;
+  obfuscatedAccountIdAndroid?: string;
+  obfuscatedProfileIdAndroid?: string;
+  autoRenewingAndroid?: boolean;
+}
 ```
 
-**Platform:** Android only
+## Platform-specific APIs
 
-**Returns:** `Promise<void>`. The acknowledged purchase details are returned through the `purchaseUpdatedListener`.
+### iOS Specific
 
-**See Also:** [`finishTransaction()`](#finishtransaction) - Recommended way to complete purchases
-
-### consumePurchaseAndroid()
-
-Consumes a purchase on Android (required for consumable products).
-
-> **Note:** This is called automatically by [`finishTransaction()`](#finishtransaction) when `isConsumable` is `true`. You typically don't need to call this directly.
-
-```tsx
-import {consumePurchaseAndroid} from 'react-native-iap';
-
-const consumePurchase = async (purchaseToken: string) => {
-  try {
-    const result = await consumePurchaseAndroid(purchaseToken);
-    console.log('Purchase consumed:', result);
-  } catch (error) {
-    console.error('Failed to consume purchase:', error);
-  }
-};
-```
-
-**Platform:** Android only
-
-**Returns:** `Promise<void>`. The consumed purchase details are returned through the `purchaseUpdatedListener`.
-
-**See Also:** [`finishTransaction()`](#finishtransaction) - Recommended way to complete purchases
-
-## iOS-Specific Methods
-
-### promotedProductListenerIOS()
-
-Listener for App Store promoted product events.
-
-```tsx
-import {promotedProductListenerIOS} from 'react-native-iap';
-
-const subscription = promotedProductListenerIOS((product) => {
-  console.log('Promoted product:', product);
-  // Trigger purchase flow for the promoted product
-});
-
-// Later, clean up
-subscription.remove();
-```
-
-**Platform:** iOS only
-
-**Returns:** `EventSubscription` object with `remove()` method
-
-### syncIOS()
-
-Syncs iOS purchases with App Store.
-
-```tsx
-import {syncIOS} from 'react-native-iap';
-
-const syncPurchases = async () => {
-  try {
-    const result = await syncIOS();
-    console.log('Sync successful:', result);
-  } catch (error) {
-    console.error('Failed to sync:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<boolean>`
-
-### requestPromotedProductIOS()
-
-Requests the promoted product from the App Store.
-
-```tsx
-import {requestPromotedProductIOS} from 'react-native-iap';
-
-const getPromotedProduct = async () => {
-  try {
-    const product = await requestPromotedProductIOS();
-    if (product) {
-      console.log('Promoted product:', product);
-    }
-  } catch (error) {
-    console.error('Failed to get promoted product:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<Product | null>`
-
-### presentCodeRedemptionSheetIOS()
-
-Presents the code redemption sheet for offer codes.
-
-```tsx
-import {presentCodeRedemptionSheetIOS} from 'react-native-iap';
-
-const showRedemptionSheet = async () => {
-  try {
-    const result = await presentCodeRedemptionSheetIOS();
-    console.log('Sheet presented:', result);
-  } catch (error) {
-    console.error('Failed to present sheet:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<boolean>`
-
-### buyPromotedProductIOS()
-
-Completes the purchase of a promoted product.
-
-```tsx
-import {buyPromotedProductIOS} from 'react-native-iap';
-
-const purchasePromotedProduct = async () => {
-  try {
-    await buyPromotedProductIOS();
-    console.log('Promoted product purchased');
-  } catch (error) {
-    console.error('Failed to purchase promoted product:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<void>`
+The following iOS‑only helpers expose StoreKit and App Store specific capabilities. Most day‑to‑day flows are covered by the cross‑platform Core Methods above; use these only when you need iOS features.
 
 ### clearTransactionIOS()
 
-Clears unfinished transactions.
+Clears all pending transactions from the iOS payment queue. Useful if your app previously crashed or missed finishing transactions.
 
-```tsx
-import {clearTransactionIOS} from 'react-native-iap';
+```ts
+import {clearTransactionIOS, getPendingTransactionsIOS} from 'react-native-iap';
 
-const clearTransactions = async () => {
-  try {
-    await clearTransactionIOS();
-    console.log('Transactions cleared');
-  } catch (error) {
-    console.error('Failed to clear transactions:', error);
-  }
-};
+// Inspect then clear
+const pending = await getPendingTransactionsIOS();
+if (pending.length) {
+  await clearTransactionIOS();
+}
 ```
 
-**Platform:** iOS only
-
-**Returns:** `Promise<void>`
-
-### beginRefundRequestIOS()
-
-Begins a refund request for a product (iOS 15+).
-
-```tsx
-import {beginRefundRequestIOS} from 'react-native-iap';
-
-const requestRefund = async (sku: string) => {
-  try {
-    const status = await beginRefundRequestIOS(sku);
-    console.log('Refund status:', status);
-  } catch (error) {
-    console.error('Failed to begin refund:', error);
-  }
-};
-```
-
-**Platform:** iOS 15+ only
-
-**Returns:** `Promise<string | null>`
-
-### subscriptionStatusIOS()
-
-Gets subscription status for a product.
-
-```tsx
-import {subscriptionStatusIOS} from 'react-native-iap';
-
-const getSubscriptionStatus = async (sku: string) => {
-  try {
-    const statuses = await subscriptionStatusIOS(sku);
-    console.log('Subscription statuses:', statuses);
-  } catch (error) {
-    console.error('Failed to get status:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<SubscriptionStatusIOS[]>`
-
-### currentEntitlementIOS()
-
-Gets current entitlement for a product.
-
-```tsx
-import {currentEntitlementIOS} from 'react-native-iap';
-
-const getEntitlement = async (sku: string) => {
-  try {
-    const entitlement = await currentEntitlementIOS(sku);
-    if (entitlement) {
-      console.log('Current entitlement:', entitlement);
-    }
-  } catch (error) {
-    console.error('Failed to get entitlement:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<Purchase | null>`
-
-### latestTransactionIOS()
-
-Gets latest transaction for a product.
-
-```tsx
-import {latestTransactionIOS} from 'react-native-iap';
-
-const getLatestTransaction = async (sku: string) => {
-  try {
-    const transaction = await latestTransactionIOS(sku);
-    if (transaction) {
-      console.log('Latest transaction:', transaction);
-    }
-  } catch (error) {
-    console.error('Failed to get transaction:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<Purchase | null>`
-
-### getPendingTransactionsIOS()
-
-Gets all pending transactions.
-
-```tsx
-import {getPendingTransactionsIOS} from 'react-native-iap';
-
-const getPendingTransactions = async () => {
-  try {
-    const transactions = await getPendingTransactionsIOS();
-    console.log('Pending transactions:', transactions);
-  } catch (error) {
-    console.error('Failed to get pending transactions:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<Purchase[]>`
-
-### showManageSubscriptionsIOS()
-
-Shows the manage subscriptions screen.
-
-```tsx
-import {showManageSubscriptionsIOS} from 'react-native-iap';
-
-const showManageSubscriptions = async () => {
-  try {
-    const result = await showManageSubscriptionsIOS();
-    console.log('Manage subscriptions shown:', result);
-  } catch (error) {
-    console.error('Failed to show manage subscriptions:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<boolean>`
-
-### isEligibleForIntroOfferIOS()
-
-Checks if user is eligible for intro offer.
-
-```tsx
-import {isEligibleForIntroOfferIOS} from 'react-native-iap';
-
-const checkEligibility = async (groupID: string) => {
-  try {
-    const isEligible = await isEligibleForIntroOfferIOS(groupID);
-    console.log('Eligible for intro offer:', isEligible);
-  } catch (error) {
-    console.error('Failed to check eligibility:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<boolean>`
-
-### getReceiptDataIOS()
-
-Gets receipt data.
-
-```tsx
-import {getReceiptDataIOS} from 'react-native-iap';
-
-const getReceiptData = async () => {
-  try {
-    const receiptData = await getReceiptDataIOS();
-    console.log('Receipt data:', receiptData);
-  } catch (error) {
-    console.error('Failed to get receipt data:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<string>` - Base64 encoded receipt data
-
-### isTransactionVerifiedIOS()
-
-Checks if a transaction is verified.
-
-```tsx
-import {isTransactionVerifiedIOS} from 'react-native-iap';
-
-const checkVerification = async (sku: string) => {
-  try {
-    const isVerified = await isTransactionVerifiedIOS(sku);
-    console.log('Transaction verified:', isVerified);
-  } catch (error) {
-    console.error('Failed to check verification:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<boolean>`
-
-### getTransactionJwsIOS()
-
-Gets transaction JWS representation.
-
-```tsx
-import {getTransactionJwsIOS} from 'react-native-iap';
-
-const getTransactionJws = async (sku: string) => {
-  try {
-    const jws = await getTransactionJwsIOS(sku);
-    if (jws) {
-      console.log('Transaction JWS:', jws);
-    }
-  } catch (error) {
-    console.error('Failed to get JWS:', error);
-  }
-};
-```
-
-**Platform:** iOS only
-
-**Returns:** `Promise<string | null>`
+Returns: `Promise<void>`
 
 ### getStorefrontIOS()
 
-Gets the storefront identifier for the user's App Store account.
+Returns the current App Store storefront country code (for example, "US", "GB").
 
-```tsx
+```ts
 import {getStorefrontIOS} from 'react-native-iap';
 
-const getStorefront = async () => {
-  try {
-    const storefront = await getStorefrontIOS();
-    console.log('User storefront:', storefront); // e.g., 'USA', 'GBR', 'KOR'
-  } catch (error) {
-    console.error('Failed to get storefront:', error);
-  }
-};
+const storefront = await getStorefrontIOS();
 ```
 
-**Platform:** iOS only
+Returns: `Promise<string>`
 
-**Returns:** `Promise<string>` - The storefront identifier
+### getPromotedProductIOS()
+
+Gets the currently promoted product, if any. Requires iOS 11+.
+
+```ts
+import {getPromotedProductIOS} from 'react-native-iap';
+
+const promoted = await getPromotedProductIOS();
+if (promoted) {
+  // Show your purchase UI for the promoted product
+}
+```
+
+Returns: `Promise<Product | null>`
+
+### requestPurchaseOnPromotedProductIOS()
+
+Initiates the purchase flow for the currently promoted product. Requires iOS 11+.
+
+```ts
+import {requestPurchaseOnPromotedProductIOS} from 'react-native-iap';
+
+await requestPurchaseOnPromotedProductIOS();
+// Purchase result is delivered via purchase listeners/useIAP callbacks
+```
+
+Returns: `Promise<void>`
+
+### getPendingTransactionsIOS()
+
+Returns all transactions that are pending completion in the StoreKit payment queue.
+
+```ts
+import {getPendingTransactionsIOS} from 'react-native-iap';
+
+const pending = await getPendingTransactionsIOS();
+```
+
+Returns: `Promise<Purchase[]>`
+
+### isEligibleForIntroOfferIOS()
+
+Checks if the user is eligible for an introductory offer for a subscription group. Requires iOS 12.2+.
+
+```ts
+import {isEligibleForIntroOfferIOS, fetchProducts} from 'react-native-iap';
+
+// Example: derive group ID from a fetched subscription product
+const [sub] = await fetchProducts({skus: ['your_sub_sku'], type: 'subs'});
+const groupId = sub?.subscriptionInfoIOS?.subscriptionGroupId ?? '';
+const eligible = groupId ? await isEligibleForIntroOfferIOS(groupId) : false;
+```
+
+Returns: `Promise<boolean>`
+
+### subscriptionStatusIOS()
+
+Returns detailed subscription status information using StoreKit 2. Requires iOS 15+.
+
+```ts
+import {subscriptionStatusIOS} from 'react-native-iap';
+
+const statuses = await subscriptionStatusIOS('your_sub_sku');
+```
+
+Returns: `Promise<SubscriptionStatusIOS[]>`
+
+### currentEntitlementIOS()
+
+Returns the current entitlement for a given SKU using StoreKit 2. Requires iOS 15+.
+
+```ts
+import {currentEntitlementIOS} from 'react-native-iap';
+
+const entitlement = await currentEntitlementIOS('your_sub_or_product_sku');
+```
+
+Returns: `Promise<Purchase | null>`
+
+### latestTransactionIOS()
+
+Returns the most recent transaction for a given SKU using StoreKit 2. Requires iOS 15+.
+
+```ts
+import {latestTransactionIOS} from 'react-native-iap';
+
+const last = await latestTransactionIOS('your_sku');
+```
+
+Returns: `Promise<Purchase | null>`
+
+### showManageSubscriptionsIOS()
+
+Opens the native subscription management interface and returns purchases for subscriptions whose auto‑renewal status changed while the sheet was open. Requires iOS 15+.
+
+```ts
+import {showManageSubscriptionsIOS} from 'react-native-iap';
+
+const changed = await showManageSubscriptionsIOS();
+if (changed.length > 0) {
+  // Update your UI / server using returned purchases
+}
+```
+
+Returns: `Promise<Purchase[]>`
+
+### beginRefundRequestIOS()
+
+Presents the refund request sheet for a specific SKU. Requires iOS 15+.
+
+```ts
+import {beginRefundRequestIOS} from 'react-native-iap';
+
+const status = await beginRefundRequestIOS('your_sku');
+// status: 'success' | 'userCancelled'
+```
+
+Returns: `Promise<'success' | 'userCancelled'>`
+
+### isTransactionVerifiedIOS()
+
+Verifies the latest transaction for a given SKU using StoreKit 2. Requires iOS 15+.
+
+```ts
+import {isTransactionVerifiedIOS} from 'react-native-iap';
+
+const ok = await isTransactionVerifiedIOS('your_sku');
+```
+
+Returns: `Promise<boolean>`
+
+### getTransactionJwsIOS()
+
+Returns the JSON Web Signature (JWS) for a transaction derived from a given SKU. Use this for server‑side validation. Requires iOS 15+.
+
+```ts
+import {getTransactionJwsIOS} from 'react-native-iap';
+
+const jws = await getTransactionJwsIOS('your_sku');
+```
+
+Returns: `Promise<string>`
+
+### getReceiptDataIOS()
+
+Returns the base64‑encoded receipt data for server validation.
+
+```ts
+import {getReceiptDataIOS} from 'react-native-iap';
+
+const receipt = await getReceiptDataIOS();
+```
+
+Returns: `Promise<string>`
+
+### syncIOS()
+
+Forces a sync with StoreKit to ensure all transactions are up to date. Requires iOS 15+.
+
+```ts
+import {syncIOS} from 'react-native-iap';
+
+await syncIOS();
+```
+
+Returns: `Promise<void>`
+
+### presentCodeRedemptionSheetIOS()
+
+Presents the system sheet for redeeming App Store promo/offer codes.
+
+```ts
+import {presentCodeRedemptionSheetIOS} from 'react-native-iap';
+
+await presentCodeRedemptionSheetIOS();
+```
+
+Returns: `Promise<boolean>`
 
 ### getAppTransactionIOS()
 
-Gets the original app transaction ID if the app was purchased from the App Store.
+Gets app transaction information for iOS apps (iOS 16.0+). AppTransaction represents the initial purchase that unlocked the app, useful for premium apps or apps that were previously paid.
+
+> Runtime: iOS 16.0+; Build: Xcode 15.0+ with iOS 16.0 SDK. Older SDKs will throw.
 
 ```tsx
 import {getAppTransactionIOS} from 'react-native-iap';
 
-const getAppTransaction = async () => {
+const fetchAppTransaction = async () => {
   try {
     const appTransaction = await getAppTransactionIOS();
     if (appTransaction) {
-      console.log('App was purchased, transaction ID:', appTransaction);
-    } else {
-      console.log('App was not purchased from App Store');
+      console.log('App Transaction ID:', appTransaction.appTransactionId);
+      console.log(
+        'Original Purchase Date:',
+        new Date(appTransaction.originalPurchaseDate),
+      );
+      console.log('Device Verification:', appTransaction.deviceVerification);
     }
   } catch (error) {
     console.error('Failed to get app transaction:', error);
@@ -878,44 +707,72 @@ const getAppTransaction = async () => {
 };
 ```
 
-**Platform:** iOS only
+**Returns:** `Promise<AppTransaction | null>`
 
-**Returns:** `Promise<string | null>` - The original app transaction ID or null
+```ts
+interface AppTransaction {
+  appTransactionId?: string; // iOS 18.4+
+  originalPlatform?: string; // iOS 18.4+
+  bundleId: string;
+  appVersion: string;
+  originalAppVersion: string;
+  originalPurchaseDate: number; // ms since epoch
+  deviceVerification: string;
+  deviceVerificationNonce: string;
+  environment: string;
+  signedDate: number;
+  appId?: number;
+  appVersionId?: number;
+  preorderDate?: number;
+}
+```
 
-## Error Handling
+### Android Specific
 
-All methods can throw errors that should be handled appropriately:
+#### acknowledgePurchaseAndroid
 
-```tsx
-import {PurchaseError} from 'react-native-iap';
+Acknowledge a non‑consumable purchase or subscription on Android.
 
-try {
-  await requestPurchase({
-    request: {
-      ios: {sku: 'product_id'},
-      android: {skus: ['product_id']},
-    },
-  });
-} catch (error) {
-  if (error instanceof PurchaseError) {
-    switch (error.code) {
-      case 'E_USER_CANCELLED':
-        console.log('User cancelled purchase');
-        break;
-      case 'E_NETWORK_ERROR':
-        console.log('Network error, please try again');
-        break;
-      default:
-        console.error('Purchase failed:', error.message);
-    }
+```ts
+import {acknowledgePurchaseAndroid} from 'react-native-iap';
+
+await acknowledgePurchaseAndroid({token: purchase.purchaseToken!});
+```
+
+Notes:
+
+- finishTransaction() calls this automatically when `isConsumable` is false. You typically do not need to call it directly.
+
+#### consumePurchaseAndroid
+
+Consume a purchase (consumables only). This marks an item as consumed so it can be purchased again.
+
+Notes:
+
+- finishTransaction() calls Android consumption automatically when `isConsumable` is true.
+- A direct JS helper is not exposed; consumption is handled internally via the native module.
+
+#### flushFailedPurchasesCachedAsPendingAndroid (Removed)
+
+This legacy helper from older libraries has been removed. The modern flow is:
+
+```ts
+// On app startup (Android)
+const purchases = await getAvailablePurchases();
+
+for (const p of purchases) {
+  if (/* consumable */) {
+    // finishTransaction will consume on Android when isConsumable is true
+    await finishTransaction({ purchase: p, isConsumable: true });
+  } else {
+    // finishTransaction will acknowledge on Android when isConsumable is false
+    await finishTransaction({ purchase: p, isConsumable: false });
   }
 }
 ```
 
-For a complete list of error codes, see the [Error Codes](../error-codes) documentation.
+This ensures pending transactions are surfaced and properly resolved without a separate “flush” API.
 
-## See Also
+## Removed APIs
 
-- [useIAP Hook](../use-iap) - Recommended for React components
-- [Types Reference](../types) - Complete type definitions
-- [Error Codes](../error-codes) - Error handling reference
+- `requestProducts()` — Removed in v3.0.0. Use `fetchProducts({ skus, type })` instead.

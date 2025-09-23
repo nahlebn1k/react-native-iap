@@ -1,128 +1,146 @@
 ---
-title: Purchase Flow
+title: Purchase Flow Example
 sidebar_label: Purchase Flow
 sidebar_position: 1
 ---
 
 import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
-# Purchase Flow (Products)
+# Purchase Flow
 
 <AdFitTopFixed />
 
-An end-to-end in-app purchase flow using the `useIAP` hook. This mirrors the example screen used in the app.
+This example walks through a clean purchase flow using react-native-iap with the `useIAP` hook and the new platform‑specific request shape. It mirrors the working sample in `example/app/purchase-flow.tsx`.
 
-## Highlights
+View the full example source:
 
-- Product loading via `fetchProducts`
-- Purchase via `requestPurchase`
-- Handle results in `onPurchaseSuccess` / `onPurchaseError`
-- Always call `finishTransaction`
-- iOS app transaction check with `getAppTransactionIOS`
+- GitHub: [example/app/purchase-flow.tsx](https://github.com/hyochan/react-native-iap/blob/main/example/app/purchase-flow.tsx)
 
 ## Flow Overview
 
-1. initConnection: Established automatically by `useIAP` on mount; wait for `connected === true`.
-2. fetchProducts: Load your products once connected.
-3. requestPurchase: Trigger a purchase for the selected product.
-4. Server validation: Validate `purchase.purchaseToken` on your backend.
-5. finishTransaction: Only after successful validation, complete the transaction.
-6. Optional: Refresh prior purchases via `getAvailablePurchases()` to update UI.
+- Initialize: `useIAP` manages the store connection lifecycle
 
-## Prerequisites
+- Load products:
 
-- Configure products in App Store Connect and Google Play Console
-- Decide consumable vs non-consumable behavior
-- Prepare a backend endpoint to validate `purchaseToken`
+  `fetchProducts({ skus, type: 'in-app' })`
 
-## Minimal Pattern
+- Start purchase:
+
+  `requestPurchase({ request: { ios: { sku }, android: { skus: [sku] } }, type: 'in-app' })`
+
+- Receive callbacks: `onPurchaseSuccess` / `onPurchaseError` (from `useIAP`)
+
+- Validate server‑side: send receipt/JWS or token to your backend
+
+- Finish transaction:
+
+  `finishTransaction({ purchase, isConsumable })`
+
+```txt
+Connect → Fetch Products → Request Purchase → Server Validate → Finish Transaction
+```
+
+## Key Concepts
+
+### 1. Connection Management
+
+- `useIAP` automatically opens/closes the connection
+- Exposes `connected`, convenient for showing loading states
+
+### 2. Product Loading
+
+- Load in‑app products or subscriptions (set `type`)
+- Handle and log failed product fetches
+
+### 3. Purchase Flow
+
+- Start purchases via unified request shape (no `Platform.OS` branching)
+- Use `onPurchaseSuccess`/`onPurchaseError` from `useIAP`
+- Always call `finishTransaction` after server validation
+
+### 4. Receipt Validation
+
+- Perform validation on your backend (never only on device)
+- iOS: validate the receipt/JWS; Android: validate purchase token + package name
+
+### 5. User Experience
+
+- Provide clear states for loading, success, and error
+- Show subscription management/deep‑links when appropriate
+
+## Platform Differences
+
+### Purchase Request Parameters
+
+Use the modern, platform‑specific request container (v2.7.0+). This avoids manual `Platform.OS` checks:
 
 ```tsx
-import {useIAP, requestPurchase, getAppTransactionIOS} from 'react-native-iap';
+await requestPurchase({
+  request: {
+    ios: {sku: productId, quantity: 1},
+    android: {skus: [productId]},
+  },
+  type: 'in-app',
+});
+```
 
-const PRODUCT_IDS = ['your.consumable', 'your.nonconsumable'];
+Notes:
 
-export function PurchaseFlowExample() {
-  const {connected, products, fetchProducts, finishTransaction} = useIAP({
-    onPurchaseSuccess: async (purchase) => {
-      // 4) Validate on your server first, then finish
-      const ok = await validateReceiptOnServer(purchase);
-      if (ok) {
-        await finishTransaction({purchase, isConsumable: true});
-      }
-    },
-    onPurchaseError: (e) => {
-      // optional: show a toast/alert
-      console.warn('Purchase failed', e);
-    },
-  });
+- Keep `andDangerouslyFinishTransactionAutomatically` off (default) to validate first.
 
-  useEffect(() => {
-    // 1) initConnection happens automatically in the hook
-    // 2) Once connected, fetch products
-    if (connected) fetchProducts({skus: PRODUCT_IDS, type: 'in-app'});
-  }, [connected, fetchProducts]);
+### Key iOS Options
 
-  const buy = async (productId: string) => {
-    // 3) Request purchase; result comes via onPurchaseSuccess/onPurchaseError
-    await requestPurchase({
-      request: {
-        ios: {sku: productId},
-        android: {skus: [productId]},
-      },
-      type: 'in-app',
-    });
-  };
+- `appAccountToken`: set per user to correlate receipts on your backend
+- `quantity`: purchase quantity for iOS (consumables)
 
-  return null;
+### Purchase Object Properties
+
+Purchase objects have different properties on iOS and Android. When accessing platform-specific properties, TypeScript type casting is required:
+
+```tsx
+// Unified fields
+const token = purchase.purchaseToken; // iOS JWS or Android token
+
+// Android-only helpers
+// const pkg = (purchase as PurchaseAndroid).packageNameAndroid;
+```
+
+### Receipt Validation
+
+Receipt validation requires different approaches:
+
+- iOS: verify receipt/JWS on your server against Apple
+- Android: verify token and package name against Google Play Developer API
+
+## Usage
+
+```tsx
+import React from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import PurchaseFlow from './purchase-flow';
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <PurchaseFlow />
+    </NavigationContainer>
+  );
 }
 ```
 
-## iOS App Transaction
+## Customization
 
-```ts
-const tx = await getAppTransactionIOS();
-```
+You can customize this example by:
 
-## Notes
+1. **Styling**: Modify the `styles` object to match your app's design
+2. **Product IDs**: Update `PRODUCT_IDS` with your actual product IDs
+3. **Validation**: Implement proper server-side receipt validation
+4. **Error Handling**: Add more specific error handling for your use case
+5. **Features**: Add features like purchase restoration, subscription management, etc.
 
-- Validate receipts server-side using `purchase.purchaseToken`.
-- Call `finishTransaction` for every successful purchase.
-- Results arrive through listeners (via the hook callbacks), not the return value of `requestPurchase`.
+## Next Steps
 
-### Example server validation
-
-```ts
-async function validateReceiptOnServer(purchase: {
-  purchaseToken: string;
-  productId?: string;
-}) {
-  const res = await fetch('https://your.server/validate', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      platform: Platform.OS,
-      productId: purchase.productId,
-      purchaseToken: purchase.purchaseToken,
-    }),
-  });
-  const json = await res.json();
-  return Boolean(json?.isValid);
-}
-```
-
-## Testing Checklist
-
-- Use sandbox/test accounts on both platforms
-- Verify your server receives `purchaseToken` and productId
-- Confirm `finishTransaction` clears pending transactions
-
-## Troubleshooting
-
-- Purchase not delivered: ensure `onPurchaseSuccess` fires and `finishTransaction` is called after validation
-- iOS cancelled: `E_USER_CANCELLED` — no action required
-- Non-consumables: hide already-owned items based on available purchases
-
-## Source
-
-- PurchaseFlow.tsx: https://github.com/hyochan/react-native-iap/blob/main/example/screens/PurchaseFlow.tsx
+- Implement proper [receipt validation](../guides/purchases#receipt-validation)
+- Add [purchase restoration](../guides/purchases#purchase-restoration)
+- Handle [subscription management](../api/methods/core-methods#deeplinktosubscriptions)
+- Add comprehensive [error handling](../api/error-handling)

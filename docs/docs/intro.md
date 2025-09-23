@@ -2,29 +2,23 @@
 sidebar_position: 1
 ---
 
-import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
+import AdFitTopFixed from "@site/src/uis/AdFitTopFixed"; import SponsorSection from '@site/src/components/SponsorSection';
 
 # React Native IAP
 
-<div
-  style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '2rem',
-    margin: '2rem 0',
-    flexWrap: 'wrap',
-  }}
->
-  <img
-    src={require("@site/static/img/logo.png").default}
-    alt="flutter_inapp_purchase Logo"
-    style={{maxWidth: '280px', width: '60%', height: 'auto'}}
-  />
-  <AdFitTopFixed />
-</div>
+<AdFitTopFixed />
 
-**React Native IAP** is a high-performance in-app purchase library using Nitro Modules that **conforms to the [Open IAP specification](https://openiap.dev)**. It provides a unified API for handling in-app purchases across iOS and Android platforms with comprehensive error handling and modern TypeScript support.
+**React Native IAP** is a powerful in-app purchase solution for Expo and React Native applications that **conforms to the [Open IAP specification](https://openiap.dev)**. It provides a unified API for handling in-app purchases across iOS and Android platforms with comprehensive error handling and modern TypeScript support.
+
+If you're shipping an app with react-native-iap, we’d love to hear about it—please share your product and feedback in [Who’s using React Native IAP?](https://github.com/hyochan/react-native-iap/discussions/1343). Community stories help us keep improving the ecosystem.
+
+## Sponsors & Community Support
+
+We’re building the OpenIAP ecosystem—defining the spec at [openiap.dev](https://www.openiap.dev), maintaining [openiap-gql](https://github.com/hyodotdev/openiap-gql) for the shared type system, and shipping native SDKs such as [openiap-apple](https://github.com/hyodotdev/openiap-apple) and [openiap-google](https://github.com/hyodotdev/openiap-google). These modules power [react-native-iap](https://github.com/hyochan/react-native-iap), [flutter_inapp_purchase](https://github.com/hyochan/flutter_inapp_purchase), [kmp-iap](https://github.com/hyochan/kmp-iap), and [react-native-iap](https://github.com/hyochan/react-native-iap). After simplifying fragmented APIs, the next milestone is a streamlined purchase flow: `initConnection → fetchProducts → requestPurchase → (server receipt validation) → finishTransaction`.
+
+Your sponsorship keeps this work moving—ensuring more developers across platforms, OS, and frameworks can implement IAPs without headaches while we expand to additional plugins and payment systems. Sponsors receive shout-outs in each release and, depending on tier, can request tailored support. If you’re interested—or have rollout feedback to share—you can view sponsorship options at [openiap.dev/sponsors](https://www.openiap.dev/sponsors).
+
+<SponsorSection variant="compact" showLabel />
 
 ## 📚 Guides
 
@@ -41,7 +35,7 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 Install the package using your favorite package manager:
 
 ```bash
-npm install react-native-iap react-native-nitro-modules
+npm install react-native-iap
 ```
 
 ### 1. Basic Setup
@@ -100,7 +94,7 @@ return (
 
 ### 4. Handle Purchases
 
-Process purchase requests with our platform-specific API (v14.0.0-rc):
+Process purchase requests with our new platform-specific API (v2.7.0+):
 
 ```tsx
 const handlePurchase = async (productId: string) => {
@@ -272,7 +266,8 @@ React Native IAP is built with a modern architecture that emphasizes:
 ### 🔧 Implementation
 
 - [**API Reference**](./api/use-iap): Complete useIAP hook documentation
-- [**Purchase Flow Example**](./examples/purchase-flow): Step-by-step product purchase implementation
+- [**Purchase Flow Example**](./examples/purchase-flow): Simple product purchase flow
+- [**Available Purchases Example**](./examples/available-purchases): Restore and list prior purchases
 
 ### 📚 Guides
 
@@ -286,7 +281,7 @@ React Native IAP is built with a modern architecture that emphasizes:
 
 - [**Receipt Validation**](./guides/purchases): Secure purchase validation
 - [**Error Handling**](./api/error-codes): Comprehensive error management
-- [**Subscription Flow**](./examples/subscription-flow): Handle recurring subscriptions
+- [**Subscriptions Flow Example**](./examples/subscription-flow): Handle recurring subscriptions
 - [**Troubleshooting**](./guides/troubleshooting): Common issues and solutions
 
 ## 🤝 Contributing
@@ -296,16 +291,3 @@ We welcome contributions! Please see our [Contributing Guide](https://github.com
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/hyochan/react-native-iap/blob/main/LICENSE) file for details.
-
-## Sponsors & Community Support
-
-We’re building the OpenIAP ecosystem—defining the spec at [openiap.dev](https://www.openiap.dev), maintaining [openiap-gql](https://github.com/hyodotdev/openiap-gql) for the shared type system, and shipping native SDKs such as [openiap-apple](https://github.com/hyodotdev/openiap-apple) and [openiap-google](https://github.com/hyodotdev/openiap-google). These modules power [expo-iap](https://github.com/hyochan/expo-iap), [flutter_inapp_purchase](https://github.com/hyochan/flutter_inapp_purchase), [kmp-iap](https://github.com/hyochan/kmp-iap), and [react-native-iap](https://github.com/hyochan/react-native-iap). After simplifying fragmented APIs, the next milestone is a streamlined purchase flow: `initConnection → fetchProducts → requestPurchase → (server receipt validation) → finishTransaction`.
-
-Your sponsorship keeps this work moving—ensuring more developers across platforms, OS, and frameworks can implement IAPs without headaches while we expand to additional plugins and payment systems. Sponsors receive shout-outs in each release and, depending on tier, can request tailored support. If you’re interested—or have rollout feedback to share—you can view sponsorship options at [openiap.dev/sponsors](https://www.openiap.dev/sponsors).
-
-This project is maintained by [hyochan](https://github.com/hyochan).
-
-- **GitHub Issues**: [Report bugs and feature requests](https://github.com/hyochan/react-native-iap/issues)
-- **Discussions**: [Join community discussions](https://github.com/hyochan/react-native-iap/discussions)
-- **Slack**: [Join the real-time chat](http://hyo.dev/joinSlack)
-- **Contributing**: [Contribute to the project](https://github.com/hyochan/react-native-iap/blob/main/CONTRIBUTING.md)

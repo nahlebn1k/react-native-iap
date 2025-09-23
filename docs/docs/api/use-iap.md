@@ -20,144 +20,38 @@ import {useIAP} from 'react-native-iap';
 
 ## Important: Hook Behavior
 
-The `useIAP` hook follows React Hooks conventions and differs from calling functions directly from the root API:
+The `useIAP` hook follows React Hooks conventions and differs from calling functions directly from `react-native-iap` (index exports):
 
-- **Automatic connection**: Calls `initConnection` on mount and `endConnection` on unmount.
-- **Void-returning methods**: Hook methods like `fetchProducts`, `requestPurchase`, `getAvailablePurchases`, etc. return `Promise<void>` in the hook. They do not resolve to data. Instead they update hook state (`products`, `subscriptions`, `availablePurchases`, etc.).
-- **Don’t await for data**: When using the hook, do not write `const x = await fetchProducts(...)`. Call the method, then read the updated state from the hook.
-- **Rely on callbacks**: In production flows, rely on `onPurchaseSuccess` and `onPurchaseError` passed to `useIAP`.
-- **Product caching**: Handled by the native layer for you.
+- **Automatic connection**: Automatically calls `initConnection` on mount and `endConnection` on unmount.
+- **Void-returning methods**: Methods like `fetchProducts`, `requestPurchase`, `getAvailablePurchases`, etc. return `Promise<void>` in the hook. They do not resolve to data. Instead, they update internal state exposed by the hook: `products`, `subscriptions`, `availablePurchases`, `currentPurchase`, etc.
+- **Don’t await for data**: When using the hook, do not write `const x = await fetchProducts(...)`. Call the method, then read the corresponding state from the hook.
+- **Prefer callbacks over `currentPurchase`**: `currentPurchase` was historically useful for debugging and migration, but for new code you should rely on `onPurchaseSuccess` and `onPurchaseError` options passed to `useIAP`.
 
 ## Basic Usage
 
 ```tsx
-import {useEffect} from 'react';
-import {View, Text, Button, Alert} from 'react-native';
-import {useIAP, requestPurchase, type PurchaseError} from 'react-native-iap';
-
-// Product/Subscription IDs from your store configuration
-const PRODUCT_IDS = ['com.example.premium', 'com.example.coins100'];
-const SUBSCRIPTION_IDS = ['com.example.monthly', 'com.example.yearly'];
-
-export default function MyStore() {
-  const {
-    connected,
-    products,
-    subscriptions,
-    availablePurchases,
-    activeSubscriptions,
-    fetchProducts,
-    finishTransaction,
-    getAvailablePurchases,
-    getActiveSubscriptions,
-  } = useIAP({
-    onPurchaseSuccess: async (purchase) => {
-      console.log('Purchase successful:', purchase);
-
-      // IMPORTANT: Validate receipt on your server here
-      // Prefer the unified token on both platforms
-      // const isValid = await validateReceiptOnServer(purchase.purchaseToken);
-      // if (!isValid) {
-      //   Alert.alert('Error', 'Receipt validation failed');
-      //   return;
-      // }
-
-      // Grant purchase to user
-      Alert.alert('Success', `Purchased: ${purchase.productId}`);
-
-      // Finish the transaction (required)
-      await finishTransaction({
-        purchase,
-        isConsumable: true, // Set based on your product type
-      });
-    },
-    onPurchaseError: (error: PurchaseError) => {
-      console.error('Purchase failed:', error);
-
-      if (error.code === 'E_USER_CANCELLED') {
-        // User cancelled - no action needed
-        return;
-      }
-
-      Alert.alert('Purchase Failed', error.message);
-    },
-  });
-
-  // Load products when connected
-  useEffect(() => {
-    if (connected) {
-      // fetchProducts is event-based, not promise-based
-      // Results will be available in 'products' and 'subscriptions' states
-      fetchProducts({skus: PRODUCT_IDS, type: 'in-app'});
-      fetchProducts({skus: SUBSCRIPTION_IDS, type: 'subs'});
-
-      // Check for active subscriptions
-      getActiveSubscriptions();
-
-      // Load available purchases for restoration
-      getAvailablePurchases();
-    }
-  }, [connected, fetchProducts, getActiveSubscriptions, getAvailablePurchases]);
-
-  // Handle purchase
-  const handlePurchase = async (productId: string, isSubscription: boolean) => {
-    try {
-      // Platform-specific API (v14.0.0-rc+) - no Platform.OS checks needed!
-      await requestPurchase({
-        request: {
-          ios: {
-            sku: productId,
-          },
-          android: {
-            skus: [productId],
-            // For subscriptions, you may need to add subscription offers
-          },
-        },
-        type: isSubscription ? 'subs' : 'in-app',
-      });
-      // Note: Result comes through onPurchaseSuccess/onPurchaseError callbacks
-    } catch (error) {
-      console.error('Request purchase failed:', error);
-    }
-  };
-
-  return (
-    <View>
-      <Text>Store: {connected ? '✅ Connected' : '⌛ Connecting...'}</Text>
-
-      {/* Products */}
-      <Text>Products:</Text>
-      {products.map((product) => (
-        <View key={product.id}>
-          <Text>
-            {product.title} - {product.displayPrice}
-          </Text>
-          <Button
-            title="Buy"
-            onPress={() => handlePurchase(product.id, false)}
-          />
-        </View>
-      ))}
-
-      {/* Subscriptions */}
-      <Text>Subscriptions:</Text>
-      {subscriptions.map((subscription) => (
-        <View key={subscription.id}>
-          <Text>
-            {subscription.title} - {subscription.displayPrice}
-          </Text>
-          <Button
-            title="Subscribe"
-            onPress={() => handlePurchase(subscription.id, true)}
-            disabled={activeSubscriptions.some(
-              (sub) => sub.productId === subscription.id,
-            )}
-          />
-        </View>
-      ))}
-    </View>
-  );
-}
+const {
+  connected,
+  products,
+  subscriptions,
+  availablePurchases,
+  currentPurchase, // Debugging/migration friendly; prefer callbacks
+  currentPurchaseError, // Debugging/migration friendly; prefer callbacks
+  fetchProducts,
+  requestPurchase,
+  validateReceipt,
+} = useIAP({
+  onPurchaseSuccess: (purchase) => {
+    // Validate on your backend, then finish the transaction
+    console.log('Purchase successful:', purchase);
+  },
+  onPurchaseError: (error) => {
+    console.error('Purchase failed:', error);
+  },
+  onSyncError: (error) => {
+    console.warn('Sync error:', error);
+  },
+});
 ```
 
 ## Configuration Options
@@ -175,8 +69,8 @@ interface UseIAPOptions {
   onPurchaseSuccess?: (purchase: Purchase) => void;
   onPurchaseError?: (error: PurchaseError) => void;
   onSyncError?: (error: Error) => void;
-  shouldAutoSyncPurchases?: boolean;
-  onPromotedProductIOS?: (product: Product) => void;
+  shouldAutoSyncPurchases?: boolean; // Controls auto sync behavior inside the hook
+  onPromotedProductIOS?: (product: Product) => void; // iOS promoted products
 }
 ```
 
@@ -221,24 +115,11 @@ interface UseIAPOptions {
   };
   ```
 
-#### onPromotedProductIOS
-
-- **Type**: `(product: Product) => void`
-- **Description**: Called when a promoted product is received from the App Store (iOS only).
-- **Example**:
-
-  ```tsx
-  onPromotedProductIOS: (product) => {
-    // Handle promoted product, e.g., show a custom UI
-    console.log('Received promoted product:', product.productId);
-  };
-  ```
-
-#### shouldAutoSyncPurchases
+#### autoFinishTransactions
 
 - **Type**: `boolean`
 - **Default**: `true`
-- **Description**: If `true`, automatically syncs purchases with the store. Set to `false` if you want to manage syncing manually.
+- **Description**: Whether to automatically finish transactions after successful purchases
 
 ## Return Values
 
@@ -279,20 +160,32 @@ interface UseIAPOptions {
   ));
   ```
 
-#### `currentPurchase` and `currentPurchaseError` (Removed)
+#### currentPurchase
 
-These properties were removed in `v14.x` because they were unreliable for production use. Please use the `onPurchaseSuccess` and `onPurchaseError` callbacks to handle purchase results.
+- **Type**: `Purchase | null`
+- **Description**: Last purchase event captured by the hook. This value is primarily helpful for debugging and migration. For production flows, prefer handling purchase results via `onPurchaseSuccess` and errors via `onPurchaseError` passed to `useIAP`.
+- **Example (debug logging only)**:
 
-#### activeSubscriptions
+  ```tsx
+  useEffect(() => {
+    if (currentPurchase) {
+      console.log('Debug purchase event:', currentPurchase.id);
+    }
+  }, [currentPurchase]);
+  ```
 
-- **Type**: `ActiveSubscription[]`
-- **Description**: Array of currently active subscriptions.
+#### currentPurchaseError
+
+- **Type**: `PurchaseError | null`
+- **Description**: Current purchase error (if any)
 - **Example**:
 
   ```tsx
-  activeSubscriptions.map((sub) => (
-    <ActiveSubscriptionItem key={sub.productId} sub={sub} />
-  ));
+  useEffect(() => {
+    if (currentPurchaseError) {
+      handlePurchaseError(currentPurchaseError);
+    }
+  }, [currentPurchaseError]);
   ```
 
 #### availablePurchases
@@ -303,7 +196,7 @@ These properties were removed in `v14.x` because they were unreliable for produc
 
   ```tsx
   availablePurchases.map((purchase) => (
-    <RestorableItem key={purchase.transactionId} purchase={purchase} />
+    <RestorableItem key={purchase.id} purchase={purchase} />
   ));
   ```
 
@@ -324,46 +217,27 @@ These properties were removed in `v14.x` because they were unreliable for produc
 
 ### Methods
 
-#### fetchProducts (hook)
+#### fetchProducts
 
-- **Type**: `(params: RequestProductsParams) => Promise<void>`
-- **Description**: Fetch products or subscriptions from the store and update the `products` or `subscriptions` state
-- **Parameters**:
-  - `params`: Object containing:
-    - `skus`: Array of product/subscription IDs to fetch
-    - `type`: Product type - either `'in-app'` for products or `'subs'` for subscriptions
-- **Returns**: `Promise<void>` - Updates `products` / `subscriptions` state
-- **Do not await for data**: Call the method, then consume state from the hook
+- **Type**: `(params: { skus: string[]; type?: 'in-app' | 'subs' }) => Promise<void>`
+- **Description**: Fetch products or subscriptions and update `products` / `subscriptions` state. In the hook this returns `void` (no data result), by design.
+- **Do not await for data**: Call it, then consume `products` / `subscriptions` state from the hook.
 - **Example**:
 
   ```tsx
-  // Fetch in-app products
-  const loadInAppProducts = async () => {
-    try {
-      await fetchProducts({
-        skus: ['com.app.premium', 'com.app.coins_100'],
-        type: 'in-app',
-      });
-      // Read from state later: products
-      console.log('Products count:', products.length);
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
-    }
-  };
+  useEffect(() => {
+    if (!connected) return;
+    // In hook: returns void, updates state
+    fetchProducts({
+      skus: ['com.app.premium', 'com.app.coins_100'],
+      type: 'in-app',
+    });
+    fetchProducts({skus: ['com.app.premium_monthly'], type: 'subs'});
+  }, [connected, fetchProducts]);
 
-  // Fetch subscriptions
-  const loadSubscriptions = async () => {
-    try {
-      await fetchProducts({
-        skus: ['com.app.premium_monthly', 'com.app.premium_yearly'],
-        type: 'subs',
-      });
-      // Read from state later: subscriptions
-      console.log('Subscriptions count:', subscriptions.length);
-    } catch (error) {
-      console.error('Failed to fetch subscriptions:', error);
-    }
-  };
+  // Later in render/effects
+  products.forEach((p) => console.log('product', p.id));
+  subscriptions.forEach((s) => console.log('sub', s.id));
   ```
 
 #### requestPurchase
@@ -377,6 +251,7 @@ These properties were removed in `v14.x` because they were unreliable for produc
   ```tsx
   const buyProduct = async (productId: string) => {
     try {
+      // In hook: returns void. Listen via callbacks or `currentPurchase`.
       await requestPurchase({
         request: {
           ios: {sku: productId},
@@ -389,31 +264,113 @@ These properties were removed in `v14.x` because they were unreliable for produc
   };
   ```
 
-#### restorePurchases
+### Subscription Offers
 
-- **Type**: `() => Promise<void>`
-- **Description**: Restores purchases and updates `availablePurchases` state.
-- **Example**:
+When purchasing subscriptions, you need to specify the pricing plan (offer) for each platform:
 
-  ```tsx
-  const handleRestore = async () => {
-    try {
-      await restorePurchases();
-      Alert.alert('Restore Successful', 'Your purchases have been restored.');
-    } catch (error) {
-      Alert.alert('Restore Failed', error.message);
-    }
-  };
-  ```
+#### Android Subscription Offers
+
+Android requires `subscriptionOffers` array containing offer tokens from `fetchProducts()`. Each offer token represents a specific pricing plan (base plan, introductory offer, etc.).
+
+```tsx
+const buySubscription = async (subscriptionId: string) => {
+  // 1) Fetch subscription products first
+  await fetchProducts({skus: [subscriptionId], type: 'subs'});
+
+  // 2) Find the subscription and build offers
+  const subscription = subscriptions.find((s) => s.id === subscriptionId);
+  if (!subscription) return;
+
+  const subscriptionOffers = (
+    subscription.subscriptionOfferDetailsAndroid ?? []
+  ).map((offer) => ({
+    sku: subscriptionId,
+    offerToken: offer.offerToken,
+  }));
+
+  // 3) Request purchase with offers
+  await requestPurchase({
+    request: {
+      ios: {sku: subscriptionId},
+      android: {
+        skus: [subscriptionId],
+        // Only include subscriptionOffers when offers are available
+        ...(subscriptionOffers.length > 0 && {subscriptionOffers}),
+      },
+    },
+    type: 'subs',
+  });
+};
+```
+
+**Note**: `subscriptionOffers` should only be included when subscription offers are available from `fetchProducts()`. Without offers, Android purchases will fail.
+
+#### iOS Subscription Offers
+
+iOS uses `withOffer` for promotional discounts configured in App Store Connect. This is optional and only needed for special promotional pricing.
+
+```tsx
+const buySubscriptionWithOffer = async (
+  subscriptionId: string,
+  discountOffer?: DiscountOfferInputIOS,
+) => {
+  await requestPurchase({
+    request: {
+      ios: {
+        sku: subscriptionId,
+        // Optional: apply promotional offer
+        ...(discountOffer && {withOffer: discountOffer}),
+      },
+      android: {skus: [subscriptionId]},
+    },
+    type: 'subs',
+  });
+};
+```
 
 #### Subscription helpers (hook)
 
 - `getActiveSubscriptions(subscriptionIds?) => Promise<ActiveSubscription[]>`
-  - Returns active subscriptions and also updates `activeSubscriptions` state.
-  - Exception to the hook’s void-return design: this helper returns data for convenience.
+  - Returns active subscription info and also updates `activeSubscriptions` state.
+  - Exception to the hook’s void-return design: this method returns data for convenience.
+  - Example:
+
+    ```tsx
+    const {getActiveSubscriptions, activeSubscriptions} = useIAP();
+
+    useEffect(() => {
+      if (!connected) return;
+      (async () => {
+        const subs = await getActiveSubscriptions(['premium_monthly']);
+        console.log('Subs from return:', subs.length);
+        console.log('Subs from state:', activeSubscriptions.length);
+      })();
+    }, [connected]);
+    ```
 
 - `hasActiveSubscriptions(subscriptionIds?) => Promise<boolean>`
-  - Boolean convenience method to check if any active subscriptions exist (optionally filtered by IDs).
+  - Boolean convenience check to see if any active subscriptions exist (optionally filtered by IDs).
+
+> Removed in v2.9.0: `purchaseHistories` state and `getPurchaseHistories()` method. Use `getAvailablePurchases()` and `availablePurchases` instead.
+
+#### getAvailablePurchases
+
+- **Type**: `() => Promise<void>`
+- **Description**: Fetch available purchases (restorable items) from the store
+- **Example**:
+
+  ```tsx
+  const restorePurchases = async () => {
+    try {
+      // Updates `availablePurchases` state; do not expect a return value
+      await getAvailablePurchases();
+      // Read from state afterwards
+      console.log('Available purchases count:', availablePurchases.length);
+    } catch (error) {
+      console.error('Failed to fetch available purchases:', error);
+    }
+  };
+  ```
 
 #### validateReceipt
 
@@ -469,8 +426,8 @@ These properties were removed in `v14.x` because they were unreliable for produc
 
 #### getPromotedProductIOS
 
-- **Type**: `() => Promise<Product | null>`
-- **Description**: Get the promoted product details (iOS only).
+- **Type**: `() => Promise<any | null>`
+- **Description**: Get the promoted product details (iOS only)
 - **Example**:
 
   ```tsx
@@ -485,23 +442,15 @@ These properties were removed in `v14.x` because they were unreliable for produc
 
 #### requestPurchaseOnPromotedProductIOS
 
-- **Type**: `() => Promise<boolean>`
-- **Description**: Complete the purchase of a promoted product (iOS only).
+- **Type**: `() => Promise<void>`
+- **Description**: Complete the purchase of a promoted product (iOS only)
+  > Removed in v2.9.0: `buyPromotedProductIOS`. Use `requestPurchaseOnPromotedProductIOS` instead.
 - **Example**:
-
-  ```tsx
-  const buyPromoted = async () => {
-    const success = await requestPurchaseOnPromotedProductIOS();
-    if (success) {
-      console.log('Promoted purchase successful');
-    }
-  };
-  ```
 
   ```tsx
   const completePurchase = async () => {
     try {
-      await buyPromotedProductIOS();
+      await requestPurchaseOnPromotedProductIOS();
       console.log('Promoted product purchase completed');
     } catch (error) {
       console.error('Failed to purchase promoted product:', error);
@@ -518,7 +467,7 @@ const IOSPurchaseExample = () => {
   const {connected, products, requestPurchase, validateReceipt} = useIAP({
     onPurchaseSuccess: async (purchase) => {
       // Validate receipt on iOS
-      const validation = await validateReceipt(purchase.id);
+      const validation = await validateReceipt(purchase.productId);
       if (validation.isValid) {
         unlockContent(purchase.productId);
       }
@@ -577,7 +526,7 @@ const AndroidPurchaseExample = () => {
         .map((product) => (
           <Button
             key={product.id}
-            title={`${product.title} - ${product.oneTimePurchaseOfferDetails?.formattedPrice}`}
+            title={`${product.title} - ${product.displayPrice}`}
             onPress={() => buyProduct(product)}
           />
         ))}
@@ -623,7 +572,7 @@ const {requestPurchase} = useIAP({
      if (connected) {
        fetchProducts({skus: productIds, type: 'in-app'});
      }
-   }, [connected]);
+   }, [connected, fetchProducts]);
    ```
 
 2. **Handle loading states**:
@@ -670,6 +619,12 @@ const PromotedProductExample = () => {
     onPromotedProductIOS: (product) => {
       console.log('Promoted product detected:', product);
     },
+    onPurchaseSuccess: (purchase) => {
+      // Recommended: handle success via callback
+    },
+    onPurchaseError: (error) => {
+      // Recommended: handle errors via callback
+    },
   });
 
   useEffect(() => {
@@ -713,5 +668,5 @@ const PromotedProductExample = () => {
 
 - [Error Codes Reference](./error-codes)
 - [Types Reference](./types)
-- [Error Handling Guide](../guides/error-handling)
+- [Error Handling Guide](../api/error-handling)
 - [Purchase Flow Guide](../guides/lifecycle)

@@ -12,33 +12,6 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 This guide covers common issues you might encounter when implementing in-app purchases with react-native-iap and how to resolve them.
 
-## Compatibility Alerts
-
-### Nitro 14.x requires RN 0.79+
-
-- `react-native-iap@14.x` uses Nitro and requires **React Native 0.79+**.
-- On **RN 0.75.x or lower**, use the last pre‑Nitro version: `npm i react-native-iap@13.1.0`.
-- Recommended: upgrade RN to 0.79+, update `react-native-nitro-modules`/`nitro-codegen` to latest, `pod install`, then clean build.
-
-### Swift 6 C++ interop error in Nitro (iOS)
-
-Symptoms: Build errors referencing Swift/C++ interop in Nitro, e.g. `AnyMap.swift` using `cppPart.pointee.*`.
-
-Temporary workaround: Pin Swift 5.10 for the `NitroModules` pod in your `ios/Podfile`:
-
-```ruby
-post_install do |installer|
-  react_native_post_install(installer, config[:reactNativePath])
-  installer.pods_project.targets.each do |t|
-    if t.name == 'NitroModules'
-      t.build_configurations.each { |c| c.build_settings['SWIFT_VERSION'] = '5.10' }
-    end
-  end
-end
-```
-
-If the issue persists after upgrading (RN 0.79+) or applying the Swift pin, please share a minimal repro (fresh app + `package.json` + `Podfile`).
-
 ## Prerequisites Checklist
 
 Before diving into troubleshooting, ensure you have completed these essential steps:
@@ -227,7 +200,7 @@ const {finishTransaction} = useIAP({
 
         // Option 2 (RECOMMENDED - Secure):
         const isValid = await validateReceiptOnServer({
-          transactionId: purchase.id,
+          transactionId: purchase.transactionId,
           productId: purchase.productId,
         });
         if (!isValid) {
@@ -236,7 +209,7 @@ const {finishTransaction} = useIAP({
         }
       } else if (Platform.OS === 'android') {
         // Android also requires server-side validation
-        const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+        const purchaseToken = purchase.purchaseTokenAndroid;
         const packageName = purchase.packageNameAndroid;
 
         // Get Google Play access token on your server (not in client)
@@ -279,9 +252,8 @@ useEffect(() => {
     const purchases = await getAvailablePurchases();
 
     for (const purchase of purchases) {
-      // Process and finish any pending transactions
+      // If already processed, just finish the transaction
       if (await isAlreadyProcessed(purchase)) {
-        // If already processed, just finish the transaction
         await finishTransaction({purchase}); // isConsumable: false by default
       } else {
         // Process the purchase first, then finish
@@ -405,7 +377,6 @@ const handleStoreUnavailable = () => {
    ```
 
 2. **Missing permissions**:
-
    ```xml
    <!-- android/app/src/main/AndroidManifest.xml -->
    <uses-permission android:name="com.android.vending.BILLING" />
@@ -451,10 +422,7 @@ useEffect(() => {
 const {connected, connectionError} = useIAP();
 
 useEffect(() => {
-  console.log('Connection state changed:', {
-    connected,
-    error: connectionError,
-  });
+  console.log('Connection state changed:', {connected, error: connectionError});
 }, [connected, connectionError]);
 ```
 

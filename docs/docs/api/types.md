@@ -4,85 +4,193 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 <AdFitTopFixed />
 
-## OpenIAP Type Definitions
+The react-native-iap type surface is now generated in one place: `src/types.ts`. The file is produced by our GraphQL schema and represents the canonical source for all product, purchase, subscription, and request shapes. After updating any schema definitions, run `bun run generate:types` to refresh the file.
 
-For comprehensive type definitions and interfaces, please refer to the **[OpenIAP Types Documentation](https://www.openiap.dev/docs/types)**.
+Key runtime helpers that build on these types live alongside them:
 
-React Native IAP conforms to the OpenIAP specification, which provides standardized type definitions across all in-app purchase implementations.
+- `src/types.ts` – auto-generated enums and interfaces
+- `src/utils/errorMapping.ts` – typed error helpers (`createPurchaseError`, `ErrorCodeUtils`)
+- `src/helpers/subscription.ts` – subscription utilities that re-export `ActiveSubscription`
 
-## Nitro Modules Integration
+Below is a curated overview of the most commonly used types. Consult `src/types.ts` for the full schema.
 
-React Native IAP uses Nitro Modules for high-performance native bridge communication. The core types are imported from `react-native-nitro-modules`:
+## Core Type Aliases
 
-```typescript
-import type {HybridObject} from 'react-native-nitro-modules';
+```ts
+export type IapPlatform = 'android' | 'ios';
+
+export type ProductType = 'in-app' | 'subs';
+
+export type PurchaseState =
+  | 'deferred'
+  | 'failed'
+  | 'pending'
+  | 'purchased'
+  | 'restored'
+  | 'unknown';
 ```
 
-## Key Type Categories
+The `ErrorCode` enum now mirrors the OpenIAP schema without the legacy `E_` prefix:
 
-### Product Types
-
-- `NitroProduct` - Product data from the store
-- `Product` - TypeScript-friendly product interface
-
-### Purchase Types
-
-- `NitroPurchase` - Purchase transaction data
-- `Purchase` - TypeScript-friendly purchase interface
-- `NitroPurchaseResult` - Purchase operation result
-
-> **Note (v14.0.0)**:
->
-> - `purchaseToken` is the unified field for both iOS (JWS representation) and Android (purchase token).
-> - The legacy fields `jwsRepresentationIOS` and `purchaseTokenAndroid` have been removed.
-
-### Request Types
-
-- `NitroPurchaseRequest` - Unified purchase request
-- `RequestPurchaseProps` - Platform-specific purchase parameters
-- `RequestSubscriptionProps` - Subscription purchase parameters
-
-### Platform-Specific Types
-
-- iOS: Types suffixed with `IOS` (e.g., `NitroRequestPurchaseIos`)
-- Android: Types suffixed with `Android` (e.g., `NitroRequestPurchaseAndroid`)
-
-## Type Conversion Utilities
-
-The library provides type conversion utilities to bridge between Nitro types and TypeScript interfaces:
-
-```typescript
-import {
-  convertNitroProductToProduct,
-  convertNitroPurchaseToPurchase,
-  validateNitroProduct,
-  validateNitroPurchase,
-} from 'react-native-iap/utils/type-bridge';
-```
-
-## Error Types
-
-Error handling types follow the OpenIAP specification:
-
-```typescript
-interface PurchaseError {
-  code: ErrorCode;
-  message: string;
-  productId?: string | null;
+```ts
+export enum ErrorCode {
+  ActivityUnavailable = 'ACTIVITY_UNAVAILABLE',
+  AlreadyOwned = 'ALREADY_OWNED',
+  ...
+  Unknown = 'UNKNOWN',
+  UserCancelled = 'USER_CANCELLED',
+  UserError = 'USER_ERROR',
 }
 ```
 
-For detailed error codes, see the [Error Codes](./error-codes) documentation.
+Use `createPurchaseError` from `src/utils/errorMapping.ts` to work with typed errors and platform mappings.
 
-## Migration Notes
+## Product Types
 
-### From v13.x to v14.0.0-rc
+All products share the generated `ProductCommon` interface. Platform extensions discriminate on the `platform` field via the `IapPlatform` string union.
 
-- All types now use the `Nitro` prefix for native bridge types
-- Platform-specific types use clear suffixes (`IOS`, `Android`)
-- Type conversion utilities handle the bridge between Nitro and TypeScript types
+```ts
+export interface ProductCommon {
+  id: string;
+  title: string;
+  description: string;
+  type: ProductType;
+  displayName?: string | null;
+  displayPrice: string;
+  currency: string;
+  price?: number | null;
+  platform: IapPlatform;
+}
 
-For complete type definitions, refer to:
+export interface ProductAndroid extends ProductCommon {
+  nameAndroid: string;
+  oneTimePurchaseOfferDetailsAndroid?: ProductAndroidOneTimePurchaseOfferDetail | null;
+  subscriptionOfferDetailsAndroid?:
+    | ProductSubscriptionAndroidOfferDetails[]
+    | null;
+}
 
-- **[OpenIAP Types Documentation](https://www.openiap.dev/docs/types)**
-- Source code: `src/specs/RnIap.nitro.ts`
+export interface ProductIOS extends ProductCommon {
+  displayNameIOS: string;
+  isFamilyShareableIOS: boolean;
+  jsonRepresentationIOS: string;
+  typeIOS: ProductTypeIOS;
+  subscriptionInfoIOS?: SubscriptionInfoIOS | null;
+}
+
+export type Product = ProductAndroid | ProductIOS;
+export type ProductSubscription =
+  | ProductSubscriptionAndroid
+  | ProductSubscriptionIOS;
+```
+
+## Purchase Types
+
+Purchases share the `PurchaseCommon` shape and discriminate on the same `platform` union. Both variants expose the unified `purchaseToken` field for server validation.
+
+```ts
+export interface PurchaseCommon {
+  id: string;
+  productId: string;
+  platform: IapPlatform;
+  purchaseState: PurchaseState;
+  transactionDate: number;
+  quantity: number;
+  isAutoRenewing: boolean;
+  purchaseToken?: string | null;
+  ids?: string[] | null;
+}
+
+export interface PurchaseAndroid extends PurchaseCommon {
+  autoRenewingAndroid?: boolean | null;
+  packageNameAndroid?: string | null;
+  signatureAndroid?: string | null;
+  dataAndroid?: string | null;
+}
+
+export interface PurchaseIOS extends PurchaseCommon {
+  appAccountToken?: string | null;
+  environmentIOS?: string | null;
+  expirationDateIOS?: number | null;
+  originalTransactionIdentifierIOS?: string | null;
+  offerIOS?: PurchaseOfferIOS | null;
+}
+
+export type Purchase = PurchaseAndroid | PurchaseIOS;
+```
+
+## Active Subscriptions
+
+`ActiveSubscription` is now part of the generated schema and shared across helpers.
+
+```ts
+export interface ActiveSubscription {
+  productId: string;
+  isActive: boolean;
+  transactionId: string;
+  transactionDate: number;
+  purchaseToken?: string | null;
+  autoRenewingAndroid?: boolean | null;
+  environmentIOS?: string | null;
+  expirationDateIOS?: number | null;
+  daysUntilExpirationIOS?: number | null;
+  willExpireSoon?: boolean | null;
+}
+```
+
+The helper `getActiveSubscriptions` in `src/helpers/subscription.ts` converts `Purchase` records into this shape and re-exports the type for convenience.
+
+## Request Parameters
+
+The request types have been harmonised to match the schema definitions.
+
+```ts
+export interface RequestPurchasePropsByPlatforms {
+  android?: RequestPurchaseAndroidProps | null;
+  ios?: RequestPurchaseIosProps | null;
+}
+
+export interface RequestSubscriptionPropsByPlatforms {
+  android?: RequestSubscriptionAndroidProps | null;
+  ios?: RequestSubscriptionIosProps | null;
+}
+
+export type MutationRequestPurchaseArgs =
+  | {
+      request: RequestPurchasePropsByPlatforms;
+      type: 'in-app';
+    }
+  | {
+      request: RequestSubscriptionPropsByPlatforms;
+      type: 'subs';
+    };
+```
+
+## Receipt Validation
+
+Receipt validation results are platform-specific unions:
+
+```ts
+export type ReceiptValidationResult =
+  | ReceiptValidationResultAndroid
+  | ReceiptValidationResultIos;
+```
+
+Use the higher-level `validateReceipt` helper exported from `src/index.ts` for a strongly typed wrapper around the native modules.
+
+## Where to Find Everything
+
+- For the exhaustive list of enums and interfaces, open `src/types.ts`.
+- For error handling utilities (`createPurchaseError`, `ErrorCodeUtils`), use `src/utils/errorMapping.ts`.
+- All generated types are re-exported from the package root so consumers can import from `react-native-iap` directly:
+
+```ts
+import type {
+  Product,
+  Purchase,
+  ActiveSubscription,
+  RequestPurchaseProps,
+} from 'react-native-iap';
+```
+
+If you need to regenerate types place new schema definitions under the GraphQL inputs and rerun the generator. EOF

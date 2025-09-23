@@ -8,143 +8,208 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 <AdFitTopFixed />
 
-React Native IAP uses standardized error codes that conform to the OpenIAP specification.
+React Native IAP provides a centralized error handling system with platform-specific error code mapping. This ensures consistent error handling across iOS and Android platforms.
 
-## OpenIAP Error Documentation
+## Error Code Enum
 
-For comprehensive error code definitions, error handling patterns, and platform-specific error mappings, please refer to:
+### ErrorCode
 
-**👉 [OpenIAP Error Documentation](https://www.openiap.dev/docs/errors)**
-
-## Basic Usage Example
+The `ErrorCode` enum provides standardized error codes that map to platform-specific errors:
 
 ```tsx
-import {useIAP, ErrorCode, PurchaseError} from 'react-native-iap';
+import {ErrorCode} from 'react-native-iap';
 
-const {requestPurchase} = useIAP({
-  onPurchaseError: (error: PurchaseError) => {
-    console.log('Error details:', {
-      code: error.code,
-      message: error.message,
-      platform: error.platform,
-    });
-
-    switch (error.code) {
-      case ErrorCode.UserCancelled:
-        // Don't show error for user cancellation
-        break;
-      case ErrorCode.NetworkError:
-        Alert.alert('Network Error', 'Please check your internet connection');
-        break;
-      case ErrorCode.ItemUnavailable:
-        Alert.alert('Item Unavailable', 'This item is not available');
-        break;
-      case ErrorCode.AlreadyOwned:
-        Alert.alert('Already Owned', 'You already own this item');
-        break;
-      case ErrorCode.DeveloperError:
-        Alert.alert('Configuration Error', 'Please contact support');
-        break;
-      default:
-        Alert.alert('Purchase Failed', error.message);
-    }
-  },
-});
+export enum ErrorCode {
+  Unknown = 'Unknown',
+  UserCancelled = 'UserCancelled',
+  UserError = 'UserError',
+  ItemUnavailable = 'ItemUnavailable',
+  RemoteError = 'RemoteError',
+  NetworkError = 'NetworkError',
+  ServiceError = 'ServiceError',
+  ReceiptFailed = 'ReceiptFailed',
+  ReceiptFinished = 'ReceiptFinished',
+  ReceiptFinishedFailed = 'ReceiptFinishedFailed',
+  NotPrepared = 'NotPrepared',
+  NotEnded = 'NotEnded',
+  AlreadyOwned = 'AlreadyOwned',
+  DeveloperError = 'DeveloperError',
+  BillingResponseJsonParseError = 'BillingResponseJsonParseError',
+  DeferredPayment = 'DeferredPayment',
+  Interrupted = 'Interrupted',
+  IapNotAvailable = 'IapNotAvailable',
+  PurchaseError = 'PurchaseError',
+  SyncError = 'SyncError',
+  TransactionValidationFailed = 'TransactionValidationFailed',
+  ActivityUnavailable = 'ActivityUnavailable',
+  AlreadyPrepared = 'AlreadyPrepared',
+  Pending = 'Pending',
+  ConnectionClosed = 'ConnectionClosed',
+  InitConnection = 'InitConnection',
+  ServiceDisconnected = 'ServiceDisconnected',
+  QueryProduct = 'QueryProduct',
+  SkuNotFound = 'SkuNotFound',
+  SkuOfferMismatch = 'SkuOfferMismatch',
+  ItemNotOwned = 'ItemNotOwned',
+  BillingUnavailable = 'BillingUnavailable',
+  FeatureNotSupported = 'FeatureNotSupported',
+  EmptySkuList = 'EmptySkuList',
+}
 ```
 
-## Advanced Error Handling with Retry
+## PurchaseError
+
+A custom error class for purchase-related errors.
 
 ```tsx
-const handlePurchaseWithRetry = async (productId: string, retryCount = 0) => {
-  const MAX_RETRIES = 2;
+export interface PurchaseErrorProps {
+  message: string;
+  responseCode?: number;
+  debugMessage?: string;
+  code?: ErrorCode;
+  productId?: string;
+  platform?: IapPlatform;
+}
 
-  try {
-    await requestPurchase({
-      request: {
-        ios: {sku: productId},
-        android: {skus: [productId]},
-      },
-    });
-  } catch (error: any) {
-    const purchaseError = error as PurchaseError;
+export type PurchaseError = Error & PurchaseErrorProps;
+```
 
-    // Determine if we should retry
-    const retryableErrors = [
-      ErrorCode.NetworkError,
-      ErrorCode.ServiceError,
-      ErrorCode.Interrupted,
-    ];
+### createPurchaseError
 
-    const shouldRetry =
-      retryableErrors.includes(purchaseError.code!) && retryCount < MAX_RETRIES;
+Creates a `PurchaseError` instance.
 
-    if (shouldRetry) {
-      console.log(`Retrying purchase (${retryCount + 1}/${MAX_RETRIES})`);
-      setTimeout(
-        () => {
-          handlePurchaseWithRetry(productId, retryCount + 1);
-        },
-        1000 * Math.pow(2, retryCount),
-      ); // Exponential backoff
-    } else {
-      handlePurchaseError(purchaseError);
-    }
-  }
+```tsx
+export const createPurchaseError = (
+  props: PurchaseErrorProps,
+): PurchaseError => {
+  // ...
 };
 ```
 
-## Platform-Specific Error Handling
+### createPurchaseErrorFromPlatform
+
+Creates a `PurchaseError` from a platform-specific error.
 
 ```tsx
-const handlePlatformSpecificError = (error: PurchaseError) => {
-  if (Platform.OS === 'ios') {
-    switch (error.code) {
-      case ErrorCode.DeferredPayment:
-        // iOS-specific: Parental approval required
-        Alert.alert('Approval Required', 'This purchase requires approval');
-        break;
-      case ErrorCode.TransactionValidationFailed:
-        // iOS-specific: StoreKit validation failed
-        Alert.alert('Validation Failed', 'Transaction could not be validated');
-        break;
-    }
-  } else if (Platform.OS === 'android') {
-    switch (error.code) {
-      case ErrorCode.BillingResponseJsonParseError:
-        // Android-specific: Billing response parse error
-        Alert.alert('Error', 'Failed to process purchase response');
-        break;
-      case ErrorCode.Pending:
-        // Android-specific: Purchase is pending
-        Alert.alert('Purchase Pending', 'Your purchase is being processed');
-        break;
-    }
-  }
+export const createPurchaseErrorFromPlatform = (
+  errorData: PlatformErrorData,
+  platform: IapPlatform,
+): PurchaseError => {
+  // ...
 };
 ```
 
-## Error Logging
+## ErrorCodeUtils
+
+Utility functions for error code mapping and validation.
+
+### getNativeErrorCode
+
+Gets the native error code for the current platform:
 
 ```tsx
-const logError = (error: PurchaseError) => {
-  // Log to analytics service
-  analytics.track('purchase_error', {
-    error_code: error.code,
-    platform: error.platform,
-    product_id: error.productId,
-    message: error.message,
-  });
-
-  // Log to crash reporting
-  if (error.code !== ErrorCode.UserCancelled) {
-    crashlytics.recordError(error);
-  }
-};
+ErrorCodeUtils.getNativeErrorCode(errorCode: ErrorCode): string
 ```
+
+### fromPlatformCode
+
+Maps platform-specific error code to standardized ErrorCode:
+
+```tsx
+ErrorCodeUtils.fromPlatformCode(
+  platformCode: string | number,
+  platform: 'ios' | 'android',
+): ErrorCode
+```
+
+### toPlatformCode
+
+Maps ErrorCode to platform-specific code:
+
+```tsx
+ErrorCodeUtils.toPlatformCode(
+  errorCode: ErrorCode,
+  platform: 'ios' | 'android',
+): string | number
+```
+
+### isValidForPlatform
+
+Checks if error code is valid for the specified platform:
+
+```tsx
+ErrorCodeUtils.isValidForPlatform(
+  errorCode: ErrorCode,
+  platform: 'ios' | 'android',
+): boolean
+```
+
+## Error Helper Functions
+
+These functions help interpret error objects.
+
+### isUserCancelledError
+
+Returns `true` if the error is a user cancellation error.
+
+```tsx
+export function isUserCancelledError(error: unknown): boolean;
+```
+
+### isNetworkError
+
+Returns `true` if the error is a network-related error.
+
+```tsx
+export function isNetworkError(error: unknown): boolean;
+```
+
+### isRecoverableError
+
+Returns `true` if the error is a recoverable error.
+
+```tsx
+export function isRecoverableError(error: unknown): boolean;
+```
+
+### getUserFriendlyErrorMessage
+
+Returns a user-friendly error message for a given error.
+
+```tsx
+export function getUserFriendlyErrorMessage(error: ErrorLike): string;
+```
+
+## User-Friendly Error Messages
+
+The `getUserFriendlyErrorMessage` function provides localized and user-friendly messages for common errors.
+
+| ErrorCode | Message |
+| --- | --- |
+| `UserCancelled` | 'Purchase was cancelled by user' |
+| `NetworkError` | 'Network connection error. Please check your internet connection and try again.' |
+| `ReceiptFinished` | 'Receipt already finished' |
+| `ServiceDisconnected` | 'Billing service disconnected. Please try again.' |
+| `BillingUnavailable` | 'Billing is unavailable on this device or account.' |
+| `ItemUnavailable` | 'This item is not available for purchase' |
+| `ItemNotOwned` | "You don't own this item" |
+| `AlreadyOwned` | 'You already own this item' |
+| `SkuNotFound` | 'Requested product could not be found' |
+| `SkuOfferMismatch` | 'Selected offer does not match the SKU' |
+| `DeferredPayment` | 'Payment is pending approval' |
+| `NotPrepared` | 'In-app purchase is not ready. Please try again later.' |
+| `ServiceError` | 'Store service error. Please try again later.' |
+| `FeatureNotSupported` | 'This feature is not supported on this device.' |
+| `TransactionValidationFailed` | 'Transaction could not be verified' |
+| `ReceiptFailed` | 'Receipt processing failed' |
+| `EmptySkuList` | 'No product IDs provided' |
+| `InitConnection` | 'Failed to initialize billing connection' |
+| `QueryProduct` | 'Failed to query products. Please try again later.' |
+| _default_ | 'An unexpected error occurred' |
 
 ## See Also
 
-- [OpenIAP Error Documentation](https://www.openiap.dev/docs/errors) - Complete error reference
-- [useIAP Hook](./use-iap) - Error handling with hooks
-- [Types Reference](./types) - Error type definitions
-- [Troubleshooting](../guides/troubleshooting) - Common issues and solutions
+- [Error Handling Guide](../guides/error-handling)
+- [useIAP Hook](./use-iap)
+- [Types Reference](./types)
+- [Troubleshooting](../guides/troubleshooting)

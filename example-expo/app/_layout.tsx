@@ -3,7 +3,10 @@ import {Stack} from 'expo-router';
 export default function RootLayout() {
   return (
     <Stack>
-      <Stack.Screen name="index" options={{title: 'Expo IAP Examples'}} />
+      <Stack.Screen
+        name="index"
+        options={{title: 'React Native IAP Examples'}}
+      />
       <Stack.Screen
         name="purchase-flow"
         options={{title: 'In-App Purchase Flow'}}

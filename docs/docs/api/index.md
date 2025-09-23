@@ -6,6 +6,10 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 Welcome to the React Native IAP API documentation. Here you'll find comprehensive guides and references for all the features and functionality available in React Native IAP.
 
+Note: react-native-iap follows the OpenIAP API model for consistency across platforms and SDKs. For the canonical API surface, see OpenIAP APIs:
+
+- [OpenIAP APIs](https://www.openiap.dev/docs/apis)
+
 ## Available APIs
 
 ### 🎣 [useIAP Hook](./use-iap)

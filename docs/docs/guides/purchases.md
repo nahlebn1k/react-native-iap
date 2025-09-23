@@ -85,10 +85,10 @@ class App extends Component {
   }
 
   handlePurchaseUpdate = (purchase: ProductPurchase) => {
-    const token = purchase.purchaseToken;
-    if (token) {
+    const receipt = purchase.purchaseToken;
+    if (receipt) {
       yourAPI
-        .deliverOrDownloadFancyInAppPurchase(token)
+        .deliverOrDownloadFancyInAppPurchase(purchase.purchaseToken)
         .then(async (deliveryResult) => {
           if (isSuccess(deliveryResult)) {
             // Tell the store that you have delivered what has been paid for.
@@ -108,7 +108,7 @@ class App extends Component {
               }
             } else if (Platform.OS === 'android') {
               // Android also requires server-side validation
-              const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+              const purchaseToken = purchase.purchaseTokenAndroid;
               const packageName = purchase.packageNameAndroid;
 
               // Your server should:
@@ -117,7 +117,7 @@ class App extends Component {
               const isValid = await validateAndroidPurchaseOnServer({
                 purchaseToken,
                 packageName,
-                productId: purchase.id,
+                productId: purchase.productId,
               });
 
               if (!isValid) {
@@ -198,7 +198,7 @@ export default function PurchaseScreen() {
         if (Platform.OS === 'ios') {
           return await validateReceipt(sku);
         } else if (Platform.OS === 'android') {
-          const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+          const purchaseToken = purchase.purchaseTokenAndroid;
           const packageName =
             purchase.packageNameAndroid || 'your.package.name';
           const isSub = subscriptionSkus.includes(sku);
@@ -440,7 +440,7 @@ const handleBuyProduct = async (productId: string) => {
 ### Legacy API (Still Supported)
 
 ```tsx
-import {requestPurchase, Platform} from 'react-native-iap';
+import {requestPurchase, Platform} from 'react-native';
 
 // For regular products (consumables/non-consumables)
 const handleBuyProduct = async (productId) => {
@@ -587,7 +587,7 @@ const {finishTransaction, validateReceipt} = useIAP({
         }
       } else if (Platform.OS === 'android') {
         // Android also requires server-side validation
-        const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+        const purchaseToken = purchase.purchaseTokenAndroid;
         const packageName = purchase.packageNameAndroid;
 
         // Your server should:
@@ -596,7 +596,7 @@ const {finishTransaction, validateReceipt} = useIAP({
         const isValid = await validateAndroidPurchaseOnServer({
           purchaseToken,
           packageName,
-          productId: purchase.id,
+          productId: purchase.productId,
         });
 
         if (!isValid) {
@@ -813,7 +813,7 @@ const response = await fetch('https://your-server.com/validate-ios-receipt', {
   method: 'POST',
   headers: {'Content-Type': 'application/json'},
   body: JSON.stringify({
-    transactionId: purchase.id,
+    transactionId: purchase.transactionId,
     productId: purchase.productId,
     // Your server will fetch the receipt from Apple
   }),
@@ -832,9 +832,9 @@ Your server should:
 ```typescript
 // Client-side: Get purchase details
 const purchaseDetails = {
-  purchaseToken: purchase.purchaseToken, // Unified field for both iOS and Android
+  purchaseToken: purchase.purchaseTokenAndroid,
   packageName: purchase.packageNameAndroid,
-  productId: purchase.id,
+  productId: purchase.productId,
 };
 
 // Send to your server
@@ -864,13 +864,14 @@ Your server should:
 For non-consumable products and subscriptions, implement purchase restoration:
 
 ```tsx
-const {getAvailablePurchases} = useIAP();
+const {getAvailablePurchases, availablePurchases} = useIAP();
 
 const restorePurchases = async () => {
   try {
-    const purchases = await getAvailablePurchases();
+    // In hook: updates state, does not return purchases
+    await getAvailablePurchases();
 
-    for (const purchase of purchases) {
+    for (const purchase of availablePurchases) {
       // Validate and restore each purchase
       const isValid = await validateReceiptOnServer(purchase);
       if (isValid) {
@@ -942,6 +943,19 @@ const isSubscriptionActive = (purchase: Purchase): boolean => {
 - **iOS**: `expirationDateIos` - Unix timestamp when subscription expires
 - **Android**: `autoRenewingAndroid` - Boolean indicating if subscription will renew
 
+#### Managing Subscriptions
+
+Provide users with subscription management options:
+
+```tsx
+import {deepLinkToSubscriptions} from 'react-native-iap';
+
+const openSubscriptionManagement = () => {
+  // This opens the platform-specific subscription management UI
+  deepLinkToSubscriptions({skuAndroid: 'your_subscription_sku'});
+};
+```
+
 ### Receipt Validation
 
 **Important Platform Differences for Receipt Validation:**
@@ -960,7 +974,7 @@ const handleValidateReceipt = useCallback(
         return await validateReceipt(sku);
       } else if (Platform.OS === 'android') {
         // Android: Requires additional validation parameters
-        const purchaseToken = purchase.purchaseToken; // Unified field for both iOS and Android
+        const purchaseToken = purchase.purchaseTokenAndroid;
         const packageName = purchase.packageNameAndroid || 'your.package.name';
         const isSub = subscriptionSkus.includes(sku);
 
@@ -1079,4 +1093,4 @@ Other helpful resources:
 
 - [Error Handling Guide](./troubleshooting) for debugging purchase issues
 - [API Reference](../api/) for detailed method documentation
-- [Complete Purchase Flow](../examples/purchase-flow) for production-ready implementation
+- See [Available Purchases Example](../examples/available-purchases) for a concrete restore flow

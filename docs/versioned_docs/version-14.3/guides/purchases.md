@@ -117,7 +117,7 @@ class App extends Component {
               const isValid = await validateAndroidPurchaseOnServer({
                 purchaseToken,
                 packageName,
-                productId: purchase.id,
+                productId: purchase.productId,
               });
 
               if (!isValid) {
@@ -596,7 +596,7 @@ const {finishTransaction, validateReceipt} = useIAP({
         const isValid = await validateAndroidPurchaseOnServer({
           purchaseToken,
           packageName,
-          productId: purchase.id,
+          productId: purchase.productId,
         });
 
         if (!isValid) {
@@ -834,7 +834,7 @@ Your server should:
 const purchaseDetails = {
   purchaseToken: purchase.purchaseToken, // Unified field for both iOS and Android
   packageName: purchase.packageNameAndroid,
-  productId: purchase.id,
+  productId: purchase.productId,
 };
 
 // Send to your server

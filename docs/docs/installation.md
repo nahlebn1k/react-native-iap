@@ -10,24 +10,13 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 This guide will help you install and configure React Native IAP in your React Native or Expo project.
 
-:::warning Compatibility (Nitro 14.x)
-
-- `react-native-iap@14.x` is Nitro-based and requires **React Native 0.79+**.
-- If you must stay on **RN 0.75.x or lower**, install the last pre‑Nitro version: `npm i react-native-iap@13.1.0`.
-- Hitting Swift 6 C++ interop errors in Nitro (e.g. `AnyMap.swift` using `cppPart.pointee.*`)? Pin Swift 5.10 for the `NitroModules` pod (see snippet below) as a temporary workaround.
-- Recommended path: Upgrade to RN 0.79+, update `react-native-nitro-modules` and `nitro-codegen` to latest, then `pod install` and do a clean build.
-- Easier alternative: Consider Expo IAP; installing `expo-modules-core` first usually smooths setup. Docs: [expo-iap installation](https://expo-iap.hyo.dev/docs/installation)
-
-If issues persist after upgrading or applying the Swift pin, please share a minimal repro (fresh app + `package.json` + `Podfile`). :::
-
 ## Prerequisites
 
 Before installing React Native IAP, make sure you have:
 
-- For `react-native-iap@14.x` (Nitro): **React Native 0.79+** (Expo SDK aligned with RN 0.79)
-- For older RN (0.75.x or lower): use `react-native-iap@13.1.0` (pre‑Nitro)
+- React Native 0.64 or later, or Expo SDK 45 or later
 - Node.js 16 or later
-- iOS 15+ for iOS apps (StoreKit 2 requirement)
+- iOS 12+ for iOS apps (iOS 15+ required for StoreKit 2 features)
 - Android API level 21+ for Android apps
 
 ## Package Installation
@@ -35,7 +24,7 @@ Before installing React Native IAP, make sure you have:
 Install the package using your favorite package manager:
 
 ```bash
-npm install react-native-iap react-native-nitro-modules
+npm install react-native-iap
 ```
 
 ### Important for Expo Managed Workflow
@@ -46,7 +35,7 @@ After installing the package, you need to:
 
 1. **Configure expo-build-properties for Android** (required for Kotlin 2.0+ support):
 
-   Starting from version 14.0.0-rc, react-native-iap supports Google Play Billing Library v8.0.0, which requires Kotlin 2.0+. Since `expo-modules-core` doesn't support Kotlin 2.0 yet, you need to manually configure the Kotlin version.
+   Starting from version 2.7, react-native-iap supports Google Play Billing Library v8, which requires Kotlin 2.0+. Since `expo-modules-core` doesn't support Kotlin 2.0 yet, you need to manually configure the Kotlin version.
 
    Add the following to your `app.json`:
 
@@ -60,6 +49,8 @@ After installing the package, you need to:
            {
              "android": {
                "kotlinVersion": "2.1.20"
+               // If you're targeting Expo SDK 54 or newer, confirm whether this manual override is still required.
+               // Please share findings with the community at https://github.com/hyochan/react-native-iap/discussions.
              }
            }
          ]
@@ -78,42 +69,6 @@ After installing the package, you need to:
 
 3. **Create a development build** (see the Platform Configuration section below for details)
 
-4. Optional: Fix iOS Folly coroutine include error
-
-   If your iOS build fails with errors such as `'folly/coro/Coroutine.h' file not found` from `RCT-Folly/folly/Expected.h`, you can opt‑in to a workaround that disables Folly coroutine support during CocoaPods install.
-
-   Add this flag to the `react-native-iap` plugin options in your Expo config:
-
-   ```json
-   {
-     "expo": {
-       "plugins": [
-         [
-           "react-native-iap",
-           {
-             "ios": {
-               "with-folly-no-coroutines": true
-             }
-           }
-         ]
-       ]
-     }
-   }
-   ```
-
-   Note migration:
-   - This option key was renamed from `with-folly-no-couroutines` to `with-folly-no-coroutines`. Update your Expo config accordingly. For compatibility, the plugin temporarily accepts the old key and logs a deprecation warning.
-
-   What this does:
-   - Injects `FOLLY_NO_CONFIG=1`, `FOLLY_CFG_NO_COROUTINES=1`, and `FOLLY_HAS_COROUTINES=0` into the Podfile `post_install` block for all Pods targets, preventing `RCT-Folly` from including non‑vendored `<folly/coro/*>` headers.
-   - Idempotent: skips if you already set these defines yourself.
-
-   After enabling the flag, re-run prebuild and install pods:
-   - `rm -rf ios`
-   - `npx expo prebuild -p ios`
-   - `cd ios && LANG=en_US.UTF-8 pod install --repo-update`
-   - `npx expo run:ios`
-
 ## Platform Configuration
 
 ### For Expo Managed Workflow
@@ -127,7 +82,6 @@ If you're using Expo managed workflow, you'll need to create a [custom developme
    ```
 
 2. **Create a development build**:
-
    ```bash
    eas build --platform ios --profile development
    eas build --platform android --profile development
@@ -135,13 +89,22 @@ If you're using Expo managed workflow, you'll need to create a [custom developme
 
 ### For React Native CLI Projects
 
+If you're using React Native CLI projects, you'll need to install expo-modules-core first:
+
+```bash
+npx install-expo-modules@latest
+```
+
+Learn more about [installing Expo modules in existing React Native projects](https://docs.expo.dev/bare/installing-expo-modules/).
+
+Then install the native dependencies:
+
 #### iOS
 
 1. **Install pods**:
 
    ```bash
    cd ios && pod install
-   // or npx pod-install
    ```
 
 2. **Add StoreKit capability** to your iOS app in Xcode:
@@ -150,253 +113,57 @@ If you're using Expo managed workflow, you'll need to create a [custom developme
    - Go to "Signing & Capabilities"
    - Click "+ Capability" and add "In-App Purchase"
 
-3. **Swift 6 interop workaround (temporary)**
-
-   If you see Swift/C++ interop errors from Nitro (e.g. `AnyMap.swift` with `cppPart.pointee.*`), pin Swift to 5.10 for the NitroModules pod in your `ios/Podfile`:
-
-   ```ruby
-   post_install do |installer|
-     react_native_post_install(installer, config[:reactNativePath])
-     installer.pods_project.targets.each do |t|
-       if t.name == 'NitroModules'
-         t.build_configurations.each { |c| c.build_settings['SWIFT_VERSION'] = '5.10' }
-       end
-     end
-   end
-   ```
-
 #### Android
 
-**Important:** Starting from version 14.0.0-rc, react-native-iap supports Google Play Billing Library v8.0.0, which requires Kotlin 2.0+.
+**Important:** Starting from version 2.7, react-native-iap supports Google Play Billing Library v8, which requires Kotlin 2.0+. Since `expo-modules-core` doesn't support Kotlin 2.0 yet, you need to configure your project with `expo-build-properties`.
 
-1. **Configure Kotlin version** in your root `android/build.gradle`:
+Add the following to your `app.json`:
 
-   ```gradle
-   buildscript {
-       ext {
-           kotlinVersion = "2.1.20"
-       }
-       dependencies {
-           classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-       }
-   }
-   ```
-
-2. **Add billing dependencies** to your `android/app/build.gradle`:
-
-   ```gradle
-   dependencies {
-       implementation "com.android.billingclient:billing-ktx:8.0.0"
-       implementation "com.google.android.gms:play-services-base:18.1.0"
-   }
-   ```
-
-## Quick Start
-
-### 1. Basic Setup
-
-First, import and initialize the IAP hook:
-
-```tsx
-import {useIAP} from 'react-native-iap';
-
-function MyStore() {
-  const {
-    connected,
-    products,
-    fetchProducts,
-    requestPurchase,
-    currentPurchase,
-    finishTransaction,
-  } = useIAP();
-
-  const productIds = ['your.product.id', 'your.premium.subscription'];
-}
-```
-
-### 2. Fetch Products
-
-Load your products when the store connects:
-
-```tsx
-useEffect(() => {
-  if (connected) {
-    // Fetch your products
-    fetchProducts({skus: productIds, type: 'in-app'});
-  }
-}, [connected]);
-```
-
-### 3. Display Products
-
-Show available products to users:
-
-```tsx
-return (
-  <View>
-    <Text>Store Status: {connected ? 'Connected' : 'Connecting...'}</Text>
-
-    {products.map((product) => (
-      <View key={product.id} style={styles.productItem}>
-        <Text style={styles.productTitle}>{product.title}</Text>
-        <Text style={styles.productPrice}>{product.displayPrice}</Text>
-        <Button title="Buy Now" onPress={() => handlePurchase(product.id)} />
-      </View>
-    ))}
-  </View>
-);
-```
-
-### 4. Handle Purchases
-
-Process purchase requests with our platform-specific API (v14.0.0-rc Current):
-
-```tsx
-const handlePurchase = async (productId: string) => {
-  try {
-    await requestPurchase({
-      request: {
-        ios: {
-          sku: productId,
-        },
-        android: {
-          skus: [productId],
-        },
-      },
-    });
-  } catch (error) {
-    console.error('Purchase failed:', error);
-  }
-};
-```
-
-> **Note:** No more Platform.OS checks! The new API automatically handles platform differences. iOS can only purchase one product at a time, while Android supports purchasing multiple products in a single transaction.
-
-### 5. Complete Transactions
-
-Finish purchases when they complete:
-
-```tsx
-useEffect(() => {
-  if (currentPurchase) {
-    const completePurchase = async () => {
-      try {
-        // Grant the purchase to user here
-        console.log('Purchase completed:', currentPurchase.id);
-
-        // Finish the transaction
-        await finishTransaction({
-          purchase: currentPurchase,
-          isConsumable: true, // Set based on your product type
-        });
-      } catch (error) {
-        console.error('Failed to complete purchase:', error);
-      }
-    };
-
-    completePurchase();
-  }
-}, [currentPurchase]);
-```
-
-### Complete Basic Example
-
-Here's a complete working example:
-
-```tsx
-import React, {useEffect} from 'react';
-import {View, Text, Button, StyleSheet} from 'react-native';
-import {useIAP} from 'react-native-iap';
-
-export default function SimpleStore() {
-  const {
-    connected,
-    products,
-    fetchProducts,
-    requestPurchase,
-    currentPurchase,
-    finishTransaction,
-  } = useIAP();
-
-  const productIds = ['com.example.coins.pack1', 'com.example.premium'];
-
-  useEffect(() => {
-    if (connected) {
-      fetchProducts({skus: productIds, type: 'in-app'});
-    }
-  }, [connected]);
-
-  useEffect(() => {
-    if (currentPurchase) {
-      const completePurchase = async () => {
-        try {
-          console.log('Purchase completed:', currentPurchase.id);
-          await finishTransaction({
-            purchase: currentPurchase,
-            isConsumable: true,
-          });
-        } catch (error) {
-          console.error('Failed to complete purchase:', error);
+```json
+{
+  "expo": {
+    "plugins": [
+      "react-native-iap",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.1.20"
+          }
         }
-      };
-      completePurchase();
-    }
-  }, [currentPurchase]);
-
-  const handlePurchase = async (productId: string) => {
-    try {
-      await requestPurchase({
-        request: {
-          ios: {
-            sku: productId,
-          },
-          android: {
-            skus: [productId],
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Purchase failed:', error);
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.status}>
-        Store: {connected ? 'Connected ✅' : 'Connecting...'}
-      </Text>
-
-      {products.map((product) => (
-        <View key={product.id} style={styles.product}>
-          <Text style={styles.title}>{product.title}</Text>
-          <Text style={styles.price}>{product.displayPrice}</Text>
-          <Button title="Buy Now" onPress={() => handlePurchase(product.id)} />
-        </View>
-      ))}
-    </View>
-  );
+      ]
+    ]
+  }
 }
-
-const styles = StyleSheet.create({
-  container: {padding: 20},
-  status: {fontSize: 16, marginBottom: 20},
-  product: {
-    padding: 15,
-    marginVertical: 5,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-  },
-  title: {fontSize: 16, fontWeight: 'bold'},
-  price: {fontSize: 14, color: '#666', marginVertical: 5},
-});
 ```
 
-## Store Configuration
+After adding this configuration, run:
 
-React Native IAP is OpenIAP compliant. For detailed instructions on setting up your products in each store:
+```bash
+npx expo prebuild --clean
+```
 
-- **iOS**: [OpenIAP iOS Setup Guide](https://www.openiap.dev/docs/ios-setup) - App Store Connect configuration
-- **Android**: [OpenIAP Android Setup Guide](https://www.openiap.dev/docs/android-setup) - Google Play Console configuration
+This configuration ensures compatibility with Google Play Billing Library v8.0.0.
+
+## Configuration
+
+### App Store Connect (iOS)
+
+Before you can use in-app purchases on iOS, you need to set up your products in App Store Connect:
+
+1. Sign in to [App Store Connect](https://appstoreconnect.apple.com/)
+2. Navigate to your app
+3. Go to "Features" > "In-App Purchases"
+4. Create your products with unique product IDs
+
+### Google Play Console (Android)
+
+For Android, set up your products in Google Play Console:
+
+1. Sign in to [Google Play Console](https://play.google.com/console/)
+2. Navigate to your app
+3. Go to "Monetize" > "Products" > "In-app products"
+4. Create your products with unique product IDs
 
 ## Verification
 
@@ -450,7 +217,6 @@ If you encounter issues during installation:
    ```
 
 3. **For React Native, reset Metro cache**:
-
    ```bash
    npx react-native start --reset-cache
    ```

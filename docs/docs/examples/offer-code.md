@@ -1,6 +1,6 @@
 ---
-title: Offer Code Redemption
-sidebar_label: Offer Codes
+title: Offer Code Redemption Example
+sidebar_label: Offer Code
 sidebar_position: 4
 ---
 
@@ -10,44 +10,60 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 <AdFitTopFixed />
 
-How to redeem offer/promo codes on iOS and Android.
+Redeem App Store offer/promo codes using the native iOS sheet. This is useful for subscription promotional codes and requires a real iOS device.
 
-## Prerequisites
+View the full example source:
 
-- iOS: Configure Offer Codes in App Store Connect
-- Android: Generate promo codes in Google Play Console
+- GitHub: https://github.com/hyochan/react-native-iap/blob/main/example/app/offer-code.tsx
 
-## iOS
+## Usage
 
-Use the native redemption sheet:
-
-```ts
+```tsx
+import {Platform, Button} from 'react-native';
 import {presentCodeRedemptionSheetIOS} from 'react-native-iap';
 
-await presentCodeRedemptionSheetIOS();
-```
+function OfferCodeButton() {
+  const onPress = async () => {
+    if (Platform.OS !== 'ios') return;
+    try {
+      await presentCodeRedemptionSheetIOS();
+      // The system sheet is presented; no result is returned
+    } catch (e) {
+      console.warn('Failed to present offer code sheet:', e);
+    }
+  };
 
-After redemption, the purchase appears in purchase history. Use `getAvailablePurchases()` to refresh your UI.
+  return <Button title="Redeem Offer Code" onPress={onPress} />;
+}
+```
 
 ## Android
 
-Redeem promo codes in Google Play Store (no direct API to open the screen). Guide users:
+Android does not support an in‑app offer code redemption sheet. Instead, direct users to the Google Play redeem page, then refresh entitlements in your app.
 
-1. Open Google Play Store
-2. Profile → Payments & subscriptions
-3. Redeem code
-4. Return to app and refresh purchases
+```tsx
+import {Platform, Button, Linking} from 'react-native';
+import {useIAP} from 'react-native-iap';
 
-## Testing
+function RedeemOrRefresh() {
+  const {getAvailablePurchases, getActiveSubscriptions} = useIAP();
 
-- iOS: Generate codes in App Store Connect, test on real devices or TestFlight.
-- Android: Generate promo codes in Google Play Console; test with your Google account.
+  const onPress = async () => {
+    if (Platform.OS === 'android') {
+      // Open Play redeem (web/Store)
+      await Linking.openURL('https://play.google.com/redeem');
+      // After redeeming, have users come back and refresh
+      await Promise.all([getAvailablePurchases(), getActiveSubscriptions()]);
+    }
+  };
 
-## Troubleshooting
+  return <Button title="Redeem (Android)" onPress={onPress} />;
+}
+```
 
-- iOS sheet not appearing: ensure device is signed into App Store and app is eligible for Offer Codes
-- Android confusion: make it explicit that redemption occurs in the Play Store, not in-app
+## Notes
 
-## Source
-
-- OfferCode.tsx: https://github.com/hyochan/react-native-iap/blob/main/example/screens/OfferCode.tsx
+- Platform: iOS only; requires a real device (not supported on simulators)
+- App Store Connect: Offer codes must be configured for your subscription
+- See also: Core Methods → iOS Specific → `presentCodeRedemptionSheetIOS()`
+- Android: Use Google Play redeem flow via `Linking.openURL('https://play.google.com/redeem')` and then refresh with `getAvailablePurchases()` and `getActiveSubscriptions()`

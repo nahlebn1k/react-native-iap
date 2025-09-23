@@ -16,7 +16,7 @@ This guide will help you install and configure React Native IAP in your React Na
 - If you must stay on **RN 0.75.x or lower**, install the last pre‑Nitro version: `npm i react-native-iap@13.1.0`.
 - Hitting Swift 6 C++ interop errors in Nitro (e.g. `AnyMap.swift` using `cppPart.pointee.*`)? Pin Swift 5.10 for the `NitroModules` pod (see snippet below) as a temporary workaround.
 - Recommended path: Upgrade to RN 0.79+, update `react-native-nitro-modules` and `nitro-codegen` to latest, then `pod install` and do a clean build.
-- Easier alternative: Consider Expo IAP; installing `expo-modules-core` first usually smooths setup. Docs: [expo-iap installation](https://expo-iap.hyo.dev/docs/installation)
+- Easier alternative: Consider React Native IAP; installing `expo-modules-core` first usually smooths setup. Docs: [expo-iap installation](https://expo-iap.hyo.dev/docs/installation)
 
 If issues persist after upgrading or applying the Swift pin, please share a minimal repro (fresh app + `package.json` + `Podfile`). :::
 
