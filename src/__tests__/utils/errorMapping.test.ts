@@ -57,7 +57,9 @@ describe('utils/errorMapping', () => {
         code: ErrorCode.NetworkError,
         message: 'ignored',
       } as any),
-    ).toBe('Network connection error');
+    ).toBe(
+      'Network connection error. Please check your internet connection and try again.',
+    );
     expect(
       getUserFriendlyErrorMessage({
         code: ErrorCode.IapNotAvailable,

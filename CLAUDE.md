@@ -289,7 +289,7 @@ yarn install && yarn typecheck && yarn lint --fix
 
 The project uses a centralized error handling approach across all platforms:
 
-**TypeScript (`src/utils.ts` + `src/types.ts`)**
+**TypeScript (`src/utils/error.ts` + `src/types.ts`)**
 
 - `parseErrorStringToJsonObj()` - Parses native error strings into structured objects
 - `isUserCancelledError()` - Helper to check for user cancellation
@@ -324,18 +324,28 @@ All native modules return errors as JSON strings:
 ### Usage Example
 
 ```typescript
-import { parseErrorStringToJsonObj, isUserCancelledError } from 'react-native-iap'
+import {
+  parseErrorStringToJsonObj,
+  isUserCancelledError,
+  getUserFriendlyErrorMessage
+} from 'react-native-iap'
 
 try {
   await requestPurchase({ ... })
 } catch (error) {
-  const parsedError = parseErrorStringToJsonObj(error)
-
-  if (isUserCancelledError(parsedError)) {
+  // Check for user cancellation
+  if (isUserCancelledError(error)) {
     console.log('User cancelled purchase')
-  } else {
-    console.error('Purchase failed:', parsedError.code, parsedError.message)
+    return
   }
+
+  // Get user-friendly error message
+  const friendlyMessage = getUserFriendlyErrorMessage(error)
+  console.error('Purchase failed:', friendlyMessage)
+
+  // Or parse error details manually
+  const parsedError = parseErrorStringToJsonObj(error)
+  console.error('Purchase failed:', parsedError.code, parsedError.message)
 }
 ```
 
