@@ -1,0 +1,60 @@
+{
+  "tutorialSidebar": [
+    {
+      "type": "doc",
+      "id": "intro",
+      "label": "Introduction"
+    },
+    {
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "installation",
+        "getting-started/setup-ios",
+        "getting-started/setup-android"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "API",
+      "items": [
+        "api/index",
+        "api/types",
+        "api/methods/core-methods",
+        "api/methods/listeners",
+        "api/use-iap",
+        "api/error-codes"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Guides",
+      "items": [
+        "guides/getting-started",
+        "guides/purchases",
+        "guides/lifecycle",
+        "guides/ios-subscription-offers",
+        "guides/offer-code-redemption",
+        "guides/error-handling",
+        "guides/ios-hot-reload-fix",
+        "guides/troubleshooting",
+        "guides/faq",
+        "guides/support"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Examples",
+      "items": [
+        "examples/basic-store",
+        "examples/complete-impl",
+        "examples/subscription-manager"
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "sponsors",
+      "label": "Sponsors"
+    }
+  ]
+}

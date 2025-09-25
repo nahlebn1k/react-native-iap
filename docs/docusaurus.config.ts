@@ -101,15 +101,15 @@ const config: Config = {
       },
       items: [
         {
+          type: 'docsVersionDropdown',
+          position: 'left',
+          dropdownActiveClassDisabled: true,
+        },
+        {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
           label: 'Docs',
-        },
-        {
-          type: 'docsVersionDropdown',
-          position: 'left',
-          dropdownActiveClassDisabled: true,
         },
         {
           to: '/blog',
