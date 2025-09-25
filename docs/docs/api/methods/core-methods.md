@@ -124,22 +124,37 @@ const loadSubscriptions = async () => {
 
 Initiates a purchase request for products or subscriptions.
 
+> **📖 Reference:** [OpenIAP Request APIs](https://www.openiap.dev/docs/apis#request-apis)
+
 > **⚠️ Platform Differences:**
 >
 > - **iOS**: Can only purchase one product at a time (uses `sku: string`)
 > - **Android**: Can purchase multiple products at once (uses `skus: string[]`)
 >
 > This exists because the iOS App Store processes purchases individually, while Google Play supports batch purchases.
+>
+> **📝 Note:** Both consumable and non-consumable in-app products use the same `requestPurchase()` API with `type: 'in-app'`. The platform handles the consumable/non-consumable behavior automatically based on your store configuration.
 
-### Recommended usage (no Platform checks)
+### Recommended usage with useIAP hook (Recommended)
 
 ```tsx
-import {requestPurchase} from 'react-native-iap';
+import {useIAP} from 'react-native-iap';
 
-// Product purchase
-const buyProduct = async (productId: string) => {
-  try {
-    await requestPurchase({
+const ProductPurchaseComponent = () => {
+  const {requestPurchase, products} = useIAP({
+    onPurchaseSuccess: (purchase) => {
+      console.log('Purchase successful:', purchase);
+      // Grant user access to purchased content
+      unlockProduct(purchase.productId);
+    },
+    onPurchaseError: (error) => {
+      console.error('Purchase failed:', error);
+      // Handle purchase error (user cancelled, network error, etc.)
+    },
+  });
+
+  const buyProduct = (productId: string) => {
+    requestPurchase({
       request: {
         ios: {
           sku: productId,
@@ -151,34 +166,59 @@ const buyProduct = async (productId: string) => {
       },
       type: 'in-app',
     });
-  } catch (error) {
-    console.error('Purchase failed:', error);
-  }
+    // No need to await - result handled through callbacks above
+  };
+
+  return (
+    // Your component JSX
+  );
+};
+```
+
+### Direct API usage (Advanced)
+
+```tsx
+import {requestPurchase} from 'react-native-iap';
+
+// Product purchase (consumable and non-consumable)
+const buyProduct = (productId: string) => {
+  requestPurchase({
+    request: {
+      ios: {
+        sku: productId,
+        quantity: 1,
+      },
+      android: {
+        skus: [productId],
+      },
+    },
+    type: 'in-app',
+  });
+  // Purchase result is handled via purchaseUpdatedListener/purchaseErrorListener or useIAP hook callbacks (onPurchaseSuccess, onPurchaseError)
+  // See: docs/api/methods/listeners#purchaseupdatedlistener and https://hyochan.github.io/expo-iap/docs/api/methods/listeners#purchaseerrorlistener
 };
 
 // Subscription purchase
-const buySubscription = async (subscriptionId: string, subscription?: any) => {
-  try {
-    await requestPurchase({
-      request: {
-        ios: {
-          sku: subscriptionId,
-          appAccountToken: 'user-123',
-        },
-        android: {
-          skus: [subscriptionId],
-          subscriptionOffers:
-            subscription?.subscriptionOfferDetails?.map((offer) => ({
-              sku: subscriptionId,
-              offerToken: offer.offerToken,
-            })) || [],
-        },
+const buySubscription = (subscriptionId: string, subscription?: any) => {
+  requestPurchase({
+    request: {
+      ios: {
+        sku: subscriptionId,
+        appAccountToken: 'user-123',
       },
-      type: 'subs',
-    });
-  } catch (error) {
-    console.error('Subscription failed:', error);
-  }
+      android: {
+        skus: [subscriptionId],
+        subscriptionOffers:
+          subscription?.subscriptionOfferDetails?.map((offer) => ({
+            sku: subscriptionId,
+            offerToken: offer.offerToken,
+          })) || [],
+      },
+    },
+    type: 'subs',
+  });
+  // Purchase result is handled via purchaseUpdatedListener/purchaseErrorListener or useIAP hook callbacks (onPurchaseSuccess, onPurchaseError)
+  // See: docs/api/methods/listeners#purchaseupdatedlistener and https://hyochan.github.io/expo-iap/docs/api/methods/listeners#purchaseerrorlistener
 };
 ```
 
