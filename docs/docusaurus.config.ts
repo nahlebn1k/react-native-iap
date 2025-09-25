@@ -48,6 +48,7 @@ const config: Config = {
           editUrl:
             'https://github.com/hyochan/react-native-iap/tree/main/docs/',
           lastVersion: 'current',
+          exclude: ['**/node_modules/**'],
           versions: {
             current: {
               label: '14.4 (Current)',

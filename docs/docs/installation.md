@@ -16,7 +16,7 @@ This guide will help you install and configure React Native IAP in your React Na
 - If you must stay on **RN 0.75.x or lower**, install the last pre‑Nitro version: `npm i react-native-iap@13.1.0`.
 - Hitting Swift 6 C++ interop errors in Nitro (e.g. `AnyMap.swift` using `cppPart.pointee.*`)? Pin Swift 5.10 for the `NitroModules` pod (see snippet below) as a temporary workaround.
 - Recommended path: Upgrade to RN 0.79+, update `react-native-nitro-modules` and `nitro-codegen` to latest, then `pod install` and do a clean build.
-- Easier alternative: Consider Expo IAP; installing `expo-modules-core` first usually smooths setup. Docs: [expo-iap installation](https://expo-iap.hyo.dev/docs/installation)
+- If you're using React Native version 0.78 or using Expo, consider using [expo-iap](https://expo-iap.hyo.dev/docs/installation) instead (easier configuration by installing `expo-modules-core` first).
 
 If issues persist after upgrading or applying the Swift pin, please share a minimal repro (fresh app + `package.json` + `Podfile`). :::
 
@@ -38,118 +38,112 @@ Install the package using your favorite package manager:
 npm install react-native-iap react-native-nitro-modules
 ```
 
-## Platform Configuration
-
 ### For React Native CLI Projects
 
-If you're using React Native CLI projects, you'll need to install expo-modules-core first:
+If you're using React Native CLI (not Expo), you need to install iOS dependencies after installing the package:
 
 ```bash
-npx install-expo-modules@latest
+cd ios && pod install
 ```
 
-Learn more about [installing Expo modules in existing React Native projects](https://docs.expo.dev/bare/installing-expo-modules/).
+The native modules will be automatically linked during your app's build process.
 
-Then install the native dependencies:
+## Expo Configuration
 
-#### iOS
+### Important for Expo Managed Workflow
 
-For detailed iOS setup instructions, see [iOS Configuration](https://www.openiap.dev/docs/ios-setup).
+If you're using the Expo managed workflow, you **must** use a [custom development client](https://docs.expo.dev/versions/latest/sdk/dev-client/) since in-app purchases require native modules that aren't available in Expo Go.
 
-#### Android
+After installing the package, you need to:
 
-For detailed Android setup instructions, see [Android Configuration](https://www.openiap.dev/docs/android-setup).
+1. **Configure expo-build-properties for Android** (required for Kotlin 2.0+ support):
 
-### Optional for Expo Managed Workflow
+   Starting from version 14.0.0-rc, react-native-iap supports Google Play Billing Library v8.0.0, which requires Kotlin 2.0+. Since `expo-modules-core` doesn't support Kotlin 2.0 yet, you need to manually configure the Kotlin version.
 
-If you're using Expo managed workflow, you'll need to create a [custom development client](https://docs.expo.dev/development/create-development-builds/) since in-app purchases require native modules that aren't available in Expo Go.
+   Add the following to your `app.json`:
 
-1. **Install EAS CLI** (if not already installed):
-
-   ```bash
-   npm install -g eas-cli
+   ```json
+   {
+     "expo": {
+       "plugins": [
+         "react-native-iap",
+         [
+           "expo-build-properties",
+           {
+             "android": {
+               "kotlinVersion": "2.1.20"
+             }
+           }
+         ]
+       ]
+     }
+   }
    ```
 
-2. **Create a development build**:
-   ```bash
-   eas build --platform ios --profile development
-   eas build --platform android --profile development
-   ```
+2. **Install expo-dev-client**
 
-## Configuration
-
-### App Store Connect (iOS)
-
-Before you can use in-app purchases on iOS, you need to set up your products in App Store Connect:
-
-1. Sign in to [App Store Connect](https://appstoreconnect.apple.com/)
-2. Navigate to your app
-3. Go to "Features" > "In-App Purchases"
-4. Create your products with unique product IDs
-
-### Google Play Console (Android)
-
-For Android, set up your products in Google Play Console:
-
-1. Sign in to [Google Play Console](https://play.google.com/console/)
-2. Navigate to your app
-3. Go to "Monetize" > "Products" > "In-app products"
-4. Create your products with unique product IDs
-
-## Verification
-
-To verify that React Native IAP is properly installed, create a simple test:
-
-```tsx
-import {useIAP} from 'react-native-iap';
-
-function TestComponent() {
-  const {connected} = useIAP();
-
-  console.log('IAP Connection status:', connected);
-
-  return null;
-}
-```
-
-If everything is set up correctly, you should see the connection status logged in your console.
-
-## Next Steps
-
-Now that you have React Native IAP installed, you can:
-
-- [Set up iOS configuration](./getting-started/setup-ios)
-- [Set up Android configuration](./getting-started/setup-android)
-- [Learn basic usage](./examples/purchase-flow)
-
-## Troubleshooting
-
-If you encounter issues during installation:
-
-1. **Clear node_modules and reinstall**:
+   Since in-app purchases require native modules that aren't available in Expo Go, you need to install expo-dev-client to create a custom development client. Learn more about [expo-dev-client](https://docs.expo.dev/versions/latest/sdk/dev-client/).
 
    ```bash
-   rm -rf node_modules
-   npm install
+   npx expo install expo-dev-client
    ```
 
-2. **For iOS, clean and rebuild pods**:
-
-   ```bash
-   cd ios
-   rm -rf Pods Podfile.lock
-   pod install
-   ```
-
-   **For Expo projects**, use prebuild instead:
+3. **Install the plugin and run prebuild**:
 
    ```bash
    npx expo prebuild --clean
    ```
 
-3. **For React Native, reset Metro cache**:
-   ```bash
-   npx react-native start --reset-cache
+   This will generate the native iOS and Android directories with the necessary configurations. Learn more about [adopting prebuild](https://docs.expo.dev/guides/adopting-prebuild/).
+
+4. Optional: Fix iOS Folly coroutine include error
+
+   If your iOS build fails with errors such as `'folly/coro/Coroutine.h' file not found` from `RCT-Folly/folly/Expected.h`, you can opt‑in to a workaround that disables Folly coroutine support during CocoaPods install.
+
+   Add this flag to the `react-native-iap` plugin options in your Expo config:
+
+   ```json
+   {
+     "expo": {
+       "plugins": [
+         [
+           "react-native-iap",
+           {
+             "ios": {
+               "with-folly-no-coroutines": true
+             }
+           }
+         ]
+       ]
+     }
+   }
    ```
 
-For more help, check our [Troubleshooting Guide](./guides/troubleshooting) or [open an issue](https://github.com/hyochan/react-native-iap/issues) on GitHub.
+   Note migration:
+   - This option key was renamed from `with-folly-no-couroutines` to `with-folly-no-coroutines`. Update your Expo config accordingly. For compatibility, the plugin temporarily accepts the old key and logs a deprecation warning.
+
+   What this does:
+   - Injects `FOLLY_NO_CONFIG=1`, `FOLLY_CFG_NO_COROUTINES=1`, and `FOLLY_HAS_COROUTINES=0` into the Podfile `post_install` block for all Pods targets, preventing `RCT-Folly` from including non‑vendored `<folly/coro/*>` headers.
+   - Idempotent: skips if you already set these defines yourself.
+
+   After enabling the flag, re-run prebuild:
+
+   ```bash
+   npx expo prebuild
+   ```
+
+## Store Configuration
+
+For detailed platform-specific configuration:
+
+- [iOS Setup](./getting-started/setup-ios.md) - iOS StoreKit configuration
+- [Android Setup](./getting-started/setup-android.md) - Android Google Play Billing configuration
+
+## Real world examples
+
+For detailed platform-specific setup instructions, check out our real examples:
+
+- [Purchase Flow](./examples/purchase-flow.md) - Complete purchase implementation
+- [Subscription Flow](./examples/subscription-flow.md) - Subscription management
+- [Available Purchases](./examples/available-purchases.md) - Restore purchases
+- [Offer Code](./examples/offer-code.md) - Promotional offers and codes
