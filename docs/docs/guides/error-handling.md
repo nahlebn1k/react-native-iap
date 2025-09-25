@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # Error Handling
 
 This guide covers best practices for handling errors in your react-native-iap implementation.
@@ -5,6 +9,8 @@ This guide covers best practices for handling errors in your react-native-iap im
 ## Overview
 
 React Native IAP provides comprehensive error handling through standardized error codes and messages. All errors are returned as structured objects with consistent properties across iOS and Android platforms.
+
+For a complete list of error codes, see [Error Codes](../api/error-codes).
 
 ## Error Structure
 

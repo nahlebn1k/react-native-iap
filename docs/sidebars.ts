@@ -32,6 +32,16 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
+      type: 'category',
+      label: 'Examples',
+      items: [
+        'examples/purchase-flow',
+        'examples/subscription-flow',
+        'examples/available-purchases',
+        'examples/offer-code',
+      ],
+    },
+    {
       type: 'doc',
       id: 'sponsors',
       label: 'Sponsors',

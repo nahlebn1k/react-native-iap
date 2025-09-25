@@ -10,13 +10,24 @@ import AdFitTopFixed from "@site/src/uis/AdFitTopFixed";
 
 This guide will help you install and configure React Native IAP in your React Native or Expo project.
 
+:::warning Compatibility (Nitro 14.x)
+
+- `react-native-iap@14.x` is Nitro-based and requires **React Native 0.79+**.
+- If you must stay on **RN 0.75.x or lower**, install the last pre‑Nitro version: `npm i react-native-iap@13.1.0`.
+- Hitting Swift 6 C++ interop errors in Nitro (e.g. `AnyMap.swift` using `cppPart.pointee.*`)? Pin Swift 5.10 for the `NitroModules` pod (see snippet below) as a temporary workaround.
+- Recommended path: Upgrade to RN 0.79+, update `react-native-nitro-modules` and `nitro-codegen` to latest, then `pod install` and do a clean build.
+- Easier alternative: Consider Expo IAP; installing `expo-modules-core` first usually smooths setup. Docs: [expo-iap installation](https://expo-iap.hyo.dev/docs/installation)
+
+If issues persist after upgrading or applying the Swift pin, please share a minimal repro (fresh app + `package.json` + `Podfile`). :::
+
 ## Prerequisites
 
 Before installing React Native IAP, make sure you have:
 
-- React Native 0.64 or later, or Expo SDK 45 or later
+- For `react-native-iap@14.x` (Nitro): **React Native 0.79+** (Expo SDK aligned with RN 0.79)
+- For older RN (0.75.x or lower): use `react-native-iap@13.1.0` (pre‑Nitro)
 - Node.js 16 or later
-- iOS 12+ for iOS apps (iOS 15+ required for StoreKit 2 features)
+- iOS 15+ for iOS apps (StoreKit 2 requirement)
 - Android API level 21+ for Android apps
 
 ## Package Installation
@@ -24,68 +35,10 @@ Before installing React Native IAP, make sure you have:
 Install the package using your favorite package manager:
 
 ```bash
-npm install react-native-iap
+npm install react-native-iap react-native-nitro-modules
 ```
 
-### Important for Expo Managed Workflow
-
-If you're using the Expo managed workflow, you **must** use a [custom development client](https://docs.expo.dev/versions/latest/sdk/dev-client/) since in-app purchases require native modules that aren't available in Expo Go.
-
-After installing the package, you need to:
-
-1. **Configure expo-build-properties for Android** (required for Kotlin 2.0+ support):
-
-   Starting from version 2.7, react-native-iap supports Google Play Billing Library v8, which requires Kotlin 2.0+. Since `expo-modules-core` doesn't support Kotlin 2.0 yet, you need to manually configure the Kotlin version.
-
-   Add the following to your `app.json`:
-
-   ```json
-   {
-     "expo": {
-       "plugins": [
-         "react-native-iap",
-         [
-           "expo-build-properties",
-           {
-             "android": {
-               "kotlinVersion": "2.1.20"
-               // If you're targeting Expo SDK 54 or newer, confirm whether this manual override is still required.
-               // Please share findings with the community at https://github.com/hyochan/react-native-iap/discussions.
-             }
-           }
-         ]
-       ]
-     }
-   }
-   ```
-
-2. **Install the plugin and run prebuild**:
-
-   ```bash
-   npx expo prebuild --clean
-   ```
-
-   This will generate the native iOS and Android directories with the necessary configurations. Learn more about [adopting prebuild](https://docs.expo.dev/guides/adopting-prebuild/).
-
-3. **Create a development build** (see the Platform Configuration section below for details)
-
 ## Platform Configuration
-
-### For Expo Managed Workflow
-
-If you're using Expo managed workflow, you'll need to create a [custom development client](https://docs.expo.dev/development/create-development-builds/) since in-app purchases require native modules that aren't available in Expo Go.
-
-1. **Install EAS CLI** (if not already installed):
-
-   ```bash
-   npm install -g eas-cli
-   ```
-
-2. **Create a development build**:
-   ```bash
-   eas build --platform ios --profile development
-   eas build --platform android --profile development
-   ```
 
 ### For React Native CLI Projects
 
@@ -101,49 +54,27 @@ Then install the native dependencies:
 
 #### iOS
 
-1. **Install pods**:
-
-   ```bash
-   cd ios && pod install
-   ```
-
-2. **Add StoreKit capability** to your iOS app in Xcode:
-   - Open your project in Xcode
-   - Select your app target
-   - Go to "Signing & Capabilities"
-   - Click "+ Capability" and add "In-App Purchase"
+For detailed iOS setup instructions, see [iOS Configuration](https://www.openiap.dev/docs/ios-setup).
 
 #### Android
 
-**Important:** Starting from version 2.7, react-native-iap supports Google Play Billing Library v8, which requires Kotlin 2.0+. Since `expo-modules-core` doesn't support Kotlin 2.0 yet, you need to configure your project with `expo-build-properties`.
+For detailed Android setup instructions, see [Android Configuration](https://www.openiap.dev/docs/android-setup).
 
-Add the following to your `app.json`:
+### Optional for Expo Managed Workflow
 
-```json
-{
-  "expo": {
-    "plugins": [
-      "react-native-iap",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "2.1.20"
-          }
-        }
-      ]
-    ]
-  }
-}
-```
+If you're using Expo managed workflow, you'll need to create a [custom development client](https://docs.expo.dev/development/create-development-builds/) since in-app purchases require native modules that aren't available in Expo Go.
 
-After adding this configuration, run:
+1. **Install EAS CLI** (if not already installed):
 
-```bash
-npx expo prebuild --clean
-```
+   ```bash
+   npm install -g eas-cli
+   ```
 
-This configuration ensures compatibility with Google Play Billing Library v8.0.0.
+2. **Create a development build**:
+   ```bash
+   eas build --platform ios --profile development
+   eas build --platform android --profile development
+   ```
 
 ## Configuration
 
@@ -189,7 +120,7 @@ Now that you have React Native IAP installed, you can:
 
 - [Set up iOS configuration](./getting-started/setup-ios)
 - [Set up Android configuration](./getting-started/setup-android)
-- [Learn basic usage](./guides/getting-started)
+- [Learn basic usage](./examples/purchase-flow)
 
 ## Troubleshooting
 

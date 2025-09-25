@@ -280,7 +280,7 @@ React Native IAP is built with a modern architecture that emphasizes:
 ### 🛠️ Advanced Topics
 
 - [**Receipt Validation**](./guides/purchases): Secure purchase validation
-- [**Error Handling**](./api/error-codes): Comprehensive error management
+- [**Error Handling**](./guides/error-handling): Comprehensive error management
 - [**Subscriptions Flow Example**](./examples/subscription-flow): Handle recurring subscriptions
 - [**Troubleshooting**](./guides/troubleshooting): Common issues and solutions
 
