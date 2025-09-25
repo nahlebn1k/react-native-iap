@@ -347,6 +347,11 @@ const restorePurchases = async () => {
 
 **Returns:** `Promise<Purchase[]>`
 
+**Platform behaviour:**
+
+- **iOS** – the library forwards the optional flags through StoreKit 2. `onlyIncludeActiveItemsIOS` defaults to `true`, so the result only contains entitlements that are still active. Setting `alsoPublishToEventListenerIOS` mirrors the data through the purchase event listeners for apps that subscribe directly to those callbacks.
+- **Android** – Google Play separates `inapp` (one‑time) and `subs` purchases. The library internally calls the billing client twice—once for each type—and merges the results before running validation. No additional options are required; both product classes are returned together.
+
 ## deepLinkToSubscriptions()
 
 Opens the platform-specific subscription management UI.
@@ -430,18 +435,24 @@ const checkSubscriptions = async () => {
 interface ActiveSubscription {
   productId: string;
   isActive: boolean;
-  expirationDateIOS?: Date;
-  autoRenewingAndroid?: boolean;
-  environmentIOS?: string;
-  willExpireSoon?: boolean;
-  daysUntilExpirationIOS?: number;
+  transactionId: string;
+  transactionDate: number; // epoch milliseconds
+  expirationDateIOS?: number | null; // epoch milliseconds
+  daysUntilExpirationIOS?: number | null;
+  willExpireSoon?: boolean | null;
+  environmentIOS?: string | null; // "Sandbox" | "Production"
+  autoRenewingAndroid?: boolean | null;
+  purchaseToken?: string | null; // JWS (iOS) or purchaseToken (Android)
 }
 ```
 
+> Optional properties may be `undefined` or `null` when the store does not provide the value (for example, `expirationDateIOS` is only present for auto-renewing products).
+
 **Platform Behavior:**
 
-- **iOS**: Uses `expirationDateIos` to determine subscription status. Includes expiration date and days until expiration.
-- **Android**: Uses purchase list presence and `autoRenewingAndroid` flag to determine status.
+- **iOS**: Derived from StoreKit 2 entitlements. `expirationDateIOS`, `daysUntilExpirationIOS`, and `environmentIOS` come directly from the latest validated transaction.
+- **Android**: Derived from Google Play Billing purchases. `autoRenewingAndroid` mirrors the Play auto-renew flag and `purchaseToken` forwards the token you need for server-side validation.
+- **Shared**: `transactionId` and `transactionDate` correspond to the most recent entitlement event on either platform.
 
 ## hasActiveSubscriptions()
 
