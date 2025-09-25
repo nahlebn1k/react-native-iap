@@ -475,6 +475,20 @@ export const getStorefrontIOS: QueryField<'getStorefrontIOS'> = async () => {
   }
 };
 
+export const getStorefrontAndroid: QueryField<'getStorefrontAndroid'> = async () => {
+    if (Platform.OS !== 'android') {
+        throw new Error('getStorefrontAndroid is only available on Android');
+    }
+
+    try {
+        const storefront = await IAP.instance.getStorefrontAndroid();
+        return storefront;
+    } catch (error) {
+        console.error('Failed to get storefront:', error);
+        throw error;
+    }
+};
+
 export const getAppTransactionIOS: QueryField<
   'getAppTransactionIOS'
 > = async () => {
